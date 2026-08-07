@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { publicSupabaseKey, publicSupabaseUrl } from './lib/deployment-config';
 
 // Routes that must remain reachable without an active session, per portal.
 const PUBLIC_PATHS: Record<'crm' | 'workspace', string[]> = {
@@ -7,9 +8,8 @@ const PUBLIC_PATHS: Record<'crm' | 'workspace', string[]> = {
   workspace: ['/workspace/login', '/workspace/session-expired'],
 };
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = publicSupabaseUrl;
+const supabaseAnonKey = publicSupabaseKey;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

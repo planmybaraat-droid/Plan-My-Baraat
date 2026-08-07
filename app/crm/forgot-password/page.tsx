@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Loader2, AlertCircle, ArrowLeft, MailCheck } from 'lucide-react';
 import { crmSupabase, isCrmSupabaseConfigured } from '../lib/supabase-crm';
+import { getSiteUrl } from '../../../lib/deployment-config';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -31,7 +32,7 @@ export default function ForgotPasswordPage() {
 
     try {
       const { error: resetError } = await crmSupabase.auth.resetPasswordForEmail(trimmed, {
-        redirectTo: `${window.location.origin}/crm/reset-password`,
+        redirectTo: `${getSiteUrl()}/crm/reset-password`,
       });
       // Always show success — never reveal whether an email address has an account.
       if (resetError) console.error(resetError.message);

@@ -45,6 +45,21 @@ SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_META_PIXEL_ID=
 ```
 
+### Production domain
+
+The canonical production URL is `https://planmybaraat.com`. In Supabase,
+open **Authentication → URL Configuration** and use:
+
+- Site URL: `https://planmybaraat.com`
+- Redirect URL: `https://planmybaraat.com/**`
+- Local development: `http://localhost:3000/**` and `http://localhost:3001/**`
+
+The Supabase project URL and publishable browser key have safe project-level
+defaults in the repository and in `vercel.json`. The elevated
+`SUPABASE_SERVICE_ROLE_KEY` must still be added as an encrypted Vercel
+environment variable for Production, Preview, and Development. Never commit
+that key to GitHub.
+
 The public marketing pages run without Supabase. `/crm` and `/workspace` do
 not: missing values redirect protected routes to a configuration error instead
 of enabling a demo/offline database. Keep `SUPABASE_SERVICE_ROLE_KEY` server

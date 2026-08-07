@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { createClient } from '@supabase/supabase-js';
 import { ShieldCheck, ShieldAlert, CalendarDays, Package, IndianRupee, Hash, FileCheck2, Wallet, Info } from 'lucide-react';
+import { publicSupabaseKey, publicSupabaseUrl } from '../../../lib/deployment-config';
 
 export const metadata: Metadata = {
   title: 'Document Verification',
@@ -36,8 +37,8 @@ interface VerifyResult {
 }
 
 async function verifyDocument(code: string): Promise<VerifyResult> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = publicSupabaseUrl;
+  const supabaseAnonKey = publicSupabaseKey;
   if (!supabaseUrl || !supabaseAnonKey) return { found: false };
 
   try {

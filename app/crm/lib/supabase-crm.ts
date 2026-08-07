@@ -7,9 +7,10 @@ import type {
   Note, UploadedFile, AgreementRecord, AgreementFormData, AgreementFilters, AgreementActivity,
   VendorAgreementRecord, VendorAgreementFormData, VendorAgreementFilters, VendorAgreementActivity
 } from './types';
+import { publicSupabaseKey, publicSupabaseUrl } from '../../../lib/deployment-config';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-url.supabase.co";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key";
+const supabaseUrl = publicSupabaseUrl;
+const supabaseAnonKey = publicSupabaseKey;
 
 // Cookie-backed browser client (not localStorage-only) so the session is
 // visible to middleware/server code for real route protection, while the
@@ -17,10 +18,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || proc
 export const crmSupabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
 // Auto-detect if Supabase is unconfigured (using default placeholder values)
-export const isCrmSupabaseConfigured = !!(
-  process.env.NEXT_PUBLIC_SUPABASE_URL && 
-  !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder-url")
-);
+export const isCrmSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const CRM_CONFIGURATION_ERROR = 'CRM database access is not configured. Contact the system administrator.';
 
