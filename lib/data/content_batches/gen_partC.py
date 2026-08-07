@@ -1,0 +1,57 @@
+import json
+
+towns = []
+def add(slug, intro, localArea, whatsIncluded, whyUs, pricingGuidance, planningNotes, closing, faqs):
+    towns.append({"slug": slug, "intro": intro, "localArea": localArea, "whatsIncluded": whatsIncluded,
+        "whyUs": whyUs, "pricingGuidance": pricingGuidance, "planningNotes": planningNotes,
+        "closing": closing, "faqs": faqs})
+
+# ---------------- VYARA ----------------
+add(
+"vyara",
+"Vyara is the administrative headquarters of Tapi district, a town that pulls in people from the surrounding tribal belt for everything from government offices to weddings. It has that district-town character - busy market streets, a genuine sense of occasion around big family events, and enough open ground near most venues to host a proper baraat entry.\n\nPlan My Baraat brings the whole entry together for Vyara weddings as one booking: the double decker Baraat on Wheels truck, a dhol team, a vintage car or baggi for the groom's arrival, and the My Safa team turban-styling him and the full baraati group.",
+"Vyara sits inland from Surat, in the hillier stretch of Tapi district, with roads that are generally well-kept given its role as the district headquarters. Venue access varies a bit more here than in flatter towns, so we always confirm the approach to your specific venue ahead of time, especially if it's on the edge of town closer to the surrounding villages.\n\nWe cover Vyara and the smaller towns and villages across Tapi district regularly, including families who travel into Vyara from more remote parts of the district for a wedding with a full baraat production.",
+"Every package includes the DJ truck, sound system, and a DJ artist leading the energy of the procession. Raj Tilak adds 2 dhol and chhatri lighting. Rajwada brings the dhol count to 4 and adds a teddy or gorilla performer working the crowd. Maharaja, the package most Vyara families choose, adds moving LED panels and lights up the groom's name as he approaches the venue. Signature, our top package, adds a security team, timed pyro and confetti, and an upgraded American vintage car.\n\nThe vintage car or baggi and the My Safa turban team are part of every package starting from Raj Tilak, so even the entry-level booking includes a proper car and complete turban styling for the group.",
+"We're a Gujarat-based baraat planning team, and for Vyara that means understanding both the town itself and the wider Tapi district it anchors - our crews are used to the mix of town-centre and semi-rural venues that come up here.\n\nInstead of arranging a truck, a dhol group, a car, and a safa stylist separately, you get one team managing all four, with the truck's arrival, the dhol beat, and the groom's step out of the vintage car all timed to land together.",
+"Pricing for a Vyara baraat depends on the package, dhol count, and whether you're adding effects like pyro or confetti. Raj Tilak gives you the full core setup at the most accessible price point; Signature costs more because it delivers a genuinely bigger show, with more dhol, LED visuals, and a security team.\n\nMessage us your date, your venue or area in Vyara, and a rough guest count, and we'll respond on WhatsApp with a real quote, usually within the hour.",
+"Wedding season runs November to February, and Vyara is generally less contested for dates than larger city venues, so 2 to 3 weeks' notice in peak season is usually enough. Outside that window, a week's notice typically works fine.\n\nIf your venue is on the outskirts of Vyara or in a nearby village, mention that when you message us - it helps us plan the truck's route through Tapi district's hillier stretches.",
+"Message us on WhatsApp with your wedding date, your venue in Vyara, and an approximate baraati headcount, and we'll confirm the truck's availability along with a package recommendation, usually within the hour.",
+[
+{"q": "Is Vyara the main town for weddings in Tapi district?", "a": "Yes, as the district headquarters, Vyara sees a steady flow of weddings, including families travelling in from smaller towns and villages across Tapi district."},
+{"q": "Can the DJ truck manage Vyara's hillier approach roads?", "a": "Generally yes, though we confirm access to your specific venue in advance given the more varied terrain compared to flatter towns."},
+{"q": "How early should we book for a Vyara wedding in peak season?", "a": "2 to 3 weeks ahead during November to February is usually enough, since Vyara sees less date competition than major city venues."},
+{"q": "Do you cover villages around Vyara as well?", "a": "Yes, we regularly serve the smaller towns and villages across Tapi district, not just Vyara's town centre."},
+{"q": "Is the safa team included from the entry-level package?", "a": "Yes, My Safa comes with Raj Tilak and every package above it, covering the groom and the entire baraati group."},
+{"q": "What's the difference between Raj Tilak and Maharaja?", "a": "Raj Tilak has the truck, 2 dhol, chhatri lights, car, and safa team. Maharaja adds moving LED panels, the groom's name lit up, and 6 dhol total."},
+{"q": "How do we get an actual price for our Vyara wedding?", "a": "Send your date, venue, and guest count on WhatsApp. We reply with a real quote built around your event, usually within the hour."},
+]
+)
+
+# ---------------- SONGADH ----------------
+add(
+"songadh",
+"Songadh sits in the hillier, more forested part of Tapi district, close to the Maharashtra border, and it has a quieter, more scenic character than the bigger towns nearby. Weddings here often draw families from both sides of the state line, and a baraat with a proper truck and dhol line stands out even more against the town's low-key backdrop.\n\nPlan My Baraat handles the full entry as one booking for Songadh families: the double decker Baraat on Wheels truck, a dhol team, a vintage car or baggi for the groom, and the My Safa team styling turbans for him and the entire baraati group.",
+"Songadh's terrain is hillier than most of the towns we cover, being close to the edge of the Sahyadri range near the Maharashtra border, so we plan truck routes here with a bit more care, particularly for venues further from the main road. The town centre itself is manageable, with most wedding venues sitting along accessible stretches.\n\nWe cover Songadh and the surrounding villages regularly, and because of its position near the state border, we've also handled baraats here for families who've travelled in from just across the line in Maharashtra.",
+"Every package starts with the DJ truck, sound system, and a DJ artist keeping the crowd energised. Raj Tilak comes with 2 dhol and chhatri lighting. Rajwada steps up to 4 dhol and adds a teddy or gorilla performer alongside the truck. Maharaja, the package most Songadh bookings settle on, brings moving LED panels and lights up the groom's name for the arrival. Signature, the top package, adds a security team, timed pyro and confetti, and an upgraded American vintage car.\n\nThe vintage car or baggi and the My Safa turban team are included in every package from Raj Tilak upward, so the entry package still delivers a full, proper royal arrival.",
+"As a Gujarat-based baraat planning team, we treat Songadh as part of our regular Tapi district coverage, so our crews are already familiar with the hillier approach roads and the venues that come up repeatedly in this part of the district.\n\nWith one team managing the truck, dhol, car, and safa, you avoid the back-and-forth of coordinating four separate vendors. We plan the timing so the truck, the dhol beat, and the groom's step out of the vintage car all come together properly at your Songadh venue.",
+"Pricing for a Songadh baraat depends on your package, dhol count, and any added effects like pyro or confetti. Raj Tilak is the most affordable way to get the complete core setup; Signature costs more because it's a genuinely bigger production, with more dhol, LED visuals, and a security team included.\n\nSend us your date, your venue or area in Songadh, and a rough guest count, and we'll respond on WhatsApp with a real quote, usually within the hour.",
+"Wedding season runs November to February, and Songadh sees less competition for dates than bigger towns, so 2 to 3 weeks' notice in peak season is usually enough. Outside that window, a week's notice generally does the job.\n\nBecause of the hillier terrain around Songadh, it helps to flag your venue's exact location when you message us, so we can plan the truck's route properly in advance.",
+"Message us on WhatsApp with your wedding date, your venue in Songadh, and an approximate baraati headcount, and we'll confirm the truck's availability along with a package recommendation, usually within the hour.",
+[
+{"q": "Is Songadh close to the Maharashtra border?", "a": "Yes, Songadh sits near the edge of Tapi district close to Maharashtra, and we've handled baraats here for families travelling in from across the state line."},
+{"q": "Can the truck handle Songadh's hillier roads?", "a": "Generally yes, though we plan the route with extra care for venues further from the main road given the more varied terrain here."},
+{"q": "How much notice do we need for a Songadh wedding?", "a": "2 to 3 weeks ahead in peak season (November to February) is usually enough, since Songadh sees less date competition than larger towns."},
+{"q": "Do you cover the villages around Songadh too?", "a": "Yes, we regularly take bookings in the villages surrounding Songadh, using the same coordinated setup as in the main town."},
+{"q": "What does the Raj Tilak package include in Songadh?", "a": "The DJ truck, sound system and DJ artist, 2 dhol, chhatri lights, the vintage car or baggi, and the full My Safa turban team."},
+{"q": "How does Rajwada compare to Maharaja?", "a": "Rajwada has 4 dhol and a teddy or gorilla performer. Maharaja steps up to 6 dhol and adds moving LED panels with the groom's name lit up."},
+{"q": "Is the vintage car ever an optional add-on?", "a": "No, it's included from Raj Tilak upward in every package, so it's part of the base booking rather than something extra."},
+]
+)
+
+with open("/sessions/eloquent-modest-faraday/mnt/outputs/project/lib/data/content_batches/partC.json", "w", encoding="utf-8") as f:
+    json.dump(towns, f, ensure_ascii=False, indent=2)
+
+for t in towns:
+    words = sum(len(t[k].split()) for k in ['intro','localArea','whatsIncluded','whyUs','pricingGuidance','planningNotes','closing'])
+    words += sum(len(fq['q'].split())+len(fq['a'].split()) for fq in t['faqs'])
+    print(t['slug'], words)

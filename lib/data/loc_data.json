@@ -1,0 +1,1357 @@
+{
+  "cities": [
+    {
+      "name": "Vadodara",
+      "slug": "vadodara"
+    },
+    {
+      "name": "Surat",
+      "slug": "surat"
+    },
+    {
+      "name": "Ahmedabad",
+      "slug": "ahmedabad"
+    },
+    {
+      "name": "Gandhinagar",
+      "slug": "gandhinagar"
+    },
+    {
+      "name": "Rajkot",
+      "slug": "rajkot"
+    },
+    {
+      "name": "Bhavnagar",
+      "slug": "bhavnagar"
+    },
+    {
+      "name": "Jamnagar",
+      "slug": "jamnagar"
+    },
+    {
+      "name": "Junagadh",
+      "slug": "junagadh"
+    },
+    {
+      "name": "Anand",
+      "slug": "anand"
+    },
+    {
+      "name": "Mehsana",
+      "slug": "mehsana"
+    },
+    {
+      "name": "Bharuch",
+      "slug": "bharuch"
+    },
+    {
+      "name": "Navsari",
+      "slug": "navsari"
+    },
+    {
+      "name": "Valsad",
+      "slug": "valsad"
+    },
+    {
+      "name": "Vapi",
+      "slug": "vapi"
+    },
+    {
+      "name": "Rajpipla",
+      "slug": "rajpipla"
+    },
+    {
+      "name": "Kevadia",
+      "slug": "kevadia"
+    },
+    {
+      "name": "Chhota Udepur",
+      "slug": "chhota-udepur"
+    }
+  ],
+  "areasByCity": {
+    "vadodara": {
+      "parentName": "Vadodara",
+      "areas": [
+        {
+          "name": "Alkapuri",
+          "slug": "vadodara-alkapuri"
+        },
+        {
+          "name": "Sayajigunj",
+          "slug": "vadodara-sayajigunj"
+        },
+        {
+          "name": "Akota",
+          "slug": "vadodara-akota"
+        },
+        {
+          "name": "Manjalpur",
+          "slug": "vadodara-manjalpur"
+        },
+        {
+          "name": "Gotri",
+          "slug": "vadodara-gotri"
+        },
+        {
+          "name": "Karelibaug",
+          "slug": "vadodara-karelibaug"
+        },
+        {
+          "name": "Waghodia Road",
+          "slug": "vadodara-waghodia-road"
+        },
+        {
+          "name": "Vasna-Bhayli Road",
+          "slug": "vadodara-vasna-bhayli-road"
+        },
+        {
+          "name": "Old Padra Road",
+          "slug": "vadodara-old-padra-road"
+        },
+        {
+          "name": "Fatehgunj",
+          "slug": "vadodara-fatehgunj"
+        },
+        {
+          "name": "Sama",
+          "slug": "vadodara-sama"
+        },
+        {
+          "name": "Subhanpura",
+          "slug": "vadodara-subhanpura"
+        },
+        {
+          "name": "Tandalja",
+          "slug": "vadodara-tandalja"
+        },
+        {
+          "name": "New VIP Road",
+          "slug": "vadodara-new-vip-road"
+        },
+        {
+          "name": "Harni",
+          "slug": "vadodara-harni"
+        },
+        {
+          "name": "Chhani",
+          "slug": "vadodara-chhani"
+        },
+        {
+          "name": "Diwalipura",
+          "slug": "vadodara-diwalipura"
+        },
+        {
+          "name": "Race Course Circle",
+          "slug": "vadodara-race-course-circle"
+        },
+        {
+          "name": "Nizampura",
+          "slug": "vadodara-nizampura"
+        },
+        {
+          "name": "Makarpura",
+          "slug": "vadodara-makarpura"
+        },
+        {
+          "name": "Gorwa",
+          "slug": "vadodara-gorwa"
+        },
+        {
+          "name": "Bhayli",
+          "slug": "vadodara-bhayli"
+        },
+        {
+          "name": "Vasna",
+          "slug": "vadodara-vasna"
+        },
+        {
+          "name": "Ellora Park",
+          "slug": "vadodara-ellora-park"
+        },
+        {
+          "name": "Gendigate",
+          "slug": "vadodara-gendigate"
+        },
+        {
+          "name": "Raopura",
+          "slug": "vadodara-raopura"
+        },
+        {
+          "name": "Mandvi",
+          "slug": "vadodara-mandvi"
+        },
+        {
+          "name": "Panigate",
+          "slug": "vadodara-panigate"
+        },
+        {
+          "name": "Salatwada",
+          "slug": "vadodara-salatwada"
+        },
+        {
+          "name": "Kirti Mandir Road",
+          "slug": "vadodara-kirti-mandir-road"
+        },
+        {
+          "name": "Jetalpur Road",
+          "slug": "vadodara-jetalpur-road"
+        },
+        {
+          "name": "Genda Circle",
+          "slug": "vadodara-genda-circle"
+        },
+        {
+          "name": "Vadsar",
+          "slug": "vadodara-vadsar"
+        },
+        {
+          "name": "Sunpharma Road",
+          "slug": "vadodara-sunpharma-road"
+        },
+        {
+          "name": "Kalali",
+          "slug": "vadodara-kalali"
+        },
+        {
+          "name": "Undera",
+          "slug": "vadodara-undera"
+        },
+        {
+          "name": "New Sama Road",
+          "slug": "vadodara-new-sama-road"
+        },
+        {
+          "name": "Ajwa Road",
+          "slug": "vadodara-ajwa-road"
+        },
+        {
+          "name": "Chhani Jakatnaka",
+          "slug": "vadodara-chhani-jakatnaka"
+        },
+        {
+          "name": "Vaghodia GIDC belt",
+          "slug": "vadodara-vaghodia-gidc-belt"
+        },
+        {
+          "name": "Atladra",
+          "slug": "vadodara-atladra"
+        },
+        {
+          "name": "Bill",
+          "slug": "vadodara-bill"
+        },
+        {
+          "name": "Sherkhi",
+          "slug": "vadodara-sherkhi"
+        }
+      ]
+    },
+    "surat": {
+      "parentName": "Surat",
+      "areas": [
+        {
+          "name": "Vesu",
+          "slug": "surat-vesu"
+        },
+        {
+          "name": "Adajan",
+          "slug": "surat-adajan"
+        },
+        {
+          "name": "City Light",
+          "slug": "surat-city-light"
+        },
+        {
+          "name": "Piplod",
+          "slug": "surat-piplod"
+        },
+        {
+          "name": "Athwalines",
+          "slug": "surat-athwalines"
+        },
+        {
+          "name": "Ghod Dod Road",
+          "slug": "surat-ghod-dod-road"
+        },
+        {
+          "name": "Varachha",
+          "slug": "surat-varachha"
+        },
+        {
+          "name": "Katargam",
+          "slug": "surat-katargam"
+        },
+        {
+          "name": "Pal",
+          "slug": "surat-pal"
+        },
+        {
+          "name": "Dumas Road",
+          "slug": "surat-dumas-road"
+        },
+        {
+          "name": "Rander",
+          "slug": "surat-rander"
+        },
+        {
+          "name": "Bhatar",
+          "slug": "surat-bhatar"
+        },
+        {
+          "name": "Palanpur Road",
+          "slug": "surat-palanpur-road"
+        },
+        {
+          "name": "Nanpura",
+          "slug": "surat-nanpura"
+        },
+        {
+          "name": "Udhna",
+          "slug": "surat-udhna"
+        },
+        {
+          "name": "Althan",
+          "slug": "surat-althan"
+        },
+        {
+          "name": "Vesu-Bharthana",
+          "slug": "surat-vesu-bharthana"
+        },
+        {
+          "name": "Magdalla",
+          "slug": "surat-magdalla"
+        },
+        {
+          "name": "Sarthana",
+          "slug": "surat-sarthana"
+        },
+        {
+          "name": "Puna",
+          "slug": "surat-puna"
+        },
+        {
+          "name": "Godadara",
+          "slug": "surat-godadara"
+        },
+        {
+          "name": "Pandesara",
+          "slug": "surat-pandesara"
+        },
+        {
+          "name": "Adajan Patiya",
+          "slug": "surat-adajan-patiya"
+        },
+        {
+          "name": "Ring Road",
+          "slug": "surat-ring-road"
+        },
+        {
+          "name": "Ved Road",
+          "slug": "surat-ved-road"
+        },
+        {
+          "name": "Parvat Patiya",
+          "slug": "surat-parvat-patiya"
+        },
+        {
+          "name": "Amroli",
+          "slug": "surat-amroli"
+        },
+        {
+          "name": "Sachin GIDC",
+          "slug": "surat-sachin-gidc"
+        },
+        {
+          "name": "Kamrej",
+          "slug": "surat-kamrej"
+        },
+        {
+          "name": "Bhestan",
+          "slug": "surat-bhestan"
+        },
+        {
+          "name": "New Textile Market belt",
+          "slug": "surat-new-textile-market-belt"
+        },
+        {
+          "name": "Dindoli",
+          "slug": "surat-dindoli"
+        },
+        {
+          "name": "Nana Varachha",
+          "slug": "surat-nana-varachha"
+        },
+        {
+          "name": "Katargam Ring Road",
+          "slug": "surat-katargam-ring-road"
+        },
+        {
+          "name": "Anand Mahal Road",
+          "slug": "surat-anand-mahal-road"
+        },
+        {
+          "name": "Jahangirpura",
+          "slug": "surat-jahangirpura"
+        },
+        {
+          "name": "Vaad",
+          "slug": "surat-vaad"
+        },
+        {
+          "name": "Umra",
+          "slug": "surat-umra"
+        },
+        {
+          "name": "Piplod-Vesu Canal Road",
+          "slug": "surat-piplod-vesu-canal-road"
+        },
+        {
+          "name": "Dumas Beach Road",
+          "slug": "surat-dumas-beach-road"
+        },
+        {
+          "name": "Hazira",
+          "slug": "surat-hazira"
+        },
+        {
+          "name": "Choryasi",
+          "slug": "surat-choryasi"
+        }
+      ]
+    },
+    "ahmedabad": {
+      "parentName": "Ahmedabad",
+      "areas": [
+        {
+          "name": "SG Highway",
+          "slug": "ahmedabad-sg-highway"
+        },
+        {
+          "name": "Satellite",
+          "slug": "ahmedabad-satellite"
+        },
+        {
+          "name": "Bodakdev",
+          "slug": "ahmedabad-bodakdev"
+        },
+        {
+          "name": "Prahlad Nagar",
+          "slug": "ahmedabad-prahlad-nagar"
+        },
+        {
+          "name": "Vastrapur",
+          "slug": "ahmedabad-vastrapur"
+        },
+        {
+          "name": "Navrangpura",
+          "slug": "ahmedabad-navrangpura"
+        },
+        {
+          "name": "Maninagar",
+          "slug": "ahmedabad-maninagar"
+        },
+        {
+          "name": "Bopal",
+          "slug": "ahmedabad-bopal"
+        },
+        {
+          "name": "South Bopal",
+          "slug": "ahmedabad-south-bopal"
+        },
+        {
+          "name": "Thaltej",
+          "slug": "ahmedabad-thaltej"
+        },
+        {
+          "name": "Gota",
+          "slug": "ahmedabad-gota"
+        },
+        {
+          "name": "Chandkheda",
+          "slug": "ahmedabad-chandkheda"
+        },
+        {
+          "name": "Naranpura",
+          "slug": "ahmedabad-naranpura"
+        },
+        {
+          "name": "Shahibaug",
+          "slug": "ahmedabad-shahibaug"
+        },
+        {
+          "name": "Vastral",
+          "slug": "ahmedabad-vastral"
+        },
+        {
+          "name": "Nikol",
+          "slug": "ahmedabad-nikol"
+        },
+        {
+          "name": "Paldi",
+          "slug": "ahmedabad-paldi"
+        },
+        {
+          "name": "Ellisbridge",
+          "slug": "ahmedabad-ellisbridge"
+        },
+        {
+          "name": "CG Road",
+          "slug": "ahmedabad-cg-road"
+        },
+        {
+          "name": "Ghatlodia",
+          "slug": "ahmedabad-ghatlodia"
+        },
+        {
+          "name": "Science City Road",
+          "slug": "ahmedabad-science-city-road"
+        },
+        {
+          "name": "Shela",
+          "slug": "ahmedabad-shela"
+        },
+        {
+          "name": "Nirnay Nagar",
+          "slug": "ahmedabad-nirnay-nagar"
+        },
+        {
+          "name": "Vaishnodevi Circle",
+          "slug": "ahmedabad-vaishnodevi-circle"
+        },
+        {
+          "name": "Ambawadi",
+          "slug": "ahmedabad-ambawadi"
+        },
+        {
+          "name": "Vejalpur",
+          "slug": "ahmedabad-vejalpur"
+        },
+        {
+          "name": "Jodhpur",
+          "slug": "ahmedabad-jodhpur"
+        },
+        {
+          "name": "Judges Bungalow Road",
+          "slug": "ahmedabad-judges-bungalow-road"
+        },
+        {
+          "name": "Sindhu Bhavan Road",
+          "slug": "ahmedabad-sindhu-bhavan-road"
+        },
+        {
+          "name": "Shilaj",
+          "slug": "ahmedabad-shilaj"
+        },
+        {
+          "name": "South Bopal-Ghuma",
+          "slug": "ahmedabad-south-bopal-ghuma"
+        },
+        {
+          "name": "Iscon Cross Road",
+          "slug": "ahmedabad-iscon-cross-road"
+        },
+        {
+          "name": "Drive-in Road",
+          "slug": "ahmedabad-drive-in-road"
+        },
+        {
+          "name": "Motera",
+          "slug": "ahmedabad-motera"
+        },
+        {
+          "name": "Sabarmati",
+          "slug": "ahmedabad-sabarmati"
+        },
+        {
+          "name": "Chandlodia",
+          "slug": "ahmedabad-chandlodia"
+        },
+        {
+          "name": "Ranip",
+          "slug": "ahmedabad-ranip"
+        },
+        {
+          "name": "New Ranip",
+          "slug": "ahmedabad-new-ranip"
+        },
+        {
+          "name": "Naroda",
+          "slug": "ahmedabad-naroda"
+        },
+        {
+          "name": "Odhav",
+          "slug": "ahmedabad-odhav"
+        },
+        {
+          "name": "Vatva",
+          "slug": "ahmedabad-vatva"
+        },
+        {
+          "name": "Isanpur",
+          "slug": "ahmedabad-isanpur"
+        },
+        {
+          "name": "Ghodasar",
+          "slug": "ahmedabad-ghodasar"
+        },
+        {
+          "name": "Nava Vadaj",
+          "slug": "ahmedabad-nava-vadaj"
+        },
+        {
+          "name": "Memnagar",
+          "slug": "ahmedabad-memnagar"
+        },
+        {
+          "name": "Usmanpura",
+          "slug": "ahmedabad-usmanpura"
+        },
+        {
+          "name": "Khokhra",
+          "slug": "ahmedabad-khokhra"
+        },
+        {
+          "name": "Anand Nagar",
+          "slug": "ahmedabad-anand-nagar"
+        },
+        {
+          "name": "Bhat GIDC belt",
+          "slug": "ahmedabad-bhat-gidc-belt"
+        }
+      ]
+    },
+    "gandhinagar": {
+      "parentName": "Gandhinagar",
+      "areas": [
+        {
+          "name": "Sector 7",
+          "slug": "gandhinagar-sector-7"
+        },
+        {
+          "name": "Sector 11",
+          "slug": "gandhinagar-sector-11"
+        },
+        {
+          "name": "Sector 16",
+          "slug": "gandhinagar-sector-16"
+        },
+        {
+          "name": "Sector 21",
+          "slug": "gandhinagar-sector-21"
+        },
+        {
+          "name": "Sector 22",
+          "slug": "gandhinagar-sector-22"
+        },
+        {
+          "name": "Sector 26",
+          "slug": "gandhinagar-sector-26"
+        },
+        {
+          "name": "Sector 28",
+          "slug": "gandhinagar-sector-28"
+        },
+        {
+          "name": "Sector 29",
+          "slug": "gandhinagar-sector-29"
+        },
+        {
+          "name": "Sector 30",
+          "slug": "gandhinagar-sector-30"
+        },
+        {
+          "name": "Kudasan",
+          "slug": "gandhinagar-kudasan"
+        },
+        {
+          "name": "Raysan",
+          "slug": "gandhinagar-raysan"
+        },
+        {
+          "name": "Koba",
+          "slug": "gandhinagar-koba"
+        },
+        {
+          "name": "Infocity",
+          "slug": "gandhinagar-infocity"
+        },
+        {
+          "name": "Adalaj",
+          "slug": "gandhinagar-adalaj"
+        },
+        {
+          "name": "Randesan",
+          "slug": "gandhinagar-randesan"
+        },
+        {
+          "name": "Pethapur",
+          "slug": "gandhinagar-pethapur"
+        },
+        {
+          "name": "Sargasan",
+          "slug": "gandhinagar-sargasan"
+        },
+        {
+          "name": "Vavol",
+          "slug": "gandhinagar-vavol"
+        },
+        {
+          "name": "Kolvada",
+          "slug": "gandhinagar-kolvada"
+        },
+        {
+          "name": "Por",
+          "slug": "gandhinagar-por"
+        },
+        {
+          "name": "Ognaj",
+          "slug": "gandhinagar-ognaj"
+        },
+        {
+          "name": "Chiloda",
+          "slug": "gandhinagar-chiloda"
+        },
+        {
+          "name": "PDPU Road belt",
+          "slug": "gandhinagar-pdpu-road-belt"
+        }
+      ]
+    },
+    "rajkot": {
+      "parentName": "Rajkot",
+      "areas": [
+        {
+          "name": "Kalawad Road",
+          "slug": "rajkot-kalawad-road"
+        },
+        {
+          "name": "University Road",
+          "slug": "rajkot-university-road"
+        },
+        {
+          "name": "Mavdi",
+          "slug": "rajkot-mavdi"
+        },
+        {
+          "name": "Gondal Road",
+          "slug": "rajkot-gondal-road"
+        },
+        {
+          "name": "150 Feet Ring Road",
+          "slug": "rajkot-150-feet-ring-road"
+        },
+        {
+          "name": "Raiya Road",
+          "slug": "rajkot-raiya-road"
+        },
+        {
+          "name": "Nana Mava Road",
+          "slug": "rajkot-nana-mava-road"
+        },
+        {
+          "name": "Kotharia Road",
+          "slug": "rajkot-kotharia-road"
+        },
+        {
+          "name": "Yagnik Road",
+          "slug": "rajkot-yagnik-road"
+        },
+        {
+          "name": "Amin Marg",
+          "slug": "rajkot-amin-marg"
+        },
+        {
+          "name": "Kothariya",
+          "slug": "rajkot-kothariya"
+        },
+        {
+          "name": "Bhaktinagar",
+          "slug": "rajkot-bhaktinagar"
+        },
+        {
+          "name": "Race Course Ring Road",
+          "slug": "rajkot-race-course-ring-road"
+        },
+        {
+          "name": "Madhapar Chowk",
+          "slug": "rajkot-madhapar-chowk"
+        },
+        {
+          "name": "Gujarat Housing Board Road",
+          "slug": "rajkot-gujarat-housing-board-road"
+        },
+        {
+          "name": "Sadar",
+          "slug": "rajkot-sadar"
+        },
+        {
+          "name": "Panchvati",
+          "slug": "rajkot-panchvati"
+        },
+        {
+          "name": "Vavdi",
+          "slug": "rajkot-vavdi"
+        },
+        {
+          "name": "Ayodhya Chowk",
+          "slug": "rajkot-ayodhya-chowk"
+        },
+        {
+          "name": "Aji Dam Road",
+          "slug": "rajkot-aji-dam-road"
+        }
+      ]
+    },
+    "bhavnagar": {
+      "parentName": "Bhavnagar",
+      "areas": [
+        {
+          "name": "Waghawadi Road",
+          "slug": "bhavnagar-waghawadi-road"
+        },
+        {
+          "name": "Kaliyabid",
+          "slug": "bhavnagar-kaliyabid"
+        },
+        {
+          "name": "Bhavnagar Town Center",
+          "slug": "bhavnagar-bhavnagar-town-center"
+        },
+        {
+          "name": "Ghogha Circle",
+          "slug": "bhavnagar-ghogha-circle"
+        },
+        {
+          "name": "Sardarnagar",
+          "slug": "bhavnagar-sardarnagar"
+        },
+        {
+          "name": "Ghoghari Bazaar",
+          "slug": "bhavnagar-ghoghari-bazaar"
+        },
+        {
+          "name": "Ambavadi",
+          "slug": "bhavnagar-ambavadi"
+        },
+        {
+          "name": "Nari Road",
+          "slug": "bhavnagar-nari-road"
+        },
+        {
+          "name": "Takhteshwar Area",
+          "slug": "bhavnagar-takhteshwar-area"
+        }
+      ]
+    },
+    "jamnagar": {
+      "parentName": "Jamnagar",
+      "areas": [
+        {
+          "name": "Bedi",
+          "slug": "jamnagar-bedi"
+        },
+        {
+          "name": "Digjam",
+          "slug": "jamnagar-digjam"
+        },
+        {
+          "name": "Pandit Nehru Marg",
+          "slug": "jamnagar-pandit-nehru-marg"
+        },
+        {
+          "name": "Patel Colony",
+          "slug": "jamnagar-patel-colony"
+        },
+        {
+          "name": "Bedi Bandar Road",
+          "slug": "jamnagar-bedi-bandar-road"
+        },
+        {
+          "name": "Jamnagar Town",
+          "slug": "jamnagar-jamnagar-town"
+        },
+        {
+          "name": "Ranjit Sagar Road",
+          "slug": "jamnagar-ranjit-sagar-road"
+        },
+        {
+          "name": "Guru Gobind Singh Marg",
+          "slug": "jamnagar-guru-gobind-singh-marg"
+        }
+      ]
+    },
+    "junagadh": {
+      "parentName": "Junagadh",
+      "areas": [
+        {
+          "name": "Girnar Road",
+          "slug": "junagadh-girnar-road"
+        },
+        {
+          "name": "Junagadh Town",
+          "slug": "junagadh-junagadh-town"
+        },
+        {
+          "name": "MG Road",
+          "slug": "junagadh-mg-road"
+        },
+        {
+          "name": "Zanzarda Road",
+          "slug": "junagadh-zanzarda-road"
+        },
+        {
+          "name": "Moti Baug",
+          "slug": "junagadh-moti-baug"
+        },
+        {
+          "name": "College Road",
+          "slug": "junagadh-college-road"
+        }
+      ]
+    },
+    "anand": {
+      "parentName": "Anand",
+      "areas": [
+        {
+          "name": "Anand Town",
+          "slug": "anand-anand-town"
+        },
+        {
+          "name": "Vidyanagar",
+          "slug": "anand-vidyanagar"
+        },
+        {
+          "name": "Anand-Vidyanagar Road",
+          "slug": "anand-anand-vidyanagar-road"
+        },
+        {
+          "name": "Karamsad",
+          "slug": "anand-karamsad"
+        },
+        {
+          "name": "Grid",
+          "slug": "anand-grid"
+        },
+        {
+          "name": "Sardar Gunj",
+          "slug": "anand-sardar-gunj"
+        },
+        {
+          "name": "V V Nagar",
+          "slug": "anand-v-v-nagar"
+        }
+      ]
+    },
+    "mehsana": {
+      "parentName": "Mehsana",
+      "areas": [
+        {
+          "name": "Mehsana Town",
+          "slug": "mehsana-mehsana-town"
+        },
+        {
+          "name": "Modhera Road",
+          "slug": "mehsana-modhera-road"
+        },
+        {
+          "name": "Highway Road",
+          "slug": "mehsana-highway-road"
+        },
+        {
+          "name": "Radhanpur Road",
+          "slug": "mehsana-radhanpur-road"
+        },
+        {
+          "name": "Malanpur",
+          "slug": "mehsana-malanpur"
+        }
+      ]
+    },
+    "bharuch": {
+      "parentName": "Bharuch",
+      "areas": [
+        {
+          "name": "Zadeshwar",
+          "slug": "bharuch-zadeshwar"
+        },
+        {
+          "name": "Kasak",
+          "slug": "bharuch-kasak"
+        },
+        {
+          "name": "Bharuch Town",
+          "slug": "bharuch-bharuch-town"
+        },
+        {
+          "name": "Ankleshwar-Bharuch Belt",
+          "slug": "bharuch-ankleshwar-bharuch-belt"
+        },
+        {
+          "name": "Station Road",
+          "slug": "bharuch-station-road"
+        },
+        {
+          "name": "Golden Bridge Area",
+          "slug": "bharuch-golden-bridge-area"
+        }
+      ]
+    },
+    "navsari": {
+      "parentName": "Navsari",
+      "areas": [
+        {
+          "name": "Navsari Town",
+          "slug": "navsari-navsari-town"
+        },
+        {
+          "name": "Lunsikui",
+          "slug": "navsari-lunsikui"
+        },
+        {
+          "name": "Eru Char Rasta",
+          "slug": "navsari-eru-char-rasta"
+        },
+        {
+          "name": "Dandi Road",
+          "slug": "navsari-dandi-road"
+        },
+        {
+          "name": "Sayaji Road",
+          "slug": "navsari-sayaji-road"
+        }
+      ]
+    },
+    "valsad": {
+      "parentName": "Valsad",
+      "areas": [
+        {
+          "name": "Valsad Town",
+          "slug": "valsad-valsad-town"
+        },
+        {
+          "name": "Tithal Road",
+          "slug": "valsad-tithal-road"
+        },
+        {
+          "name": "Halar",
+          "slug": "valsad-halar"
+        },
+        {
+          "name": "Sam Talav Area",
+          "slug": "valsad-sam-talav-area"
+        }
+      ]
+    },
+    "vapi": {
+      "parentName": "Vapi",
+      "areas": [
+        {
+          "name": "Vapi GIDC",
+          "slug": "vapi-vapi-gidc"
+        },
+        {
+          "name": "Chala",
+          "slug": "vapi-chala"
+        },
+        {
+          "name": "Silvassa Border Belt",
+          "slug": "vapi-silvassa-border-belt"
+        },
+        {
+          "name": "Vapi Town",
+          "slug": "vapi-vapi-town"
+        },
+        {
+          "name": "Char Rasta Area",
+          "slug": "vapi-char-rasta-area"
+        },
+        {
+          "name": "Dungra Road",
+          "slug": "vapi-dungra-road"
+        }
+      ]
+    },
+    "rajpipla": {
+      "parentName": "Rajpipla",
+      "areas": [
+        {
+          "name": "Rajpipla Town",
+          "slug": "rajpipla-rajpipla-town"
+        },
+        {
+          "name": "Netrang Road",
+          "slug": "rajpipla-netrang-road"
+        },
+        {
+          "name": "Rajpipla Fort Area",
+          "slug": "rajpipla-rajpipla-fort-area"
+        }
+      ]
+    },
+    "kevadia": {
+      "parentName": "Kevadia",
+      "areas": [
+        {
+          "name": "Statue of Unity Belt",
+          "slug": "kevadia-statue-of-unity-belt"
+        },
+        {
+          "name": "Kevadia Colony",
+          "slug": "kevadia-kevadia-colony"
+        },
+        {
+          "name": "Ekta Nagar",
+          "slug": "kevadia-ekta-nagar"
+        },
+        {
+          "name": "Sardar Sarovar Dam Area",
+          "slug": "kevadia-sardar-sarovar-dam-area"
+        }
+      ]
+    },
+    "chhota-udepur": {
+      "parentName": "Chhota Udepur",
+      "areas": [
+        {
+          "name": "Chhota Udepur Town",
+          "slug": "chhota-udepur-chhota-udepur-town"
+        },
+        {
+          "name": "Kawant Road",
+          "slug": "chhota-udepur-kawant-road"
+        },
+        {
+          "name": "Bodeli Belt",
+          "slug": "chhota-udepur-bodeli-belt"
+        }
+      ]
+    }
+  },
+  "towns": [
+    {
+      "name": "Padra",
+      "slug": "padra"
+    },
+    {
+      "name": "Karjan",
+      "slug": "karjan"
+    },
+    {
+      "name": "Dabhoi",
+      "slug": "dabhoi"
+    },
+    {
+      "name": "Ankleshwar",
+      "slug": "ankleshwar"
+    },
+    {
+      "name": "Jambusar",
+      "slug": "jambusar"
+    },
+    {
+      "name": "Dahej",
+      "slug": "dahej"
+    },
+    {
+      "name": "Vyara",
+      "slug": "vyara"
+    },
+    {
+      "name": "Songadh",
+      "slug": "songadh"
+    },
+    {
+      "name": "Mandvi (Surat)",
+      "slug": "mandvi-surat"
+    },
+    {
+      "name": "Bilimora",
+      "slug": "bilimora"
+    },
+    {
+      "name": "Gandevi",
+      "slug": "gandevi"
+    },
+    {
+      "name": "Dharampur",
+      "slug": "dharampur"
+    },
+    {
+      "name": "Umargam",
+      "slug": "umargam"
+    },
+    {
+      "name": "Daman",
+      "slug": "daman"
+    },
+    {
+      "name": "Sanand",
+      "slug": "sanand"
+    },
+    {
+      "name": "Kalol",
+      "slug": "kalol"
+    },
+    {
+      "name": "Vijapur",
+      "slug": "vijapur"
+    },
+    {
+      "name": "Kadi",
+      "slug": "kadi"
+    },
+    {
+      "name": "Visnagar",
+      "slug": "visnagar"
+    },
+    {
+      "name": "Unjha",
+      "slug": "unjha"
+    },
+    {
+      "name": "Patan",
+      "slug": "patan"
+    },
+    {
+      "name": "Palanpur",
+      "slug": "palanpur"
+    },
+    {
+      "name": "Deesa",
+      "slug": "deesa"
+    },
+    {
+      "name": "Himatnagar",
+      "slug": "himatnagar"
+    },
+    {
+      "name": "Idar",
+      "slug": "idar"
+    },
+    {
+      "name": "Modasa",
+      "slug": "modasa"
+    },
+    {
+      "name": "Nadiad",
+      "slug": "nadiad"
+    },
+    {
+      "name": "Kheda",
+      "slug": "kheda"
+    },
+    {
+      "name": "Petlad",
+      "slug": "petlad"
+    },
+    {
+      "name": "Borsad",
+      "slug": "borsad"
+    },
+    {
+      "name": "Dholka",
+      "slug": "dholka"
+    },
+    {
+      "name": "Viramgam",
+      "slug": "viramgam"
+    },
+    {
+      "name": "Bavla",
+      "slug": "bavla"
+    },
+    {
+      "name": "Gondal",
+      "slug": "gondal"
+    },
+    {
+      "name": "Jetpur",
+      "slug": "jetpur"
+    },
+    {
+      "name": "Dhoraji",
+      "slug": "dhoraji"
+    },
+    {
+      "name": "Upleta",
+      "slug": "upleta"
+    },
+    {
+      "name": "Morbi",
+      "slug": "morbi"
+    },
+    {
+      "name": "Wankaner",
+      "slug": "wankaner"
+    },
+    {
+      "name": "Dwarka",
+      "slug": "dwarka"
+    },
+    {
+      "name": "Khambhalia",
+      "slug": "khambhalia"
+    },
+    {
+      "name": "Keshod",
+      "slug": "keshod"
+    },
+    {
+      "name": "Veraval",
+      "slug": "veraval"
+    },
+    {
+      "name": "Somnath",
+      "slug": "somnath"
+    },
+    {
+      "name": "Porbandar",
+      "slug": "porbandar"
+    },
+    {
+      "name": "Mahuva",
+      "slug": "mahuva"
+    },
+    {
+      "name": "Amreli",
+      "slug": "amreli"
+    },
+    {
+      "name": "Savarkundla",
+      "slug": "savarkundla"
+    },
+    {
+      "name": "Botad",
+      "slug": "botad"
+    },
+    {
+      "name": "Surendranagar",
+      "slug": "surendranagar"
+    },
+    {
+      "name": "Wadhwan",
+      "slug": "wadhwan"
+    },
+    {
+      "name": "Limbdi",
+      "slug": "limbdi"
+    },
+    {
+      "name": "Nandod",
+      "slug": "nandod"
+    },
+    {
+      "name": "Dediapada",
+      "slug": "dediapada"
+    },
+    {
+      "name": "Tilakwada",
+      "slug": "tilakwada"
+    },
+    {
+      "name": "Zaghadia",
+      "slug": "zaghadia"
+    }
+  ]
+}
