@@ -13,6 +13,7 @@ export interface TaskRecord {
   status: TaskStatus;
   progress: number;
   completion_notes: string | null;
+  review_reason: string | null;
   created_at: string;
   updated_at: string;
   assignees?: { staff_user_id: string; name: string }[];
@@ -23,9 +24,20 @@ export interface TaskComment { id: string; task_id: string; author_id: string | 
 export interface TaskAttachment { id: string; task_id: string; file_name: string; file_url: string; file_type: string | null; uploaded_by: string | null; created_at: string }
 
 export async function getTasks() {
-  const { data, error } = await crmSupabase.from('crm_tasks').select('*, crm_task_assignees(staff_user_id)').order('due_date', { ascending: true, nullsFirst: false });
+  const { data, error } = await crmSupabase
+    .from('crm_tasks')
+    .select('*, crm_task_assignees(staff_user_id, crm_users(full_name))')
+    .order('due_date', { ascending: true, nullsFirst: false });
   if (error) throw new Error(error.message);
-  return (data || []) as unknown as TaskRecord[];
+  type TaskAssigneeRow = { staff_user_id: string; crm_users: { full_name: string | null } | null };
+  type TaskRow = Record<string, unknown> & { crm_task_assignees?: TaskAssigneeRow[] };
+  return ((data || []) as TaskRow[]).map((row) => ({
+    ...row,
+    assignees: (row.crm_task_assignees || []).map((a) => ({
+      staff_user_id: a.staff_user_id,
+      name: a.crm_users?.full_name || 'Staff',
+    })),
+  })) as unknown as TaskRecord[];
 }
 
 export async function getTask(id: string) {
@@ -47,7 +59,7 @@ export async function createTask(input: { title: string; description: string; pr
   return task as TaskRecord;
 }
 
-export async function updateTaskStatus(id: string, status: TaskStatus, extra: Partial<Pick<TaskRecord, 'progress' | 'completion_notes'>> = {}) {
+export async function updateTaskStatus(id: string, status: TaskStatus, extra: Partial<Pick<TaskRecord, 'progress' | 'completion_notes' | 'review_reason'>> = {}) {
   const { data, error } = await crmSupabase.from('crm_tasks').update({ status, ...extra, updated_at: new Date().toISOString() }).eq('id', id).select().single();
   if (error) throw new Error(error.message);
   return data as TaskRecord;

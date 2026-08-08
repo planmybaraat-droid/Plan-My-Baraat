@@ -61,18 +61,49 @@ export async function getUserModuleAccess(userId: string): Promise<{ role: strin
 // Bulk-load module_access for every crm_users row, keyed by user id — used to
 // show an "N modules enabled" count per row in the Staff Management table
 // without a per-row round trip.
-export async function getAllModuleAccess(): Promise<Record<string, { role: string; module_access: Record<string, boolean> }>> {
-  const { data, error } = await crmSupabase.from('crm_users').select('id, role, module_access');
+export async function getAllModuleAccess(): Promise<Record<string, { role: string; module_access: Record<string, boolean>; crm_section_access: Record<string, boolean> }>> {
+  const { data, error } = await crmSupabase.from('crm_users').select('id, role, module_access, crm_section_access');
   if (error) throw new Error(error.message);
-  const map: Record<string, { role: string; module_access: Record<string, boolean> }> = {};
+  const map: Record<string, { role: string; module_access: Record<string, boolean>; crm_section_access: Record<string, boolean> }> = {};
   for (const row of data || []) {
-    map[String(row.id)] = { role: String(row.role || 'staff'), module_access: (row.module_access as Record<string, boolean>) || {} };
+    map[String(row.id)] = {
+      role: String(row.role || 'staff'),
+      module_access: (row.module_access as Record<string, boolean>) || {},
+      crm_section_access: (row.crm_section_access as Record<string, boolean>) || {},
+    };
   }
   return map;
 }
 
 export async function updateStaffModuleAccess(staffId: string, moduleAccess: Record<string, boolean>) {
   return staffApi('PATCH', { staff_id: staffId, action: 'update_permissions', module_access: moduleAccess });
+}
+
+// -- CRM section access (Manager role) --------------------------------------
+// Same idea as module access above, but for the Manager tier that logs into
+// the CRM itself with a restricted sidebar instead of the Staff Workspace.
+export async function getUserSectionAccess(userId: string): Promise<{ role: string; crm_section_access: Record<string, boolean> }> {
+  const { data, error } = await crmSupabase.from('crm_users').select('role, crm_section_access').eq('id', userId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return { role: data?.role || 'staff', crm_section_access: (data?.crm_section_access as Record<string, boolean>) || {} };
+}
+
+export async function updateStaffSectionAccess(staffId: string, sectionAccess: Record<string, boolean>) {
+  return staffApi('PATCH', { staff_id: staffId, action: 'update_section_access', crm_section_access: sectionAccess });
+}
+
+// Single round trip used by the Manage Access modal, which needs to know the
+// role before it can decide whether to render Workspace module toggles or
+// CRM section toggles — fetching both maps at once avoids a fetch-then-refetch
+// race against the still-unknown role.
+export async function getUserAccess(userId: string): Promise<{ role: string; module_access: Record<string, boolean>; crm_section_access: Record<string, boolean> }> {
+  const { data, error } = await crmSupabase.from('crm_users').select('role, module_access, crm_section_access').eq('id', userId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return {
+    role: data?.role || 'staff',
+    module_access: (data?.module_access as Record<string, boolean>) || {},
+    crm_section_access: (data?.crm_section_access as Record<string, boolean>) || {},
+  };
 }
 
 export async function getNextStaffCode() {

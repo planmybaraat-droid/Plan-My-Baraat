@@ -9,6 +9,7 @@ import type { CrmRole, EmploymentType, StaffFilters, StaffFormData, StaffRecord,
 import { createBlankStaff, createStaff, deleteStaff, getAllModuleAccess, getNextStaffCode, getStaff, getStaffLastLogin, resetStaffPassword, setStaffActive, updateStaff } from './staff-data';
 import ManageAccessModal from './ManageAccessModal';
 import { WORKSPACE_MODULES } from '../../../lib/modulePermissions';
+import { CRM_SECTIONS } from '../../../lib/crmSectionPermissions';
 
 const DEPARTMENTS = ['Operations', 'Sales', 'Client Servicing', 'Production', 'Accounts', 'Marketing', 'Management'];
 const EMPLOYMENT: EmploymentType[] = ['Full Time', 'Part Time', 'Contract', 'Intern'];
@@ -68,7 +69,7 @@ export default function StaffPage() {
   const { open } = useSidebar(); const [staff, setStaff] = useState<StaffRecord[]>([]); const [loading, setLoading] = useState(true); const [filtersOpen, setFiltersOpen] = useState(false); const [filters, setFilters] = useState<StaffFilters>({ search: '', department: '', status: '', employment_type: '' }); const [editing, setEditing] = useState<StaffRecord | null | undefined>(undefined); const [nextCode, setNextCode] = useState('PMB-001'); const [deleteTarget, setDeleteTarget] = useState<StaffRecord | null>(null);
   const [resetTarget, setResetTarget] = useState<StaffRecord | null>(null); const [lastLogin, setLastLogin] = useState<{ id: string; text: string } | null>(null); const [toggling, setToggling] = useState<string | null>(null);
   const [accessTarget, setAccessTarget] = useState<StaffRecord | null>(null);
-  const [accessMap, setAccessMap] = useState<Record<string, { role: string; module_access: Record<string, boolean> }>>({});
+  const [accessMap, setAccessMap] = useState<Record<string, { role: string; module_access: Record<string, boolean>; crm_section_access: Record<string, boolean> }>>({});
   const load = useCallback(async () => { setLoading(true); try { setStaff(await getStaff(filters)); } finally { setLoading(false); } }, [filters]);
   useEffect(() => { const timer = window.setTimeout(load, 200); return () => clearTimeout(timer); }, [load]);
   useEffect(() => { getAllModuleAccess().then(setAccessMap).catch(() => {}); }, [staff.length]);
@@ -77,6 +78,7 @@ export default function StaffPage() {
     const entry = accessMap[item.user_id];
     if (!entry) return null;
     if (['admin', 'super_admin'].includes(entry.role)) return 'All';
+    if (entry.role === 'manager') return `${Object.values(entry.crm_section_access).filter(Boolean).length}/${CRM_SECTIONS.length} sections`;
     return `${Object.values(entry.module_access).filter(Boolean).length}/${WORKSPACE_MODULES.length}`;
   };
   const openNew = async () => { setNextCode(await getNextStaffCode()); setEditing(null); };
@@ -97,7 +99,21 @@ export default function StaffPage() {
                   <button onClick={() => setEditing(item)} className="rounded-lg p-2 text-gray-400 hover:bg-amber-50 hover:text-amber-600"><Pencil size={15} /></button><button onClick={() => setDeleteTarget(item)} className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={15} /></button></div></td></tr>)}</tbody></table></div><div className="divide-y md:hidden">{staff.map(item => <div key={item.id} className="p-4"><div className="flex justify-between gap-3"><div className="flex gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-xs font-black text-red-600">{item.full_name?.[0] ?? '?'}</span><div><b>{item.full_name}</b><p className="mt-1 text-xs text-gray-400">{item.job_title} · {item.department}</p></div></div><span className={`h-fit rounded-full px-2 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[item.status]}`}>{item.status}</span></div><div className="mt-3 flex items-center justify-between border-t pt-3 text-xs"><span className="text-gray-500">{item.employee_code} · {item.employment_type}</span><div className="flex gap-1"><button onClick={() => viewLastLogin(item)} className="p-2 text-blue-600"><Clock size={15} /></button><button onClick={() => setAccessTarget(item)} className="p-2 text-red-600"><Shield size={15} /></button><button onClick={() => setResetTarget(item)} className="p-2 text-purple-600"><Key size={15} /></button><button onClick={() => toggleActive(item)} disabled={toggling === item.id} className="p-2 text-emerald-600 disabled:opacity-50"><Power size={15} /></button><button onClick={() => setEditing(item)} className="p-2 text-amber-600"><Pencil size={15} /></button><button onClick={() => setDeleteTarget(item)} className="p-2 text-red-600"><Trash2 size={15} /></button></div></div></div>)}</div></>}</div>
   </div>{editing !== undefined && <StaffModal initial={editing} nextCode={nextCode} onClose={() => setEditing(undefined)} onSaved={saved} />}
   {resetTarget && <ResetPasswordModal staff={resetTarget} onClose={() => setResetTarget(null)} />}
-  {accessTarget && <ManageAccessModal staff={accessTarget} onClose={() => setAccessTarget(null)} onSaved={(access) => { if (accessTarget.user_id) setAccessMap((current) => ({ ...current, [accessTarget.user_id as string]: { role: 'staff', module_access: access } })); }} />}
+  {accessTarget && <ManageAccessModal staff={accessTarget} onClose={() => setAccessTarget(null)} onSaved={(access) => {
+    if (!accessTarget.user_id) return;
+    setAccessMap((current) => {
+      const existing = current[accessTarget.user_id as string] || { role: accessTarget.role, module_access: {}, crm_section_access: {} };
+      const isManagerAccount = existing.role === 'manager';
+      return {
+        ...current,
+        [accessTarget.user_id as string]: {
+          ...existing,
+          module_access: isManagerAccount ? existing.module_access : access,
+          crm_section_access: isManagerAccount ? access : existing.crm_section_access,
+        },
+      };
+    });
+  }} />}
   {lastLogin && <div className="fixed inset-0 z-[110] flex items-center justify-center bg-gray-950/60 p-5 backdrop-blur-sm" onMouseDown={event => event.target === event.currentTarget && setLastLogin(null)}><div className="w-full max-w-xs rounded-2xl bg-white p-5 text-center shadow-2xl"><Clock className="mx-auto text-blue-600" size={22} /><p className="mt-3 text-sm font-bold text-gray-900">Last login</p><p className="mt-1 text-xs text-gray-500">{lastLogin.text}</p><button onClick={() => setLastLogin(null)} className="mt-4 w-full rounded-xl bg-gray-100 px-4 py-2 text-xs font-bold text-gray-700">Close</button></div></div>}
   <ConfirmDialog open={!!deleteTarget} title="Delete Staff Member" message={`Delete ${deleteTarget?.full_name}? This also removes their CRM login and attendance history.`} confirmLabel="Delete staff member" onConfirm={remove} onCancel={() => setDeleteTarget(null)} /></>;
 }

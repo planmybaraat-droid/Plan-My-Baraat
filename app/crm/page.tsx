@@ -18,6 +18,8 @@ import { getStaff } from './staff/staff-data';
 import { deriveConfirmedEvents, getStaffBirthdaysForYears } from './event-calendar/event-calendar-data';
 import type { CalendarEvent, BirthdayEvent } from './event-calendar/event-calendar-data';
 import type { StaffRecord } from './lib/types';
+import { useCrmProfile } from './lib/useCrmProfile';
+import { isCrmManagerRole } from '../../lib/crmSectionPermissions';
 
 interface StaffRosterRow {
   staff: StaffRecord;
@@ -48,6 +50,8 @@ function dateKey(date: Date) {
 
 export default function CrmDashboard() {
   const { open } = useSidebar();
+  const { profile } = useCrmProfile();
+  const isManager = isCrmManagerRole(profile?.role);
   const [loading, setLoading] = useState(true);
 
   const [vendorTotal, setVendorTotal] = useState(0);
@@ -64,8 +68,15 @@ export default function CrmDashboard() {
     async function load() {
       try {
         const today = new Date().toISOString().slice(0, 10);
+        // A Manager account can't read Vendors/Leads/Agreements/Invoices
+        // (those stay Admin-only), so skip fetching them entirely rather
+        // than showing misleading zeros from a blocked query.
         const [vendors, leads, _quotations, agreements, invoices, taskRows, staff, attendanceRows, taskAssigneeRows] = await Promise.all([
-          getVendors(), getLeads(), getQuotations(), getAgreements(), getInvoices(),
+          isManager ? Promise.resolve([]) : getVendors(),
+          isManager ? Promise.resolve([]) : getLeads(),
+          isManager ? Promise.resolve([]) : getQuotations(),
+          isManager ? Promise.resolve([]) : getAgreements(),
+          isManager ? Promise.resolve([]) : getInvoices(),
           crmSupabase.from('crm_tasks').select('status, due_date'),
           getStaff({ status: 'Active' }),
           crmSupabase.from('crm_attendance').select('staff_id, check_in, check_out').eq('attendance_date', today),
@@ -127,7 +138,7 @@ export default function CrmDashboard() {
         setBirthdays(await getStaffBirthdaysForYears([year - 1, year, year + 1]));
       } catch (err) { console.error(err); }
     })();
-  }, []);
+  }, [isManager]);
 
   const monthDays = useMemo(() => {
     const first = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
@@ -165,17 +176,19 @@ export default function CrmDashboard() {
     <>
       <CrmHeader
         title="Dashboard"
-        subtitle="Welcome back, Admin! Here's an overview of your CRM."
+        subtitle={`Welcome back, ${profile?.name?.split(' ')[0] || (isManager ? 'Manager' : 'Admin')}! Here's an overview of your CRM.`}
         onMenuClick={open}
         actions={
-          <div className="flex gap-2">
-            <Link href="/crm/vendors/new" className="hidden sm:flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
-              <UserPlus size={16} /> Add Vendor
-            </Link>
-            <Link href="/crm/leads/new" className="hidden sm:flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
-              <UserSearch size={16} /> Add Lead
-            </Link>
-          </div>
+          isManager ? undefined : (
+            <div className="flex gap-2">
+              <Link href="/crm/vendors/new" className="hidden sm:flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
+                <UserPlus size={16} /> Add Vendor
+              </Link>
+              <Link href="/crm/leads/new" className="hidden sm:flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                <UserSearch size={16} /> Add Lead
+              </Link>
+            </div>
+          )
         }
       />
 
@@ -186,36 +199,62 @@ export default function CrmDashboard() {
       ) : (
         <div className="space-y-4 p-4 sm:p-5">
           {/* KPI row */}
-          <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
-            <Link href="/crm/vendors" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><Users size={19} /></span>
-                <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{vendorTotal}</p><p className="text-[11px] font-semibold text-gray-400">Vendors</p></div>
-              </div>
-              <p className="mt-2.5 text-[11px] font-bold text-red-600">View all vendors →</p>
-            </Link>
-            <Link href="/crm/leads" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><UserSearch size={19} /></span>
-                <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{leadTotal}</p><p className="text-[11px] font-semibold text-gray-400">Leads</p></div>
-              </div>
-              <p className="mt-2.5 text-[11px] font-bold text-blue-600">View all leads →</p>
-            </Link>
-            <Link href="/crm/agreements" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><ClipboardCheck size={19} /></span>
-                <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{agreementsPending}</p><p className="text-[11px] font-semibold text-gray-400">Agreement Pending</p></div>
-              </div>
-              <p className="mt-2.5 text-[11px] font-bold text-emerald-600">View all agreements →</p>
-            </Link>
-            <Link href="/crm/invoices" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><ReceiptText size={19} /></span>
-                <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{invoicesOverdue}</p><p className="text-[11px] font-semibold text-gray-400">Invoices Overdue</p></div>
-              </div>
-              <p className="mt-2.5 text-[11px] font-bold text-amber-600">View all invoices →</p>
-            </Link>
-          </div>
+          {isManager ? (
+            <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-3">
+              <Link href="/crm/staff" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><UserCog size={19} /></span>
+                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{staffRoster.length}</p><p className="text-[11px] font-semibold text-gray-400">Active staff</p></div>
+                </div>
+                <p className="mt-2.5 text-[11px] font-bold text-red-600">View staff →</p>
+              </Link>
+              <Link href="/crm/attendance" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><Users size={19} /></span>
+                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{staffRoster.filter((r) => r.checkIn && !r.checkOut).length}</p><p className="text-[11px] font-semibold text-gray-400">On duty now</p></div>
+                </div>
+                <p className="mt-2.5 text-[11px] font-bold text-emerald-600">View attendance →</p>
+              </Link>
+              <Link href="/crm/tasks" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><ListChecks size={19} /></span>
+                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{taskCounts.pending + taskCounts.inProgress}</p><p className="text-[11px] font-semibold text-gray-400">Open tasks</p></div>
+                </div>
+                <p className="mt-2.5 text-[11px] font-bold text-amber-600">View tasks →</p>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
+              <Link href="/crm/vendors" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><Users size={19} /></span>
+                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{vendorTotal}</p><p className="text-[11px] font-semibold text-gray-400">Vendors</p></div>
+                </div>
+                <p className="mt-2.5 text-[11px] font-bold text-red-600">View all vendors →</p>
+              </Link>
+              <Link href="/crm/leads" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><UserSearch size={19} /></span>
+                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{leadTotal}</p><p className="text-[11px] font-semibold text-gray-400">Leads</p></div>
+                </div>
+                <p className="mt-2.5 text-[11px] font-bold text-blue-600">View all leads →</p>
+              </Link>
+              <Link href="/crm/agreements" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><ClipboardCheck size={19} /></span>
+                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{agreementsPending}</p><p className="text-[11px] font-semibold text-gray-400">Agreement Pending</p></div>
+                </div>
+                <p className="mt-2.5 text-[11px] font-bold text-emerald-600">View all agreements →</p>
+              </Link>
+              <Link href="/crm/invoices" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><ReceiptText size={19} /></span>
+                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{invoicesOverdue}</p><p className="text-[11px] font-semibold text-gray-400">Invoices Overdue</p></div>
+                </div>
+                <p className="mt-2.5 text-[11px] font-bold text-amber-600">View all invoices →</p>
+              </Link>
+            </div>
+          )}
 
           {/* Staff On Duty Today + Tasks Overview */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

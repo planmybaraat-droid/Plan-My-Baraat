@@ -3,6 +3,7 @@ import { requireCrmAdmin } from '@/app/crm/lib/apiAuth';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/app/crm/lib/supabase-admin';
 import type { StaffFormData } from '@/app/crm/lib/types';
 import { MODULE_KEYS, defaultModuleAccess } from '@/lib/modulePermissions';
+import { CRM_SECTION_KEYS, defaultSectionAccess } from '@/lib/crmSectionPermissions';
 
 const STAFF_ROLES = new Set(['admin', 'super_admin', 'staff', 'sales', 'manager', 'vendor', 'accountant']);
 const STAFF_STATUSES = new Set(['Active', 'On Leave', 'Inactive']);
@@ -93,6 +94,9 @@ export async function POST(req: NextRequest) {
       full_name: body.full_name,
       role: body.role,
       module_access: isAdminRole ? {} : defaultModuleAccess(),
+      // Manager accounts start with every CRM section hidden too — Admin
+      // grants sections individually via Staff Management -> Manage Access.
+      crm_section_access: isAdminRole ? {} : defaultSectionAccess(),
       updated_at: new Date().toISOString(),
     })
     .eq('id', userId);
@@ -162,7 +166,7 @@ export async function PATCH(req: NextRequest) {
 
   const body = await readObject(req);
   if (!body) return NextResponse.json({ error: 'A valid JSON object is required.' }, { status: 400 });
-  const { staff_id: staffId, action, new_password: newPassword, module_access: moduleAccessInput } = body;
+  const { staff_id: staffId, action, new_password: newPassword, module_access: moduleAccessInput, crm_section_access: sectionAccessInput } = body;
   if (typeof staffId !== 'string' || !UUID_PATTERN.test(staffId)) return NextResponse.json({ error: 'A valid staff ID is required.' }, { status: 400 });
   if (typeof action !== 'string') return NextResponse.json({ error: 'A valid action is required.' }, { status: 400 });
   const { data: staff, error: staffLookupError } = await supabaseAdmin.from('crm_staff').select('user_id').eq('id', staffId).single();
@@ -191,6 +195,33 @@ export async function PATCH(req: NextRequest) {
       .eq('id', staff.user_id);
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 });
     return NextResponse.json({ ok: true, module_access: clean });
+  }
+
+  // Grants/revokes which restricted CRM sidebar sections a Manager account
+  // can see (Staff/Tasks/Attendance/HR Overview/Letters/KYC/Salary &
+  // Payroll/Event Calendar). Admin-only, same as update_permissions above —
+  // a Manager can never touch this route themselves to escalate their own
+  // access, since this whole route requires requireCrmAdmin.
+  if (action === 'update_section_access') {
+    if (!sectionAccessInput || typeof sectionAccessInput !== 'object' || Array.isArray(sectionAccessInput)) {
+      return NextResponse.json({ error: 'A valid crm_section_access object is required.' }, { status: 400 });
+    }
+    const cleanSections: Record<string, boolean> = {};
+    for (const key of CRM_SECTION_KEYS) {
+      cleanSections[key] = (sectionAccessInput as Record<string, unknown>)[key] === true;
+    }
+    const { data: targetProfile, error: targetLookupError } = await supabaseAdmin
+      .from('crm_users').select('role').eq('id', staff.user_id).maybeSingle();
+    if (targetLookupError) return NextResponse.json({ error: targetLookupError.message }, { status: 400 });
+    if (!targetProfile || targetProfile.role !== 'manager') {
+      return NextResponse.json({ error: 'CRM section access can only be set for Manager accounts.' }, { status: 400 });
+    }
+    const { error: updateSectionError } = await supabaseAdmin
+      .from('crm_users')
+      .update({ crm_section_access: cleanSections, permissions_updated_at: new Date().toISOString(), permissions_updated_by: gate.user.id })
+      .eq('id', staff.user_id);
+    if (updateSectionError) return NextResponse.json({ error: updateSectionError.message }, { status: 400 });
+    return NextResponse.json({ ok: true, crm_section_access: cleanSections });
   }
 
   if (action === 'reset_password') {

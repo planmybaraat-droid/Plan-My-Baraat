@@ -9,6 +9,7 @@ import CrmHeader from '../components/CrmHeader';
 import { useSidebar } from '../sidebar-context';
 import { crmSupabase } from '../lib/supabase-crm';
 import { useCrmProfile, initialsFrom } from '../lib/useCrmProfile';
+import { isCrmAdminRole, resolveSectionAccess, type CrmSectionKey } from '../../../lib/crmSectionPermissions';
 
 export default function MorePage() {
   const { open } = useSidebar();
@@ -26,19 +27,31 @@ export default function MorePage() {
     router.push('/crm/login');
   };
   
-  const menuItems = [
-    { href: '/crm/cities', label: 'Cities Management', desc: 'Add or modify cities', icon: Building2 },
-    { href: '/crm/categories', label: 'Categories Management', desc: 'Add or modify vendor categories', icon: Tag },
-    { href: '/crm/packages', label: 'Packages Management', desc: 'Manage vendor pricing packages', icon: Package },
-    { href: '/crm/package-maker', label: 'Package Maker', desc: 'Build packages from categories with pricing', icon: Calculator },
-    { href: '/crm/staff', label: 'Staff', desc: 'Manage team profiles, roles and shifts', icon: UserCog },
-    { href: '/crm/tasks', label: 'Tasks', desc: 'Assign and review work across your team', icon: ListChecks },
-    { href: '/crm/attendance', label: 'Attendance', desc: 'Daily attendance, timings and monthly summaries', icon: CalendarCheck2 },
-    { href: '/crm/quotations', label: 'Client Quotations', desc: 'Build custom proposals from packages and services', icon: FileText },
-    { href: '/crm/agreements', label: 'Client Agreements', desc: 'Create and manage service agreements', icon: ScrollText },
-    { href: '/crm/invoices', label: 'Invoices & Payments', desc: 'Issue invoices and record client payments', icon: ReceiptText },
+  const allMenuItems: { href: string; label: string; desc: string; icon: typeof Building2; sectionKey?: CrmSectionKey; adminOnly?: boolean }[] = [
+    { href: '/crm/cities', label: 'Cities Management', desc: 'Add or modify cities', icon: Building2, adminOnly: true },
+    { href: '/crm/categories', label: 'Categories Management', desc: 'Add or modify vendor categories', icon: Tag, adminOnly: true },
+    { href: '/crm/packages', label: 'Packages Management', desc: 'Manage vendor pricing packages', icon: Package, adminOnly: true },
+    { href: '/crm/package-maker', label: 'Package Maker', desc: 'Build packages from categories with pricing', icon: Calculator, adminOnly: true },
+    { href: '/crm/staff', label: 'Staff', desc: 'Manage team profiles, roles and shifts', icon: UserCog, sectionKey: 'staff' },
+    { href: '/crm/tasks', label: 'Tasks', desc: 'Assign and review work across your team', icon: ListChecks, sectionKey: 'tasks' },
+    { href: '/crm/attendance', label: 'Attendance', desc: 'Daily attendance, timings and monthly summaries', icon: CalendarCheck2, sectionKey: 'attendance' },
+    { href: '/crm/hr', label: 'HR Overview', desc: 'Company-wide HR summary', icon: UserCog, sectionKey: 'hrOverview' },
+    { href: '/crm/hr/letters', label: 'Letters', desc: 'Generate and manage employee letters', icon: ScrollText, sectionKey: 'letters' },
+    { href: '/crm/hr/kyc', label: 'KYC & Documents', desc: 'Manage employee KYC documents', icon: FileText, sectionKey: 'kyc' },
+    { href: '/crm/hr/payroll', label: 'Salary & Payroll', desc: 'Manage salary records and payroll', icon: ReceiptText, sectionKey: 'salaryPayroll' },
+    { href: '/crm/event-calendar', label: 'Event Calendar', desc: 'View confirmed bookings by date', icon: CalendarCheck2, sectionKey: 'eventCalendar' },
+    { href: '/crm/quotations', label: 'Client Quotations', desc: 'Build custom proposals from packages and services', icon: FileText, adminOnly: true },
+    { href: '/crm/agreements', label: 'Client Agreements', desc: 'Create and manage service agreements', icon: ScrollText, adminOnly: true },
+    { href: '/crm/invoices', label: 'Invoices & Payments', desc: 'Issue invoices and record client payments', icon: ReceiptText, adminOnly: true },
     { href: '/crm/settings', label: 'Settings', desc: 'System configuration & preferences', icon: Settings },
   ];
+
+  const menuItems = allMenuItems.filter((item) => {
+    if (isCrmAdminRole(profile?.role)) return true;
+    if (item.adminOnly) return false;
+    if (item.sectionKey) return resolveSectionAccess(profile?.role, profile?.sectionAccess, item.sectionKey);
+    return true;
+  });
 
   return (
     <>

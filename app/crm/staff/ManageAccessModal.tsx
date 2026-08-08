@@ -3,53 +3,70 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Shield, X } from 'lucide-react';
 import type { StaffRecord } from '../lib/types';
-import { getUserModuleAccess, updateStaffModuleAccess } from './staff-data';
+import { updateStaffModuleAccess, updateStaffSectionAccess, getUserAccess } from './staff-data';
 import { WORKSPACE_MODULES, type ModuleKey } from '../../../lib/modulePermissions';
+import { CRM_SECTIONS, type CrmSectionKey } from '../../../lib/crmSectionPermissions';
 
 interface ManageAccessModalProps {
   staff: StaffRecord;
   onClose: () => void;
-  onSaved?: (moduleAccess: Record<string, boolean>) => void;
+  onSaved?: (access: Record<string, boolean>) => void;
 }
 
 export default function ManageAccessModal({ staff, onClose, onSaved }: ManageAccessModalProps) {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState('staff');
   const [access, setAccess] = useState<Record<ModuleKey, boolean>>({} as Record<ModuleKey, boolean>);
+  const [sectionAccess, setSectionAccess] = useState<Record<CrmSectionKey, boolean>>({} as Record<CrmSectionKey, boolean>);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
 
+  const isManager = role === 'manager';
+
   useEffect(() => {
     let active = true;
     if (!staff.user_id) { setLoading(false); return; }
-    getUserModuleAccess(staff.user_id).then(({ role: r, module_access }) => {
-      if (!active) return;
-      setRole(r);
-      const next = {} as Record<ModuleKey, boolean>;
-      for (const m of WORKSPACE_MODULES) next[m.key] = module_access[m.key] === true;
-      setAccess(next);
-      setLoading(false);
-    }).catch((cause) => {
-      if (!active) return;
-      setError(cause instanceof Error ? cause.message : 'Could not load permissions.');
-      setLoading(false);
-    });
+    getUserAccess(staff.user_id)
+      .then((result) => {
+        if (!active) return;
+        setRole(result.role);
+        const nextModules = {} as Record<ModuleKey, boolean>;
+        for (const m of WORKSPACE_MODULES) nextModules[m.key] = result.module_access[m.key] === true;
+        setAccess(nextModules);
+        const nextSections = {} as Record<CrmSectionKey, boolean>;
+        for (const s of CRM_SECTIONS) nextSections[s.key] = result.crm_section_access[s.key] === true;
+        setSectionAccess(nextSections);
+        setLoading(false);
+      })
+      .catch((cause) => {
+        if (!active) return;
+        setError(cause instanceof Error ? cause.message : 'Could not load permissions.');
+        setLoading(false);
+      });
     return () => { active = false; };
   }, [staff.user_id]);
 
   const isAdmin = role === 'admin' || role === 'super_admin';
   const toggle = (key: ModuleKey) => setAccess((current) => ({ ...current, [key]: !current[key] }));
+  const toggleSection = (key: CrmSectionKey) => setSectionAccess((current) => ({ ...current, [key]: !current[key] }));
   const selectAll = () => setAccess(() => { const next = {} as Record<ModuleKey, boolean>; for (const m of WORKSPACE_MODULES) next[m.key] = true; return next; });
   const clearAll = () => setAccess(() => { const next = {} as Record<ModuleKey, boolean>; for (const m of WORKSPACE_MODULES) next[m.key] = false; return next; });
+  const selectAllSections = () => setSectionAccess(() => { const next = {} as Record<CrmSectionKey, boolean>; for (const s of CRM_SECTIONS) next[s.key] = true; return next; });
+  const clearAllSections = () => setSectionAccess(() => { const next = {} as Record<CrmSectionKey, boolean>; for (const s of CRM_SECTIONS) next[s.key] = false; return next; });
 
   const save = async () => {
     if (!staff.user_id) return;
     setSaving(true); setError(''); setSaved(false);
     try {
-      await updateStaffModuleAccess(staff.id, access);
+      if (isManager) {
+        await updateStaffSectionAccess(staff.id, sectionAccess);
+        onSaved?.(sectionAccess);
+      } else {
+        await updateStaffModuleAccess(staff.id, access);
+        onSaved?.(access);
+      }
       setSaved(true);
-      onSaved?.(access);
       window.setTimeout(() => setSaved(false), 2500);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not save permissions.');
@@ -58,7 +75,10 @@ export default function ManageAccessModal({ staff, onClose, onSaved }: ManageAcc
     }
   };
 
-  const enabledCount = Object.values(access).filter(Boolean).length;
+  const enabledCount = isManager
+    ? Object.values(sectionAccess).filter(Boolean).length
+    : Object.values(access).filter(Boolean).length;
+  const totalCount = isManager ? CRM_SECTIONS.length : WORKSPACE_MODULES.length;
 
   return (
     <div className="fixed inset-0 z-[110] flex items-end justify-center overflow-hidden bg-gray-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
@@ -79,10 +99,41 @@ export default function ManageAccessModal({ staff, onClose, onSaved }: ManageAcc
             <div className="flex h-40 items-center justify-center"><Loader2 className="animate-spin text-red-600" size={24} /></div>
           ) : isAdmin ? (
             <p className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-600">This account is an {role === 'super_admin' ? 'Super Admin' : 'Admin'} and already has full access to every module by default.</p>
+          ) : isManager ? (
+            <>
+              <p className="text-[11px] text-gray-400">Manager accounts log into the CRM directly with a restricted sidebar — grant only the sections your Manager should see. Leads, Quotations, Agreements, Vendor Agreements, Invoices and system configuration always stay Admin-only.</p>
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{enabledCount} of {totalCount} sections enabled</p>
+                <div className="flex gap-2">
+                  <button onClick={selectAllSections} className="text-[11px] font-bold text-red-600 hover:underline">Select all</button>
+                  <span className="text-gray-300">·</span>
+                  <button onClick={clearAllSections} className="text-[11px] font-bold text-gray-500 hover:underline">Clear all</button>
+                </div>
+              </div>
+              <div className="mt-3 divide-y divide-gray-100 rounded-2xl border border-gray-200">
+                {CRM_SECTIONS.map((sec) => (
+                  <label key={sec.key} className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-gray-900">{sec.label}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-gray-400">{sec.description}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(sec.key)}
+                      aria-pressed={sectionAccess[sec.key]}
+                      aria-label={`Toggle ${sec.label}`}
+                      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${sectionAccess[sec.key] ? 'bg-red-600' : 'bg-gray-200'}`}
+                    >
+                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${sectionAccess[sec.key] ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                    </button>
+                  </label>
+                ))}
+              </div>
+            </>
           ) : (
             <>
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{enabledCount} of {WORKSPACE_MODULES.length} modules enabled</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{enabledCount} of {totalCount} modules enabled</p>
                 <div className="flex gap-2">
                   <button onClick={selectAll} className="text-[11px] font-bold text-red-600 hover:underline">Select all</button>
                   <span className="text-gray-300">·</span>

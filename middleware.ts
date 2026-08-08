@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { publicSupabaseKey, publicSupabaseUrl } from './lib/deployment-config';
 import { WORKSPACE_MODULES, resolveModuleAccess } from './lib/modulePermissions';
+import { CRM_SECTIONS, resolveSectionAccess } from './lib/crmSectionPermissions';
 
 // Routes that must remain reachable without an active session, per portal.
 const PUBLIC_PATHS: Record<'crm' | 'workspace', string[]> = {
@@ -63,16 +64,32 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(homePath, request.url));
   }
 
-  // Keep the Admin CRM admin-only: a signed-in staff account (any role other
-  // than admin/super_admin) gets sent to their own workspace instead of the
-  // admin nav, rather than just hiding menu items client-side.
+  // Keep the Admin CRM restricted to Admin/Super Admin and the Manager
+  // tier: any other signed-in role (Staff/Sales/Accountant) gets sent to
+  // their own workspace instead of the admin nav, rather than just hiding
+  // menu items client-side.
   if (user && (portal === 'crm' || isLegacyAdminPanel) && !isPublicPath) {
-    const { data: profile, error: profileError } = await supabase.from('crm_users').select('role,is_active').eq('id', user.id).maybeSingle();
+    const { data: profile, error: profileError } = await supabase.from('crm_users').select('role,is_active,crm_section_access').eq('id', user.id).maybeSingle();
     if (profileError || !profile || profile.is_active === false) {
       return NextResponse.redirect(new URL('/crm/unauthorized', request.url));
     }
-    if (!['admin', 'super_admin'].includes(profile.role)) {
+    if (!['admin', 'super_admin', 'manager'].includes(profile.role) || (isLegacyAdminPanel && profile.role === 'manager')) {
       return NextResponse.redirect(new URL(isLegacyAdminPanel ? '/crm/unauthorized' : '/workspace', request.url));
+    }
+
+    // Server-side section gate for Manager accounts: a Manager can't reach
+    // a hidden CRM section by typing its URL directly even if it's hidden
+    // from their sidebar. Dashboard, Notifications, and Settings stay open
+    // to every Manager regardless of crm_section_access.
+    if (profile.role === 'manager') {
+      const deniedSection = CRM_SECTIONS.find(
+        (section) => pathname === section.path || pathname.startsWith(`${section.path}/`),
+      );
+      if (deniedSection && !resolveSectionAccess(profile.role, profile.crm_section_access, deniedSection.key)) {
+        const redirectUrl = new URL('/crm', request.url);
+        redirectUrl.searchParams.set('access_denied', deniedSection.key);
+        return NextResponse.redirect(redirectUrl);
+      }
     }
   }
 
@@ -85,10 +102,10 @@ export async function middleware(request: NextRequest) {
     if (profileError || !profile || profile.is_active === false) {
       return NextResponse.redirect(new URL('/crm/unauthorized', request.url));
     }
-    if (['admin', 'super_admin'].includes(profile.role)) {
+    if (['admin', 'super_admin', 'manager'].includes(profile.role)) {
       return NextResponse.redirect(new URL('/crm', request.url));
     }
-    if (!['staff', 'sales', 'manager', 'accountant'].includes(profile.role)) {
+    if (!['staff', 'sales', 'accountant'].includes(profile.role)) {
       return NextResponse.redirect(new URL('/crm/unauthorized', request.url));
     }
 

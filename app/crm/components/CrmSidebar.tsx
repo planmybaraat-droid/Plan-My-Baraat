@@ -11,48 +11,61 @@ import {
 import { crmSupabase } from '../lib/supabase-crm';
 import { useCrmProfile, initialsFrom } from '../lib/useCrmProfile';
 import { useCrmNotifications } from '../lib/useCrmNotifications';
+import { isCrmAdminRole, isCrmManagerRole, resolveSectionAccess, type CrmSectionKey } from '../../../lib/crmSectionPermissions';
 
-const bottomTabs = [
+const adminBottomTabs = [
   { href: '/crm',        label: 'Home',    icon: LayoutDashboard, exact: true },
   { href: '/crm/vendors', label: 'Vendors', icon: Users },
   { href: '/crm/leads',   label: 'Leads',   icon: UserSearch },
   { href: '/crm/more',    label: 'More',    icon: MoreHorizontal },
 ];
 
-type SidebarItem = { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+type SidebarItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+  // Present only on items gated by the Manager section-toggle system.
+  // Admin/Super Admin always see these; a Manager needs the matching
+  // toggle granted in Staff Management -> Manage Access.
+  sectionKey?: CrmSectionKey;
+  // Present on items that stay Admin/Super Admin only regardless of any
+  // Manager toggle (Leads, Quotations, Agreements, Invoices, config, etc.)
+  adminOnly?: boolean;
+};
 
 const sidebarSections: { label: string; items: SidebarItem[] }[] = [
   { label: 'Overview', items: [
     { href: '/crm', label: 'Dashboard', icon: LayoutDashboard, exact: true },
     { href: '/crm/notifications', label: 'Notifications', icon: Bell },
+    { href: '/crm/settings', label: 'Settings', icon: Settings },
   ] },
   { label: 'People & operations', items: [
-    { href: '/crm/staff', label: 'Staff', icon: UserCog },
-    { href: '/crm/tasks', label: 'Tasks', icon: ListChecks },
-    { href: '/crm/attendance', label: 'Attendance', icon: CalendarCheck2 },
-    { href: '/crm/vendors', label: 'Vendors', icon: Users },
+    { href: '/crm/staff', label: 'Staff', icon: UserCog, sectionKey: 'staff' },
+    { href: '/crm/tasks', label: 'Tasks', icon: ListChecks, sectionKey: 'tasks' },
+    { href: '/crm/attendance', label: 'Attendance', icon: CalendarCheck2, sectionKey: 'attendance' },
+    { href: '/crm/vendors', label: 'Vendors', icon: Users, adminOnly: true },
   ] },
   { label: 'HR management', items: [
-    { href: '/crm/hr', label: 'HR Overview', icon: LayoutDashboard, exact: true },
-    { href: '/crm/hr/letters', label: 'Letters', icon: FileSignature },
-    { href: '/crm/hr/kyc', label: 'KYC & Documents', icon: FolderCheck },
-    { href: '/crm/hr/payroll', label: 'Salary & Payroll', icon: Wallet },
+    { href: '/crm/hr', label: 'HR Overview', icon: LayoutDashboard, exact: true, sectionKey: 'hrOverview' },
+    { href: '/crm/hr/letters', label: 'Letters', icon: FileSignature, sectionKey: 'letters' },
+    { href: '/crm/hr/kyc', label: 'KYC & Documents', icon: FolderCheck, sectionKey: 'kyc' },
+    { href: '/crm/hr/payroll', label: 'Salary & Payroll', icon: Wallet, sectionKey: 'salaryPayroll' },
+    { href: '/crm/event-calendar', label: 'Event Calendar', icon: CalendarDays, sectionKey: 'eventCalendar' },
   ] },
   { label: 'Sales & documents', items: [
-    { href: '/crm/leads', label: 'Customer Leads', icon: UserSearch },
-    { href: '/crm/baraat-leads', label: 'Baraat Enquiries', icon: MessageSquare },
-    { href: '/crm/quotations', label: 'Client Quotations', icon: FileText },
-    { href: '/crm/agreements', label: 'Client Agreements', icon: ScrollText },
-    { href: '/crm/vendor-agreements', label: 'Vendor Agreements', icon: Handshake },
-    { href: '/crm/invoices', label: 'Invoices & Payments', icon: ReceiptText },
-    { href: '/crm/event-calendar', label: 'Event Calendar', icon: CalendarDays },
+    { href: '/crm/leads', label: 'Customer Leads', icon: UserSearch, adminOnly: true },
+    { href: '/crm/baraat-leads', label: 'Baraat Enquiries', icon: MessageSquare, adminOnly: true },
+    { href: '/crm/quotations', label: 'Client Quotations', icon: FileText, adminOnly: true },
+    { href: '/crm/agreements', label: 'Client Agreements', icon: ScrollText, adminOnly: true },
+    { href: '/crm/vendor-agreements', label: 'Vendor Agreements', icon: Handshake, adminOnly: true },
+    { href: '/crm/invoices', label: 'Invoices & Payments', icon: ReceiptText, adminOnly: true },
   ] },
   { label: 'Configuration', items: [
-    { href: '/crm/cities', label: 'Cities', icon: Building2 },
-    { href: '/crm/categories', label: 'Categories', icon: Tag },
-    { href: '/crm/packages', label: 'Packages', icon: Package },
-    { href: '/crm/package-maker', label: 'Package Maker', icon: Calculator },
-    { href: '/crm/settings', label: 'Settings', icon: Settings },
+    { href: '/crm/cities', label: 'Cities', icon: Building2, adminOnly: true },
+    { href: '/crm/categories', label: 'Categories', icon: Tag, adminOnly: true },
+    { href: '/crm/packages', label: 'Packages', icon: Package, adminOnly: true },
+    { href: '/crm/package-maker', label: 'Package Maker', icon: Calculator, adminOnly: true },
   ] },
 ];
 
@@ -87,6 +100,29 @@ export default function CrmSidebar({ mobileOpen, onClose }: CrmSidebarProps) {
     return pathname.startsWith(href);
   };
 
+  const role = profile?.role;
+  const isManager = isCrmManagerRole(role);
+  const canSeeItem = (item: SidebarItem) => {
+    if (isCrmAdminRole(role)) return true;
+    if (item.adminOnly) return false;
+    if (item.sectionKey) return resolveSectionAccess(role, profile?.sectionAccess, item.sectionKey);
+    return true; // utility items (Dashboard, Notifications, Settings)
+  };
+  const visibleSections = sidebarSections
+    .map((section) => ({ ...section, items: section.items.filter(canSeeItem) }))
+    .filter((section) => section.items.length > 0);
+
+  const bottomTabs = isManager
+    ? (() => {
+        const managerItems = visibleSections.filter((s) => s.label !== 'Overview').flatMap((s) => s.items);
+        return [
+          { href: '/crm', label: 'Home', icon: LayoutDashboard, exact: true },
+          ...managerItems.slice(0, 2),
+          { href: '/crm/more', label: 'More', icon: MoreHorizontal },
+        ];
+      })()
+    : adminBottomTabs;
+
   return (
     <>
       {/* Mobile overlay */}
@@ -118,7 +154,7 @@ export default function CrmSidebar({ mobileOpen, onClose }: CrmSidebarProps) {
         </div>
 
         <nav className="crm-sidebar-nav flex-1 overflow-y-auto px-3 py-3">
-          {sidebarSections.map(section => <div key={section.label} className="mb-3 last:mb-1">
+          {visibleSections.map(section => <div key={section.label} className="mb-3 last:mb-1">
             <p className="px-3 pb-1.5 pt-1 text-[8px] font-black uppercase tracking-[0.2em] text-gray-600">{section.label}</p>
             <div className="space-y-0.5">{section.items.map(({ href, label, icon: Icon, exact }) => {
               const active = isActive(href, exact);
