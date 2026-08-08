@@ -18,6 +18,7 @@ export interface CrmProfile {
   email: string;
   role: string;
   roleLabel: string;
+  moduleAccess: Record<string, boolean>;
 }
 
 export function initialsFrom(name: string) {
@@ -48,7 +49,7 @@ export function useCrmProfile() {
 
       const { data: row } = await crmSupabase
         .from('crm_users')
-        .select('full_name, role, email')
+        .select('full_name, role, email, module_access')
         .eq('id', user.id)
         .maybeSingle();
 
@@ -57,8 +58,9 @@ export function useCrmProfile() {
       const email = row?.email || user.email || '';
       const name = row?.full_name || email || 'CRM User';
       const role = row?.role || 'staff';
+      const moduleAccess = (row?.module_access || {}) as Record<string, boolean>;
 
-      setProfile({ name, email, role, roleLabel: ROLE_LABELS[role] || role });
+      setProfile({ name, email, role, roleLabel: ROLE_LABELS[role] || role, moduleAccess });
       setLoading(false);
     }
 

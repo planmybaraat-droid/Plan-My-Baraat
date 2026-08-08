@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireCrmAdmin } from '@/app/crm/lib/apiAuth';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/app/crm/lib/supabase-admin';
 import type { StaffFormData } from '@/app/crm/lib/types';
+import { MODULE_KEYS, defaultModuleAccess } from '@/lib/modulePermissions';
 
 const STAFF_ROLES = new Set(['admin', 'super_admin', 'staff', 'sales', 'manager', 'vendor', 'accountant']);
 const STAFF_STATUSES = new Set(['Active', 'On Leave', 'Inactive']);
@@ -81,9 +82,19 @@ export async function POST(req: NextRequest) {
 
   // The DB trigger auto-inserts a default crm_users row on auth.users insert;
   // update it with the real name/role chosen in this form.
+  // New staff accounts start with every module disabled — an Admin must
+  // explicitly grant access via Staff Management -> Manage Access. Admin and
+  // Super Admin roles bypass the module map entirely, so it's left empty for
+  // them (not meaningful either way).
+  const isAdminRole = body.role === 'admin' || body.role === 'super_admin';
   const { error: roleError } = await supabaseAdmin
     .from('crm_users')
-    .update({ full_name: body.full_name, role: body.role, updated_at: new Date().toISOString() })
+    .update({
+      full_name: body.full_name,
+      role: body.role,
+      module_access: isAdminRole ? {} : defaultModuleAccess(),
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', userId);
   if (roleError) {
     await supabaseAdmin.auth.admin.deleteUser(userId);
@@ -151,13 +162,35 @@ export async function PATCH(req: NextRequest) {
 
   const body = await readObject(req);
   if (!body) return NextResponse.json({ error: 'A valid JSON object is required.' }, { status: 400 });
-  const { staff_id: staffId, action, new_password: newPassword } = body;
+  const { staff_id: staffId, action, new_password: newPassword, module_access: moduleAccessInput } = body;
   if (typeof staffId !== 'string' || !UUID_PATTERN.test(staffId)) return NextResponse.json({ error: 'A valid staff ID is required.' }, { status: 400 });
   if (typeof action !== 'string') return NextResponse.json({ error: 'A valid action is required.' }, { status: 400 });
   const { data: staff, error: staffLookupError } = await supabaseAdmin.from('crm_staff').select('user_id').eq('id', staffId).single();
   if (staffLookupError) return NextResponse.json({ error: staffLookupError.message }, { status: 404 });
   if (!staff?.user_id) {
     return NextResponse.json({ error: 'This staff member has no linked login yet.' }, { status: 400 });
+  }
+
+  if (action === 'update_permissions') {
+    if (!moduleAccessInput || typeof moduleAccessInput !== 'object' || Array.isArray(moduleAccessInput)) {
+      return NextResponse.json({ error: 'A valid module_access object is required.' }, { status: 400 });
+    }
+    const clean: Record<string, boolean> = {};
+    for (const key of MODULE_KEYS) {
+      clean[key] = (moduleAccessInput as Record<string, unknown>)[key] === true;
+    }
+    const { data: targetProfile, error: targetLookupError } = await supabaseAdmin
+      .from('crm_users').select('role').eq('id', staff.user_id).maybeSingle();
+    if (targetLookupError) return NextResponse.json({ error: targetLookupError.message }, { status: 400 });
+    if (targetProfile && ['admin', 'super_admin'].includes(targetProfile.role)) {
+      return NextResponse.json({ error: 'Admins already have full access and cannot be restricted here.' }, { status: 400 });
+    }
+    const { error: updateError } = await supabaseAdmin
+      .from('crm_users')
+      .update({ module_access: clean, permissions_updated_at: new Date().toISOString(), permissions_updated_by: gate.user.id })
+      .eq('id', staff.user_id);
+    if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 });
+    return NextResponse.json({ ok: true, module_access: clean });
   }
 
   if (action === 'reset_password') {

@@ -102,7 +102,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
           mobileOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
-        <div className="crm-workspace flex-1 flex flex-col min-w-0 overflow-hidden pb-36 lg:pb-0">
+        <div className="crm-workspace flex-1 flex flex-col min-w-0 overflow-hidden">
           <main className="crm-main flex-1 overflow-y-auto">
             {children}
           </main>

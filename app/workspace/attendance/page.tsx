@@ -67,7 +67,7 @@ export default function MyAttendancePage() {
           ) : (
             <div className="divide-y divide-gray-100">
               {rows.map((r) => (
-                <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+                <div key={r.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-6">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900">{new Date(`${r.attendance_date}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</p>
                     <div className="mt-1 flex flex-wrap gap-3 text-xs text-gray-400">
@@ -76,7 +76,7 @@ export default function MyAttendancePage() {
                       <span className="font-semibold text-gray-500">{hoursBetween(r.check_in, r.check_out)}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {r.punch_in_selfie_url && <SelfieButton path={r.punch_in_selfie_url} label="In selfie" />}
                     {r.punch_out_selfie_url && <SelfieButton path={r.punch_out_selfie_url} label="Out selfie" />}
                     <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[r.status] || 'bg-gray-100 text-gray-600'}`}>{r.status}</span>

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { publicSupabaseKey, publicSupabaseUrl } from './lib/deployment-config';
+import { WORKSPACE_MODULES, resolveModuleAccess } from './lib/modulePermissions';
 
 // Routes that must remain reachable without an active session, per portal.
 const PUBLIC_PATHS: Record<'crm' | 'workspace', string[]> = {
@@ -78,7 +79,7 @@ export async function middleware(request: NextRequest) {
   if (user && portal === 'workspace' && !isPublicPath) {
     const { data: profile, error: profileError } = await supabase
       .from('crm_users')
-      .select('role,is_active')
+      .select('role,is_active,module_access')
       .eq('id', user.id)
       .maybeSingle();
     if (profileError || !profile || profile.is_active === false) {
@@ -89,6 +90,20 @@ export async function middleware(request: NextRequest) {
     }
     if (!['staff', 'sales', 'manager', 'accountant'].includes(profile.role)) {
       return NextResponse.redirect(new URL('/crm/unauthorized', request.url));
+    }
+
+    // Server-side module gate: a Staff account can't reach a module by typing
+    // its URL directly even if it's hidden from their sidebar. Only routes
+    // that map to a permissioned module are checked here — Dashboard,
+    // Notifications, Profile, Settings and Login stay open to every staff
+    // account regardless of their module_access map.
+    const deniedModule = WORKSPACE_MODULES.find(
+      (module) => pathname === module.path || pathname.startsWith(`${module.path}/`),
+    );
+    if (deniedModule && !resolveModuleAccess(profile.role, profile.module_access, deniedModule.key)) {
+      const redirectUrl = new URL('/workspace', request.url);
+      redirectUrl.searchParams.set('access_denied', deniedModule.key);
+      return NextResponse.redirect(redirectUrl);
     }
   }
 

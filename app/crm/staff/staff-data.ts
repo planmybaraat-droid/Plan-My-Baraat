@@ -46,6 +46,35 @@ export const resetStaffPassword = (staff_id: string, new_password: string) => st
 export const setStaffActive = (staff_id: string, activate: boolean) => staffApi('PATCH', { staff_id, action: activate ? 'activate' : 'deactivate' }).then(r => normalizeStaff(r.staff));
 export const getStaffLastLogin = (staff_id: string) => staffApi('PATCH', { staff_id, action: 'last_login' }).then(r => r.last_sign_in_at as string | null);
 
+// -- Module access (Staff Access Management) --------------------------------
+// Reads go straight through the regular client: crm_users has a "read the
+// team directory" policy that lets any signed-in CRM user read every row
+// (needed for @mentions, assignee pickers, etc.), so this doesn't need the
+// service-role route. Writing someone else's permissions does need it, since
+// the row-level UPDATE policy on crm_users only lets people edit their own row.
+export async function getUserModuleAccess(userId: string): Promise<{ role: string; module_access: Record<string, boolean> }> {
+  const { data, error } = await crmSupabase.from('crm_users').select('role, module_access').eq('id', userId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return { role: data?.role || 'staff', module_access: (data?.module_access as Record<string, boolean>) || {} };
+}
+
+// Bulk-load module_access for every crm_users row, keyed by user id — used to
+// show an "N modules enabled" count per row in the Staff Management table
+// without a per-row round trip.
+export async function getAllModuleAccess(): Promise<Record<string, { role: string; module_access: Record<string, boolean> }>> {
+  const { data, error } = await crmSupabase.from('crm_users').select('id, role, module_access');
+  if (error) throw new Error(error.message);
+  const map: Record<string, { role: string; module_access: Record<string, boolean> }> = {};
+  for (const row of data || []) {
+    map[String(row.id)] = { role: String(row.role || 'staff'), module_access: (row.module_access as Record<string, boolean>) || {} };
+  }
+  return map;
+}
+
+export async function updateStaffModuleAccess(staffId: string, moduleAccess: Record<string, boolean>) {
+  return staffApi('PATCH', { staff_id: staffId, action: 'update_permissions', module_access: moduleAccess });
+}
+
 export async function getNextStaffCode() {
   const staff = await getStaff();
   const max = staff.map(item => Number(item.employee_code.match(/\d+$/)?.[0]) || 0).reduce((a, b) => Math.max(a, b), 0);

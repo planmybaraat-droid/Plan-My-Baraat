@@ -92,18 +92,20 @@ export default function AdminTasksPage() {
           ) : (
             <div className="divide-y divide-gray-100">
               {tasks.map((t) => (
-                <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2"><Flag size={12} className="text-gray-400" /><p className="truncate text-sm font-bold text-gray-900">{t.title}</p></div>
+                <div key={t.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-6">
+                  <div className="min-w-0 sm:flex-1">
+                    <div className="flex items-center gap-2"><Flag size={12} className="shrink-0 text-gray-400" /><p className="truncate text-sm font-bold text-gray-900">{t.title}</p></div>
                     <p className="mt-1 text-xs text-gray-400">{t.due_date ? `Due ${new Date(t.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : 'No due date'} · Progress {t.progress}%</p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[t.status]}`}>{t.status}</span>
-                  {t.status === 'Completed' && (
-                    <div className="flex gap-1.5">
-                      <button onClick={() => review(t.id, 'Needs Revision')} className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-[11px] font-bold text-purple-700">Request revision</button>
-                      <button onClick={() => review(t.id, 'Rejected')} className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-bold text-red-700">Reject</button>
-                    </div>
-                  )}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[t.status]}`}>{t.status}</span>
+                    {t.status === 'Completed' && (
+                      <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => review(t.id, 'Needs Revision')} className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-[11px] font-bold text-purple-700">Request revision</button>
+                        <button onClick={() => review(t.id, 'Rejected')} className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-bold text-red-700">Reject</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

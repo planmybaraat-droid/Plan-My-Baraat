@@ -11,6 +11,8 @@ import { crmSupabase } from '../crm/lib/supabase-crm';
 import SelfieCapture from './components/SelfieCapture';
 import { getTodayAttendance, getSelfieUrl, punchIn, punchOut, getMonthAttendance } from './lib/attendance-data';
 import type { AttendanceRecord } from '../crm/lib/types';
+import { useSearchParams } from 'next/navigation';
+import { resolveModuleAccess } from '../../lib/modulePermissions';
 
 function formatTime(t: string | null | undefined) {
   if (!t) return '—';
@@ -55,6 +57,10 @@ const DAY_STYLE: Record<string, string> = {
 export default function WorkspaceDashboard() {
   const { open } = useSidebar();
   const { profile } = useCrmProfile();
+  const searchParams = useSearchParams();
+  const accessDeniedModule = searchParams.get('access_denied');
+  const canTasks = resolveModuleAccess(profile?.role, profile?.moduleAccess, 'tasks');
+  const canLeads = resolveModuleAccess(profile?.role, profile?.moduleAccess, 'leads');
   const { items: notifications } = useCrmNotifications();
   const [attendance, setAttendance] = useState<AttendanceRecord | null | undefined>(undefined);
   const [capturing, setCapturing] = useState<'in' | 'out' | null>(null);
@@ -130,8 +136,14 @@ export default function WorkspaceDashboard() {
     <>
       <CrmHeader title={`${greeting()}, ${profile?.name?.split(' ')[0] || ''} 👋`} subtitle="Here's what's happening today" onMenuClick={open} notificationsHref="/workspace/notifications" />
       <div className="space-y-5 p-4 sm:p-6">
+        {accessDeniedModule && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
+            You don&apos;t have permission to access that module. Ask your Admin to grant access under Staff Management &rarr; Manage Access.
+          </div>
+        )}
         {/* Summary tiles */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {canTasks && (
           <Link href="/workspace/tasks" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-gray-300 sm:p-5">
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><ListChecks size={16} /></span>
@@ -142,6 +154,7 @@ export default function WorkspaceDashboard() {
             </div>
             <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-red-600">{todaysTasks.length} Due today</p>
           </Link>
+          )}
           <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Clock size={16} /></span>
@@ -162,6 +175,7 @@ export default function WorkspaceDashboard() {
             </div>
             <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600">Today</p>
           </div>
+          {canLeads && (
           <Link href="/workspace/leads" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-gray-300 sm:p-5">
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600"><UserSearch size={16} /></span>
@@ -172,6 +186,7 @@ export default function WorkspaceDashboard() {
             </div>
             <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-purple-600">Assigned to you</p>
           </Link>
+          )}
         </div>
 
         <div className="grid gap-5 lg:grid-cols-2">

@@ -1,9 +1,16 @@
-import { CRM_CONFIGURATION_ERROR, crmSupabase } from '../lib/supabase-crm';
+import { CRM_CONFIGURATION_ERROR, crmSupabase, isCrmSupabaseConfigured } from '../lib/supabase-crm';
 import type { InvoiceFilters, InvoiceFormData, InvoicePayment, InvoiceRecord } from '../lib/types';
 import { financialYear } from './invoice-config';
 
 const STORAGE_KEY = 'crm_invoices';
-const isConfigured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder-url'));
+// Was previously checking process.env.NEXT_PUBLIC_SUPABASE_URL directly, which
+// is undefined unless that exact env var is set on the host — every other
+// CRM data module instead uses supabase-crm's isCrmSupabaseConfigured, which
+// also accepts the built-in production fallback (see lib/deployment-config.ts).
+// Left as its own env check, Invoices would silently fall back to "not
+// configured" in any environment relying on that fallback while every other
+// module kept working — the exact class of bug flagged in the CRM audit.
+const isConfigured = isCrmSupabaseConfigured;
 
 function localInvoices(): InvoiceRecord[] {
   if (typeof window === 'undefined') return [];

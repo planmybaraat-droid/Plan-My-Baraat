@@ -3245,6 +3245,27 @@ display: grid;
 .crm-main {
   overflow-x: hidden;
   scroll-behavior: smooth;
+  /* Clears the fixed mobile bottom tab bar (~64px + safe-area) and the
+     floating Team Chat button (bottom-20 + its own 48px height) so the last
+     item on any scrollable page is never hidden behind them. This lives on
+     .crm-main (the actual scroll container, shared by every page in both
+     the Admin CRM and Staff Workspace) rather than a per-page fix, and
+     rather than the outer non-scrolling wrapper — padding placed there has
+     no visual effect since that element never scrolls. */
+  padding-bottom: 9rem;
+}
+
+@media (min-width: 1024px) {
+  .crm-main {
+    padding-bottom: 0;
+  }
+}
+
+/* Mobile bottom tab bar should also respect the device's own safe area
+   (notches / home-indicator gesture bars) — this class was referenced on
+   the tab bar markup but never defined, so it was a no-op. */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .crm-main :where(h1, h2, h3, h4, p, span, td, th, label) {

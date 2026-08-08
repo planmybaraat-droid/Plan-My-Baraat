@@ -6,18 +6,36 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, ListChecks, CalendarCheck2, UserSearch, FileText, ScrollText, Bell, UserCircle, Settings, X, ChevronRight, LogOut,
+  ReceiptText, Package, CalendarDays, Lock,
 } from 'lucide-react';
 import { crmSupabase } from '../../crm/lib/supabase-crm';
 import { useCrmProfile, initialsFrom } from '../../crm/lib/useCrmProfile';
 import { getMyStaffProfile } from '../lib/attendance-data';
+import { resolveModuleAccess, type ModuleKey } from '../../../lib/modulePermissions';
 
-const navItems = [
-  { href: '/workspace', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/workspace/tasks', label: 'My Tasks', icon: ListChecks },
-  { href: '/workspace/attendance', label: 'My Attendance', icon: CalendarCheck2 },
-  { href: '/workspace/leads', label: 'My Leads', icon: UserSearch },
-  { href: '/workspace/quotations', label: 'My Quotations', icon: FileText },
-  { href: '/workspace/agreements', label: 'My Agreements', icon: ScrollText },
+const MODULE_ICONS: Record<ModuleKey, typeof LayoutDashboard> = {
+  tasks: ListChecks,
+  attendance: CalendarCheck2,
+  leads: UserSearch,
+  quotations: FileText,
+  agreements: ScrollText,
+  invoices: ReceiptText,
+  packages: Package,
+  calendar: CalendarDays,
+};
+
+const MODULE_NAV: { key: ModuleKey; href: string; label: string }[] = [
+  { key: 'tasks', href: '/workspace/tasks', label: 'My Tasks' },
+  { key: 'attendance', href: '/workspace/attendance', label: 'My Attendance' },
+  { key: 'leads', href: '/workspace/leads', label: 'My Leads' },
+  { key: 'quotations', href: '/workspace/quotations', label: 'My Quotations' },
+  { key: 'agreements', href: '/workspace/agreements', label: 'My Agreements' },
+  { key: 'invoices', href: '/workspace/invoices', label: 'My Invoices' },
+  { key: 'packages', href: '/workspace/packages', label: 'Packages' },
+  { key: 'calendar', href: '/workspace/event-calendar', label: 'Event Calendar' },
+];
+
+const UTILITY_NAV = [
   { href: '/workspace/notifications', label: 'Notifications', icon: Bell },
   { href: '/workspace/profile', label: 'Profile', icon: UserCircle },
   { href: '/workspace/settings', label: 'Settings', icon: Settings },
@@ -57,6 +75,13 @@ export default function WorkspaceSidebar({ mobileOpen, onClose }: WorkspaceSideb
 
   const isActive = (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href));
 
+  const grantedModules = MODULE_NAV.filter((item) => resolveModuleAccess(profile?.role, profile?.moduleAccess, item.key));
+  const navItems: { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
+    { href: '/workspace', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+    ...grantedModules.map((item) => ({ href: item.href, label: item.label, icon: MODULE_ICONS[item.key] })),
+    ...UTILITY_NAV,
+  ];
+
   return (
     <>
       {mobileOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={onClose} />}
@@ -84,6 +109,12 @@ export default function WorkspaceSidebar({ mobileOpen, onClose }: WorkspaceSideb
         </div>
 
         <nav className="crm-sidebar-nav flex-1 overflow-y-auto px-3 py-3">
+          {profile && grantedModules.length === 0 && (
+            <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 text-[11px] leading-snug text-gray-400">
+              <Lock size={14} className="mt-0.5 shrink-0 text-gray-500" />
+              <span>No modules enabled yet. Ask your Admin to grant access under Staff Management &rarr; Manage Access.</span>
+            </div>
+          )}
           <div className="space-y-0.5">
             {navItems.map(({ href, label, icon: Icon, exact }) => {
               const active = isActive(href, exact);
@@ -116,7 +147,7 @@ export default function WorkspaceSidebar({ mobileOpen, onClose }: WorkspaceSideb
 
       <nav className="crm-mobile-tabs lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 safe-area-pb">
         <div className="flex">
-          {[navItems[0], navItems[1], navItems[3], navItems[6]].map(({ href, label, icon: Icon, exact }) => {
+          {[navItems[0], ...navItems.slice(1, 3), navItems[navItems.length - 1]].map(({ href, label, icon: Icon, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href);
             return (
               <Link key={href} href={href} className={`flex-1 flex flex-col items-center justify-center pt-2.5 pb-2 gap-1 transition-colors ${active ? 'text-red-600' : 'text-gray-400'}`}>
