@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, ListChecks, CalendarCheck2, UserSearch, FileText, ScrollText, Bell, UserCircle, Settings, X, ChevronRight, LogOut,
-  ReceiptText, Package, CalendarDays, Lock,
+  ReceiptText, Package, CalendarDays, Lock, Handshake,
 } from 'lucide-react';
 import { crmSupabase } from '../../crm/lib/supabase-crm';
 import { useCrmProfile, initialsFrom } from '../../crm/lib/useCrmProfile';
@@ -19,6 +19,7 @@ const MODULE_ICONS: Record<ModuleKey, typeof LayoutDashboard> = {
   leads: UserSearch,
   quotations: FileText,
   agreements: ScrollText,
+  vendorAgreements: Handshake,
   invoices: ReceiptText,
   packages: Package,
   calendar: CalendarDays,
@@ -30,6 +31,7 @@ const MODULE_NAV: { key: ModuleKey; href: string; label: string }[] = [
   { key: 'leads', href: '/workspace/leads', label: 'My Leads' },
   { key: 'quotations', href: '/workspace/quotations', label: 'My Quotations' },
   { key: 'agreements', href: '/workspace/agreements', label: 'My Agreements' },
+  { key: 'vendorAgreements', href: '/workspace/vendor-agreements', label: 'Vendor Agreements' },
   { key: 'invoices', href: '/workspace/invoices', label: 'My Invoices' },
   { key: 'packages', href: '/workspace/packages', label: 'Packages' },
   { key: 'calendar', href: '/workspace/event-calendar', label: 'Event Calendar' },

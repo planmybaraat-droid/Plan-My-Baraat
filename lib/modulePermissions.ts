@@ -13,6 +13,7 @@ export type ModuleKey =
   | 'leads'
   | 'quotations'
   | 'agreements'
+  | 'vendorAgreements'
   | 'invoices'
   | 'packages'
   | 'calendar';
@@ -31,6 +32,7 @@ export const WORKSPACE_MODULES: ModuleDef[] = [
   { key: 'leads', label: 'My Leads', description: 'Customer leads assigned to this staff member', path: '/workspace/leads' },
   { key: 'quotations', label: 'My Quotations', description: 'View quotations for assigned clients', path: '/workspace/quotations' },
   { key: 'agreements', label: 'My Agreements', description: 'View and create client agreements', path: '/workspace/agreements', canCreate: true },
+  { key: 'vendorAgreements', label: 'Vendor Agreements', description: 'View and create vendor agreements', path: '/workspace/vendor-agreements', canCreate: true },
   { key: 'invoices', label: 'My Invoices', description: 'View and create invoices & payment receipts', path: '/workspace/invoices', canCreate: true },
   { key: 'packages', label: 'Packages', description: 'View the baraat package catalogue', path: '/workspace/packages' },
   { key: 'calendar', label: 'Event Calendar', description: 'View confirmed events on the shared calendar', path: '/workspace/event-calendar' },

@@ -61,18 +61,18 @@ export default function ManageAccessModal({ staff, onClose, onSaved }: ManageAcc
   const enabledCount = Object.values(access).filter(Boolean).length;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-end justify-center bg-gray-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
-        <div className="sticky top-0 z-10 flex items-start justify-between border-b border-gray-100 bg-white px-5 py-4 sm:px-7">
-          <div>
-            <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[.2em] text-red-600"><Shield size={12} /> Manage Access</p>
-            <h2 className="mt-1 text-lg font-black text-gray-950">{staff.full_name}</h2>
-            <p className="mt-1 text-xs text-gray-400">{staff.job_title || 'Staff member'} · {staff.crm_id || staff.email}</p>
+    <div className="fixed inset-0 z-[110] flex items-end justify-center overflow-hidden bg-gray-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-gray-100 bg-white px-5 py-4 sm:px-7">
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[.2em] text-red-600"><Shield size={12} className="shrink-0" /> Manage Access</p>
+            <h2 className="mt-1 truncate text-lg font-black text-gray-950">{staff.full_name}</h2>
+            <p className="mt-1 truncate text-xs text-gray-400">{staff.job_title || 'Staff member'} · {staff.crm_id || staff.email}</p>
           </div>
-          <button onClick={onClose} className="rounded-xl p-2 text-gray-400 hover:bg-gray-100"><X size={19} /></button>
+          <button onClick={onClose} className="shrink-0 rounded-xl p-2 text-gray-400 hover:bg-gray-100"><X size={19} /></button>
         </div>
 
-        <div className="p-5 sm:p-7">
+        <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-7">
           {!staff.user_id ? (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">This staff member has no CRM login yet, so there&apos;s nothing to grant access to.</p>
           ) : loading ? (
@@ -92,8 +92,8 @@ export default function ManageAccessModal({ staff, onClose, onSaved }: ManageAcc
               <div className="mt-3 divide-y divide-gray-100 rounded-2xl border border-gray-200">
                 {WORKSPACE_MODULES.map((mod) => (
                   <label key={mod.key} className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3.5">
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-gray-900">{mod.label}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-gray-900">{mod.label}</p>
                       <p className="mt-0.5 truncate text-[11px] text-gray-400">{mod.description}</p>
                     </div>
                     <button
