@@ -2473,7 +2473,31 @@ display: grid;
 .home-gallery-item {
   flex-basis: 0;
   min-width: 0;
+  flex-grow: var(--gallery-grow, 1);
+  aspect-ratio: var(--gallery-ar, 4 / 5);
   box-shadow: 0 18px 40px -32px rgba(1, 1, 1, 0.38);
+}
+
+@media (max-width: 639px) {
+  .home-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.625rem;
+  }
+
+  .home-gallery-row {
+    display: contents;
+  }
+
+  .home-gallery-item {
+    flex-grow: 0;
+    aspect-ratio: 4 / 5;
+  }
+
+  .home-gallery-row:last-child .home-gallery-item:last-child {
+    grid-column: 1 / -1;
+    aspect-ratio: 16 / 10;
+  }
 }
 
 .home-faq summary::-webkit-details-marker {
@@ -3046,6 +3070,17 @@ display: grid;
   transition:
     box-shadow 260ms ease,
     transform 260ms ease;
+}
+
+.gallery-moment {
+  position: relative;
+  aspect-ratio: var(--gallery-ar, 4 / 5);
+}
+
+@media (max-width: 639px) {
+  .gallery-moment {
+    aspect-ratio: 4 / 5;
+  }
 }
 
 .gallery-moment:hover,

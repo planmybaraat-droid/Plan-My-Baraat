@@ -11,12 +11,14 @@ interface LeadCaptureFormProps {
   variant?: "hero" | "bottom";
   defaultPackage?: string;
   defaultLocation?: string;
+  showPackageField?: boolean;
 }
 
 export default function LeadCaptureForm({
   variant = "hero",
   defaultPackage = "",
   defaultLocation = "",
+  showPackageField = true,
 }: LeadCaptureFormProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -34,7 +36,8 @@ export default function LeadCaptureForm({
     if (!phone.trim() || !/^[6-9]\d{9}$/.test(phone.trim()))
       newErrors.phone = "Enter a valid 10-digit Indian mobile number";
     if (!location.trim()) newErrors.location = "Please enter your city or area";
-    if (!packageInterested) newErrors.packageInterested = "Please select a package";
+    if (showPackageField && !packageInterested)
+      newErrors.packageInterested = "Please select a package";
     if (!requirement.trim() || requirement.trim().length < 10)
       newErrors.requirement = "Please describe your requirement (min 10 chars)";
     return newErrors;
@@ -210,28 +213,30 @@ export default function LeadCaptureForm({
         </div>
 
         {/* Package */}
-        <div className="wa-field-group wa-field-full">
-          <label className="wa-label" htmlFor="lead-package">
-            Package Interested *
-          </label>
-          <select
-            id="lead-package"
-            className={`wa-input ${errors.packageInterested ? "wa-input-error" : ""}`}
-            value={packageInterested}
-            onChange={(e) => setPackageInterested(e.target.value)}
-          >
-            <option value="">Select a package</option>
-            {BARAAT_PACKAGES.map((pkg) => (
-              <option key={pkg.name} value={pkg.name}>
-                {pkg.name}
-              </option>
-            ))}
-            <option value="Not sure yet">Not sure yet</option>
-          </select>
-          {errors.packageInterested && (
-            <span className="wa-error">{errors.packageInterested}</span>
-          )}
-        </div>
+        {showPackageField && (
+          <div className="wa-field-group wa-field-full">
+            <label className="wa-label" htmlFor="lead-package">
+              Package Interested *
+            </label>
+            <select
+              id="lead-package"
+              className={`wa-input ${errors.packageInterested ? "wa-input-error" : ""}`}
+              value={packageInterested}
+              onChange={(e) => setPackageInterested(e.target.value)}
+            >
+              <option value="">Select a package</option>
+              {BARAAT_PACKAGES.map((pkg) => (
+                <option key={pkg.name} value={pkg.name}>
+                  {pkg.name}
+                </option>
+              ))}
+              <option value="Not sure yet">Not sure yet</option>
+            </select>
+            {errors.packageInterested && (
+              <span className="wa-error">{errors.packageInterested}</span>
+            )}
+          </div>
+        )}
 
         {/* Requirement */}
         <div className="wa-field-group wa-field-full">

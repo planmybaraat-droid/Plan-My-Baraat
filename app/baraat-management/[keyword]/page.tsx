@@ -9,6 +9,7 @@ import SiteFooter from "@/components/SiteFooter";
 import FAQAccordion from "@/components/FAQAccordion";
 import EnquireNowButton from "@/components/EnquireNowButton";
 import LeadCaptureForm from "@/components/LeadCaptureForm";
+import GallerySection from "@/components/GallerySection";
 import SeoLinkBlock from "@/components/SeoLinkBlock";
 import Reveal from "@/components/Reveal";
 import { BARAAT_KEYWORDS, getBaraatKeywordBySlug } from "@/lib/data/baraatKeywordList";
@@ -156,7 +157,7 @@ export default function KeywordPage({
             </div>
 
             <div className="mx-auto mt-10 max-w-xl">
-              <LeadCaptureForm variant="hero" />
+              <LeadCaptureForm variant="hero" showPackageField={false} />
             </div>
           </div>
         </section>
@@ -269,6 +270,9 @@ export default function KeywordPage({
             </div>
           </Reveal>
         </section>
+
+        {/* ── Gallery ── */}
+        <GallerySection />
 
         {/* ── Closing CTA ── */}
         <section className="border-t border-[#010101]/10 bg-white px-5 py-16 sm:px-8 sm:py-20 lg:px-10">

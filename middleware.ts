@@ -13,10 +13,14 @@ const supabaseAnonKey = publicSupabaseKey;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  // The legacy /admin panel predates the /crm system and has no auth checks
+  // of its own — route it through the same admin-only gate as /crm rather
+  // than leaving it reachable by anyone who knows the URL.
+  const isLegacyAdminPanel = pathname.startsWith('/admin');
   const portal: 'crm' | 'workspace' = pathname.startsWith('/workspace') ? 'workspace' : 'crm';
   const loginPath = `/${portal}/login`;
   const homePath = `/${portal}`;
-  const isPublicPath = PUBLIC_PATHS[portal].some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const isPublicPath = !isLegacyAdminPanel && PUBLIC_PATHS[portal].some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
   let response = NextResponse.next({ request: { headers: request.headers } });
 
@@ -49,7 +53,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user && !isPublicPath) {
-    const redirectUrl = new URL(loginPath, request.url);
+    const redirectUrl = new URL(isLegacyAdminPanel ? '/crm/login' : loginPath, request.url);
     redirectUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(redirectUrl);
   }
@@ -61,13 +65,13 @@ export async function middleware(request: NextRequest) {
   // Keep the Admin CRM admin-only: a signed-in staff account (any role other
   // than admin/super_admin) gets sent to their own workspace instead of the
   // admin nav, rather than just hiding menu items client-side.
-  if (user && portal === 'crm' && !isPublicPath) {
+  if (user && (portal === 'crm' || isLegacyAdminPanel) && !isPublicPath) {
     const { data: profile, error: profileError } = await supabase.from('crm_users').select('role,is_active').eq('id', user.id).maybeSingle();
     if (profileError || !profile || profile.is_active === false) {
       return NextResponse.redirect(new URL('/crm/unauthorized', request.url));
     }
     if (!['admin', 'super_admin'].includes(profile.role)) {
-      return NextResponse.redirect(new URL('/workspace', request.url));
+      return NextResponse.redirect(new URL(isLegacyAdminPanel ? '/crm/unauthorized' : '/workspace', request.url));
     }
   }
 
@@ -92,5 +96,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/crm/:path*', '/workspace/:path*'],
+  matcher: ['/crm/:path*', '/workspace/:path*', '/admin/:path*'],
 };

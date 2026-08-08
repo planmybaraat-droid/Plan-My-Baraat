@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -298,23 +299,23 @@ export default function GalleryClient() {
             <div
               id="photos-panel"
               role="tabpanel"
-              className="w-full columns-2 gap-3 sm:columns-3 sm:gap-4 lg:columns-4"
+              className="grid w-full grid-cols-2 gap-3 sm:block sm:columns-3 sm:gap-4 lg:columns-4"
             >
               {GALLERY_MOMENTS.map((moment, index) => (
                 <button
                   key={`${moment.src}-${moment.title}`}
                   type="button"
                   onClick={() => setActivePhoto(index)}
-                  className="gallery-moment group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-xl bg-[#010101]/5 text-left sm:mb-4"
+                  className="gallery-moment group block w-full break-inside-avoid overflow-hidden rounded-xl bg-[#010101]/5 text-left sm:mb-4"
+                  style={{ "--gallery-ar": `${moment.width} / ${moment.height}` } as CSSProperties}
                   aria-label={`Open photo: ${moment.title}`}
                 >
                   <Image
                     src={moment.src}
                     alt={moment.alt}
-                    width={moment.width}
-                    height={moment.height}
+                    fill
                     sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
-                    className="block h-auto w-full transition-transform duration-700 group-hover:scale-[1.02]"
+                    className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                   />
                   <span
                     className="absolute inset-0 bg-gradient-to-t from-[#010101]/80 via-[#010101]/5 to-transparent"

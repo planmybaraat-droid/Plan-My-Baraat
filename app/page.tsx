@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,6 +21,7 @@ import {
   Truck,
 } from "lucide-react";
 
+import ConsultationForm from "@/components/ConsultationForm";
 import HomeWelcomePopup from "@/components/HomeWelcomePopup";
 import HomeWhatsAppPlanner from "@/components/HomeWhatsAppPlanner";
 import Reveal from "@/components/Reveal";
@@ -319,7 +321,7 @@ export default function HomePage() {
           <div className="home-hero-overlay" aria-hidden="true" />
           <div className="home-hero-grid" aria-hidden="true" />
 
-          <div className="relative z-10 mx-auto flex min-h-[44rem] max-w-7xl items-center px-5 py-20 sm:px-8 sm:py-24 lg:min-h-[46rem] lg:px-10 lg:py-28">
+          <div className="relative z-10 mx-auto flex min-h-[44rem] max-w-7xl items-center px-5 py-20 sm:px-8 sm:py-24 lg:min-h-[46rem] lg:px-10 lg:py-28 xl:justify-between xl:gap-10">
             <div className="w-full min-w-0 max-w-4xl">
               <div className="hero-label-row mb-7">
                 <span className="hero-label-line" aria-hidden="true" />
@@ -383,6 +385,23 @@ export default function HomePage() {
                     </p>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="hidden w-full max-w-md shrink-0 xl:block">
+              <div className="overflow-hidden rounded-3xl bg-white/97 p-7 shadow-[0_40px_90px_-30px_rgba(1,1,1,0.65)] backdrop-blur-sm">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#E30B1D]">
+                  Free Consultation
+                </p>
+                <h2 className="mt-2 text-xl font-extrabold leading-[1.2] tracking-[-0.025em] text-[#010101]">
+                  Get a Free Baraat Quote
+                </h2>
+                <p className="mt-2 text-xs leading-5 text-[#010101]/55">
+                  Share a few details and our specialists will reach out on WhatsApp with priority availability for your wedding date.
+                </p>
+                <div className="mt-5">
+                  <ConsultationForm />
+                </div>
               </div>
             </div>
           </div>
@@ -765,10 +784,12 @@ export default function HomePage() {
                     <figure
                       key={image.src}
                       className="home-gallery-item group relative overflow-hidden rounded-2xl bg-[#010101]/5"
-                      style={{
-                        flexGrow: image.width / image.height,
-                        aspectRatio: `${image.width} / ${image.height}`,
-                      }}
+                      style={
+                        {
+                          "--gallery-grow": image.width / image.height,
+                          "--gallery-ar": `${image.width} / ${image.height}`,
+                        } as CSSProperties
+                      }
                     >
                       <Image
                         src={image.src}
