@@ -648,6 +648,23 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-family: var(--font-outfit), sans-serif;
 }
 
+/* Homepage hero card only: swap the WhatsApp-green badge/button for the
+   site's own red/crimson brand color so it matches the rest of the hero
+   section. Every other page that reuses this same wa-form-hero component
+   (city pages, service pages, package pages) intentionally keeps the
+   original green WhatsApp styling and is untouched by this override. */
+.home-hero-lead-form .wa-badge {
+  background: linear-gradient(135deg, #E30B1D, #a80814);
+}
+.home-hero-lead-form .wa-send-btn {
+  background: linear-gradient(135deg, #E30B1D 0%, #a80814 100%);
+  box-shadow: 0 8px 24px -4px rgba(227, 11, 29, 0.35);
+}
+.home-hero-lead-form .wa-send-btn:hover {
+  background: linear-gradient(135deg, #c40917 0%, #8f060f 100%);
+  box-shadow: 0 14px 32px -6px rgba(227, 11, 29, 0.45);
+}
+
 /* Success Card */
 .wa-success-card {
   background: #f0fdf4;

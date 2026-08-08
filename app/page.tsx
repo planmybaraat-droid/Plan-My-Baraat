@@ -388,7 +388,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="mt-10 flex w-full justify-center xl:mt-0 xl:w-auto xl:max-w-md xl:shrink-0 xl:justify-start">
+            <div className="home-hero-lead-form mt-10 flex w-full justify-center xl:mt-0 xl:w-auto xl:max-w-md xl:shrink-0 xl:justify-start">
               <LeadCaptureForm variant="hero" showPackageField={false} />
             </div>
           </div>
