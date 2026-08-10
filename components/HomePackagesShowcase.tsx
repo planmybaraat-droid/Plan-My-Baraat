@@ -9,7 +9,7 @@ const PACKAGE_IMAGES: Record<string, string> = {
   "raj-tilak": "/Assests/packages/raj-tilak-premium.jpeg",
   rajwada: "/Assests/packages/rajwada-v2.png",
   maharaja: "/Assests/packages/maharaja-v2.png",
-  signature: "/Assests/packages/signature-home.png",
+  signature: "/Assests/packages/signature-v2.png",
 };
 
 function featureParts(feature: string) {
@@ -66,11 +66,7 @@ export default function HomePackagesShowcase() {
                           quality={95}
                           priority={packageIndex === 0}
                           sizes="(max-width: 1023px) 100vw, 34vw"
-                          className={`object-cover transition-transform duration-700 ${
-                            signature
-                              ? "scale-[1.45] object-bottom hover:scale-[1.5] sm:scale-[1.38] sm:hover:scale-[1.43] lg:scale-[1.55] lg:hover:scale-[1.6]"
-                              : "object-center hover:scale-[1.025]"
-                          }`}
+                          className="object-cover object-center transition-transform duration-700 hover:scale-[1.025]"
                         />
                         <div
                           className={`absolute inset-0 ${
