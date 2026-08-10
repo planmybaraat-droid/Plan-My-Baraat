@@ -47,10 +47,16 @@ export default function HomePackagesShowcase() {
               <Reveal key={pkg.id} delay={packageIndex % 2}>
                 <article className={`overflow-hidden rounded-2xl border bg-white shadow-[0_24px_65px_-52px_rgba(1,1,1,0.7)] ${featured ? "border-[#E30B1D]/45" : "border-[#010101]/10"}`}>
                   <div className="grid lg:grid-cols-[0.34fr_0.66fr]">
-                    <div className="relative flex min-h-64 flex-col overflow-hidden bg-[#100104] text-white lg:min-h-full">
+                    <div
+                      className={`relative flex flex-col overflow-hidden bg-[#100104] text-white lg:min-h-full ${
+                        signature ? "min-h-[36rem] sm:min-h-[34rem]" : "min-h-64"
+                      }`}
+                    >
                       <div
-                        className={`relative w-full overflow-hidden bg-[#010101] lg:absolute lg:inset-0 lg:h-full lg:aspect-auto ${
-                          signature ? "aspect-[4/5] sm:aspect-[4/3] md:aspect-[16/10]" : "aspect-[16/10]"
+                        className={`w-full overflow-hidden bg-[#010101] ${
+                          signature
+                            ? "absolute inset-0 h-full"
+                            : "relative aspect-[16/10] lg:absolute lg:inset-0 lg:h-full lg:aspect-auto"
                         }`}
                       >
                         <Image
@@ -60,21 +66,38 @@ export default function HomePackagesShowcase() {
                           quality={95}
                           priority={packageIndex === 0}
                           sizes="(max-width: 1023px) 100vw, 34vw"
-                          className={`object-cover transition-transform duration-700 hover:scale-[1.025] ${
-                            signature ? "object-[center_44%] sm:object-center" : "object-center"
+                          className={`object-cover transition-transform duration-700 ${
+                            signature
+                              ? "scale-[1.45] object-bottom hover:scale-[1.5] sm:scale-[1.38] sm:hover:scale-[1.43] lg:scale-[1.55] lg:hover:scale-[1.6]"
+                              : "object-center hover:scale-[1.025]"
                           }`}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#100104] via-[#100104]/15 to-[#010101]/5 lg:from-[#100104] lg:via-[#100104]/35 lg:to-transparent" aria-hidden="true" />
+                        <div
+                          className={`absolute inset-0 ${
+                            signature
+                              ? "bg-[linear-gradient(180deg,rgba(1,1,1,0.05)_22%,rgba(16,1,4,0.24)_48%,rgba(16,1,4,0.96)_100%)]"
+                              : "bg-gradient-to-t from-[#100104] via-[#100104]/15 to-[#010101]/5 lg:from-[#100104] lg:via-[#100104]/35 lg:to-transparent"
+                          }`}
+                          aria-hidden="true"
+                        />
                         <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-4 p-5 sm:p-6">
-                          <span className="text-[11px] font-extrabold tracking-[0.18em] text-white/45">{String(packageIndex + 1).padStart(2, "0")}</span>
+                          {!signature && <span className="text-[11px] font-extrabold tracking-[0.18em] text-white/45">{String(packageIndex + 1).padStart(2, "0")}</span>}
                           {featured && <span className="rounded-full bg-[#E30B1D] px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.11em] text-white">Most popular</span>}
                         </div>
                       </div>
-                      <div className="relative flex flex-1 flex-col justify-between bg-[linear-gradient(145deg,#050505_0%,#170308_58%,#6f0715_145%)] p-6 sm:p-8 lg:min-h-full lg:bg-[linear-gradient(180deg,transparent_25%,rgba(16,1,4,0.42)_50%,rgba(16,1,4,0.98)_82%)] lg:p-9 lg:pt-72">
+                      <div
+                        className={`relative flex flex-1 flex-col p-6 sm:p-8 lg:min-h-full lg:p-9 ${
+                          signature
+                            ? "min-h-[36rem] justify-end bg-[linear-gradient(180deg,transparent_32%,rgba(16,1,4,0.2)_50%,rgba(16,1,4,0.98)_88%)] sm:min-h-[34rem]"
+                            : "justify-between bg-[linear-gradient(145deg,#050505_0%,#170308_58%,#6f0715_145%)] lg:bg-[linear-gradient(180deg,transparent_25%,rgba(16,1,4,0.42)_50%,rgba(16,1,4,0.98)_82%)] lg:pt-72"
+                        }`}
+                      >
                         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#E30B1D]/18 blur-3xl" aria-hidden="true" />
                         <div className="relative">
-                        <p className="mt-8 text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#ff6875]">{pkg.tagline}</p>
+                        {signature && <p className="mb-4 text-[11px] font-extrabold tracking-[0.18em] text-white/75">{String(packageIndex + 1).padStart(2, "0")}</p>}
+                        {!signature && <p className="mt-8 text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#ff6875]">{pkg.tagline}</p>}
                         <h3 className="mt-2 text-[clamp(1.9rem,4vw,3rem)] font-extrabold leading-none tracking-[-0.045em]">{pkg.name.replace(" Package", "")}</h3>
+                        {signature && <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#ff6875]">{pkg.tagline}</p>}
                         <p className="mt-5 max-w-md text-sm leading-7 text-white/60">{pkg.description}</p>
                         </div>
                         <Link href={`/packages/${pkg.id}`} className="relative mt-8 inline-flex w-fit items-center gap-2 text-sm font-extrabold text-white transition-colors hover:text-[#ff6875]">
