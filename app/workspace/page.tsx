@@ -2,17 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Camera, CheckCircle2, Clock, ListChecks, LogOut as PunchOutIcon, UserSearch, Bell, TimerReset, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Camera, CheckCircle2, Clock, ListChecks, LogOut as PunchOutIcon, UserSearch, Bell, TimerReset, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
 import CrmHeader from '../crm/components/CrmHeader';
 import { useSidebar } from '../crm/sidebar-context';
 import { useCrmProfile } from '../crm/lib/useCrmProfile';
 import { useCrmNotifications } from '../crm/lib/useCrmNotifications';
-import { crmSupabase } from '../crm/lib/supabase-crm';
+import { crmSupabase, getVendors } from '../crm/lib/supabase-crm';
 import SelfieCapture from './components/SelfieCapture';
 import { getTodayAttendance, getSelfieUrl, punchIn, punchOut, getMonthAttendance } from './lib/attendance-data';
-import type { AttendanceRecord } from '../crm/lib/types';
+import type { AttendanceRecord, Vendor } from '../crm/lib/types';
 import { useSearchParams } from 'next/navigation';
 import { resolveModuleAccess } from '../../lib/modulePermissions';
+import DownloadCenterCard from '../crm/components/DownloadCenterCard';
 
 function formatTime(t: string | null | undefined) {
   if (!t) return '—';
@@ -68,6 +69,9 @@ export default function WorkspaceDashboard() {
   const [error, setError] = useState('');
   const [tasks, setTasks] = useState<{ id: string; title: string; status: string; due_date: string | null; progress: number; priority: string }[]>([]);
   const [leadCount, setLeadCount] = useState(0);
+  const [leaveSummary, setLeaveSummary] = useState({ pending: 0, approvedDays: 0 });
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [canDownloadVendors, setCanDownloadVendors] = useState(true);
   const [monthCursor, setMonthCursor] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [monthMap, setMonthMap] = useState<Record<string, string>>({});
 
@@ -80,8 +84,17 @@ export default function WorkspaceDashboard() {
       setTasks(data || []);
       const { count: leads } = await crmSupabase.from('crm_customer_leads').select('id', { count: 'exact', head: true });
       setLeadCount(leads || 0);
+      const { data: leaveRows } = await crmSupabase.from('crm_leave_requests').select('status,number_of_days');
+      setLeaveSummary({
+        pending: (leaveRows || []).filter((row) => row.status === 'Pending').length,
+        approvedDays: (leaveRows || []).filter((row) => row.status === 'Approved').reduce((sum, row) => sum + Number(row.number_of_days || 0), 0),
+      });
     })();
   }, [loadAttendance]);
+
+  useEffect(() => {
+    getVendors().then(setVendors).catch(() => setCanDownloadVendors(false));
+  }, []);
 
   useEffect(() => {
     (async () => setMonthMap(await getMonthAttendance(monthCursor.year, monthCursor.month)))();
@@ -143,6 +156,16 @@ export default function WorkspaceDashboard() {
         )}
         {/* Summary tiles */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Link href="/workspace/leave" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-gray-300 sm:p-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><CalendarRange size={16} /></span>
+              <div className="min-w-0">
+                <p className="text-lg font-black leading-tight tracking-tight text-gray-950 tabular-nums">{leaveSummary.pending}</p>
+                <p className="text-[10.5px] font-semibold leading-tight text-gray-400">Pending Leave</p>
+              </div>
+            </div>
+            <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-violet-600">{leaveSummary.approvedDays} approved day(s)</p>
+          </Link>
           {canTasks && (
           <Link href="/workspace/tasks" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-gray-300 sm:p-5">
             <div className="flex items-center gap-3">
@@ -188,6 +211,8 @@ export default function WorkspaceDashboard() {
           </Link>
           )}
         </div>
+
+        <DownloadCenterCard vendors={vendors} canDownloadVendors={canDownloadVendors} />
 
         <div className="grid gap-5 lg:grid-cols-2">
           {/* Attendance card */}

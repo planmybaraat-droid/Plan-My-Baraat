@@ -24,20 +24,40 @@ export interface TaskComment { id: string; task_id: string; author_id: string | 
 export interface TaskAttachment { id: string; task_id: string; file_name: string; file_url: string; file_type: string | null; uploaded_by: string | null; created_at: string }
 
 export async function getTasks() {
-  const { data, error } = await crmSupabase
+  const { data: taskRows, error: taskError } = await crmSupabase
     .from('crm_tasks')
-    .select('*, crm_task_assignees(staff_user_id, crm_users(full_name))')
+    .select('*')
     .order('due_date', { ascending: true, nullsFirst: false });
-  if (error) throw new Error(error.message);
-  type TaskAssigneeRow = { staff_user_id: string; crm_users: { full_name: string | null } | null };
-  type TaskRow = Record<string, unknown> & { crm_task_assignees?: TaskAssigneeRow[] };
-  return ((data || []) as TaskRow[]).map((row) => ({
+  if (taskError) throw new Error(taskError.message);
+
+  const tasks = (taskRows || []) as TaskRecord[];
+  if (!tasks.length) return tasks;
+
+  const taskIds = tasks.map((task) => task.id);
+  const { data: assignmentRows, error: assignmentError } = await crmSupabase
+    .from('crm_task_assignees')
+    .select('task_id,staff_user_id')
+    .in('task_id', taskIds);
+  if (assignmentError) throw new Error(assignmentError.message);
+
+  const staffIds = Array.from(new Set((assignmentRows || []).map((row) => row.staff_user_id)));
+  const staffNames = new Map<string, string>();
+  if (staffIds.length) {
+    const { data: staffRows, error: staffError } = await crmSupabase
+      .from('crm_users')
+      .select('id,full_name')
+      .in('id', staffIds);
+    if (staffError) throw new Error(staffError.message);
+    for (const staff of staffRows || []) staffNames.set(staff.id, staff.full_name || 'Staff');
+  }
+
+  return tasks.map((row) => ({
     ...row,
-    assignees: (row.crm_task_assignees || []).map((a) => ({
-      staff_user_id: a.staff_user_id,
-      name: a.crm_users?.full_name || 'Staff',
+    assignees: (assignmentRows || []).filter((assignment) => assignment.task_id === row.id).map((assignment) => ({
+      staff_user_id: assignment.staff_user_id,
+      name: staffNames.get(assignment.staff_user_id) || 'Staff',
     })),
-  })) as unknown as TaskRecord[];
+  }));
 }
 
 export async function getTask(id: string) {

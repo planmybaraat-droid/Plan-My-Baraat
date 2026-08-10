@@ -41,9 +41,9 @@ export default function SiteFooter({ variant = "default" }: SiteFooterProps) {
               <Image
                 src="/logo.png"
                 alt="Plan My Baraat"
-                width={185}
-                height={50}
-                className="h-11 w-auto object-contain"
+                width={207}
+                height={56}
+                className="h-12 w-auto object-contain sm:h-14"
               />
               <h2 className="mt-7 max-w-sm text-2xl font-extrabold leading-tight tracking-[-0.035em] sm:text-3xl">
                 Your Baraat, planned with precision.
@@ -183,7 +183,13 @@ export default function SiteFooter({ variant = "default" }: SiteFooterProps) {
       >
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 lg:grid-cols-4 lg:px-8">
           <div className="space-y-4">
-            <Image src="/logo.png" alt="PlanMyBaraat" width={150} height={40} className="h-9 w-auto object-contain" />
+            <Image
+              src="/logo.png"
+              alt="PlanMyBaraat"
+              width={185}
+              height={50}
+              className="h-10 w-auto object-contain sm:h-12"
+            />
             <p className="text-xs leading-relaxed">
               Gujarat&apos;s trusted baraat specialists — double-decker DJ trucks, vintage cars,
               dhol, pyro effects, and safa teams, delivered as ready-made royal packages.

@@ -1950,24 +1950,55 @@ display: grid;
 }
 
 .letter-doc-subject {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
   margin-top: 14px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: #faf9f7;
-  border: 1px solid #eeece8;
+  padding: 7px 14px;
   color: #262421;
   font-size: 11px;
   font-weight: 650;
-  line-height: 1.5;
+  line-height: 1.35;
+  text-align: center;
+  box-sizing: border-box;
 }
 
-.letter-doc-subject span {
-  margin-right: 6px;
+.letter-doc-subject-highlight {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 1px solid #eeece8;
+  border-radius: 10px;
+  background: #faf9f7;
+}
+
+.letter-doc-subject-label {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
   color: #e30b1d;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: 9.5px;
+  line-height: 1;
+}
+
+.letter-doc-subject-text {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  color: #262421;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.letter-pdf-capture .letter-doc-subject-highlight {
+  transform: translateY(4px);
 }
 
 .letter-doc-body {
@@ -2057,7 +2088,12 @@ display: grid;
 
 .letter-doc-content--agreement .letter-doc-subject {
   margin-top: 10px;
-  padding: 6px 11px;
+  min-height: 29px;
+  padding: 5px 11px;
+  font-size: 9.8px;
+}
+
+.letter-doc-content--agreement .letter-doc-subject-text {
   font-size: 9.8px;
 }
 
@@ -2152,18 +2188,9 @@ display: grid;
 }
 
 .letter-doc-authorized-signature {
-  position: relative;
-  z-index: 1;
-  max-width: 230px;
-}
-
-.letter-doc-authorized-signature .letter-doc-stamp-wrap {
-  height: 52px;
-  margin: 0;
-}
-
-.letter-doc-authorized-signature p {
-  margin-bottom: 5px;
+  margin: 8px 0 12px;
+  width: 240px;
+  max-width: 240px;
 }
 
 .letter-doc-signee {
@@ -3405,11 +3432,8 @@ display: grid;
   }
 
   .crm-header-actions {
-    width: 100%;
-  }
-
-  .crm-header-actions > :first-child:not(:last-child) {
-    min-width: 0;
+    width: auto;
+    flex-wrap: nowrap;
   }
 
   .crm-main > * {
@@ -3657,6 +3681,27 @@ display: grid;
 .invoice-preview-scroll { overflow: auto; border-radius: 0 0 1rem 1rem; background: #d9d9d7; padding: 1.5rem; }
 .invoice-document { width: 794px; margin: 0 auto; color: #161616; font-family: var(--font-outfit), "Manrope", Arial, sans-serif; }
 .invoice-pdf-page { position: relative; width: 794px; height: 1123px; overflow: hidden; background: #fff; padding: 44px 48px 86px; box-shadow: 0 12px 40px -24px rgba(0,0,0,.5); }
+
+/* Dashboard download-centre documents reuse the same A4 capture dimensions,
+   logo treatment, red accent and footer hierarchy as the CRM document family. */
+.catalog-render-host{position:absolute;left:0;top:0;width:794px;pointer-events:none;z-index:-1}
+.catalog-document{width:794px;background:#eef0f3}
+.catalog-pdf-page{position:relative;width:794px;height:1123px;overflow:hidden;background:#fff;padding:38px 50px 196px;color:#18181b;font-family:var(--font-outfit),Arial,sans-serif;page-break-after:always}
+.catalog-pdf-page:last-child{page-break-after:auto}
+.catalog-pdf-page>main,.catalog-doc-header,.catalog-doc-footer{position:relative;z-index:1}
+.catalog-doc-watermark-logo{position:absolute;top:49%;left:50%;z-index:0;width:455px;height:auto;opacity:.035;filter:grayscale(1);transform:translate(-50%,-50%);pointer-events:none}
+.catalog-doc-header{height:60px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid #e5e7eb}
+.catalog-doc-header img{width:164px;height:43px;object-fit:contain;object-position:left top}
+.catalog-doc-header>div{text-align:right}.catalog-doc-header span{display:block;font-size:7.5px;font-weight:800;text-transform:uppercase;letter-spacing:.18em;color:#a1a1aa}.catalog-doc-header strong{display:block;margin-top:5px;font-size:10.5px;color:#18181b}
+.catalog-doc-footer{position:absolute;right:50px;bottom:24px;left:50px}
+.catalog-doc-footer-contact{display:flex;flex-wrap:wrap;gap:22px;padding-bottom:11px;margin-bottom:11px;border-bottom:1px solid #ececea}.catalog-doc-footer-contact span{display:flex;align-items:center;gap:5px;color:#57554f;font-size:9.5px;font-weight:650}.catalog-doc-footer-contact svg{flex-shrink:0;color:#e30b1d}
+.catalog-doc-footer-main{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}.catalog-doc-footer-brand strong{display:block;margin-bottom:3px;color:#0a0a0a;font-size:12.5px;font-weight:850}.catalog-doc-footer-brand p{margin:0 0 5px;color:#7a7873;font-size:9px;font-weight:500;line-height:1.5}.catalog-doc-footer-brand span{color:#9b9994;font-size:8.5px;font-weight:650}
+.catalog-doc-footer-verify{display:flex;flex-shrink:0;flex-direction:column;align-items:center;gap:3px}.catalog-doc-footer-verify img,.catalog-doc-qr-placeholder{display:block;width:43px;height:43px}.catalog-doc-footer-verify small{color:#9b9994;font-size:7.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.catalog-doc-footer-verify b{font-size:7px;color:#52525b}
+.catalog-doc-title{padding:25px 0 18px;border-bottom:1.5px solid #27272a}.catalog-doc-title>span{font-size:7.5px;font-weight:900;text-transform:uppercase;letter-spacing:.22em;color:#e21e2b}.catalog-doc-title h1{margin-top:7px;font-size:29px;line-height:1;letter-spacing:-.035em}.catalog-doc-title p{margin-top:7px;max-width:590px;font-size:9.5px;line-height:1.5;color:#71717a}
+.catalog-doc-list{display:grid;height:655px;margin-top:14px}.catalog-doc-row{display:grid;grid-template-columns:38px 1fr;gap:14px;align-content:center;padding:8px 0;border-bottom:1px solid #e4e4e7}.catalog-doc-row>b{font-size:10.5px;color:#e21e2b}.catalog-doc-row span,.catalog-doc-vendors span{font-size:7px;font-weight:850;text-transform:uppercase;letter-spacing:.12em;color:#9ca3af}.catalog-doc-row h2{display:inline;margin-left:11px;font-size:12px}.catalog-doc-row p{margin-top:4px;font-size:8.5px;line-height:1.4;color:#64646f}.catalog-doc-row small{display:block;margin-top:4px;font-size:7.25px;line-height:1.4;color:#d8202f}
+.catalog-doc-vendors{display:flex;height:640px;flex-direction:column;margin-top:15px}.catalog-doc-vendors>article{display:grid;grid-template-columns:34px 1.3fr 1fr .8fr;flex:1;gap:15px;align-content:center;align-items:start;padding:10px 0;border-bottom:1px solid #e4e4e7}.catalog-doc-vendor-index{font-size:10.5px;font-weight:900;color:#e21e2b}.catalog-doc-vendor-name h2{margin-top:4px;font-size:12px}.catalog-doc-vendors p{margin-top:4px;font-size:8.25px;line-height:1.35;color:#4b4b55}.catalog-doc-empty{margin-top:20px;padding:35px;border:1px dashed #d1d5db;border-radius:12px;text-align:center;font-size:10px;color:#9ca3af}
+.catalog-doc-package-intro{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-top:15px;padding:14px 17px;border-radius:12px;background:#070b16;color:#fff}.catalog-doc-package-intro p{font-size:8.5px;line-height:1.5;color:#d4d4d8}.catalog-doc-package-intro strong{max-width:160px;font-size:9.5px;line-height:1.35;text-align:right;color:#fff}
+.catalog-doc-package-services{display:flex;height:530px;flex-direction:column;margin-top:15px}.catalog-doc-package-services>h2{margin-bottom:6px;font-size:14px}.catalog-doc-package-services>article{display:grid;grid-template-columns:34px 1fr;flex:1;gap:11px;align-content:center;padding:4px 0;border-bottom:1px solid #e4e4e7}.catalog-doc-package-services>article>b{font-size:8.5px;color:#e21e2b}.catalog-doc-package-services h3{font-size:9.5px}.catalog-doc-package-services p{margin-top:2px;font-size:7.5px;line-height:1.35;color:#64646f}
 .invoice-doc-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; }
 .invoice-doc-logo { width: auto; height: 44px; object-fit: contain; }
 .invoice-doc-header > div:first-child > p { margin-top: 5px; color: #9b9b9b; font-size: 8px; font-weight: 600; letter-spacing: .03em; }

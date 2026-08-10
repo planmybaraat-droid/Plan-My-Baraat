@@ -35,7 +35,7 @@ export function createQuotationService(name: string, enabled = false, isCustom =
 // rename colliding with an already-added copy under the new name.
 export function reconcileQuotationServices(services: QuotationService[]): QuotationService[] {
   const merged = new Map<string, QuotationService>();
-  for (const raw of services) {
+  for (const raw of services || []) {
     const name = LEGACY_SERVICE_NAME_MAP[raw.name] ?? raw.name;
     const service: QuotationService = {
       ...raw,

@@ -19,22 +19,23 @@ export default function CrmHeader({ title, subtitle, onMenuClick, actions, notif
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="crm-header sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3">
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+    <header className="crm-header sticky top-0 z-30 border-b border-gray-100 bg-white px-3 py-2 sm:px-4 sm:py-3">
+      <div className="flex min-w-0 flex-nowrap items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-50 active:bg-gray-100"
+            className="shrink-0 rounded-lg p-1.5 text-gray-500 hover:bg-gray-50 active:bg-gray-100 lg:hidden"
+            aria-label="Open menu"
           >
             <Menu size={20} />
           </button>
           <div className="min-w-0">
-            <h1 className="truncate text-base sm:text-lg font-bold text-gray-900 leading-tight">{title}</h1>
+            <h1 className="truncate text-sm font-bold leading-tight text-gray-900 sm:text-lg">{title}</h1>
             {subtitle && <p className="text-xs text-gray-400 font-medium hidden sm:block mt-0.5">{subtitle}</p>}
           </div>
         </div>
 
-        <div className="crm-header-actions flex min-w-0 flex-wrap items-center justify-end gap-2">
+        <div className="crm-header-actions flex shrink-0 flex-nowrap items-center justify-end gap-1.5 sm:gap-2">
           {actions}
           <div className="relative">
             <button onClick={() => setOpen((v) => !v)} className="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50" aria-label="Notifications">

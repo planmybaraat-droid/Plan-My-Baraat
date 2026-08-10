@@ -23,7 +23,7 @@ const BASE_URL = "https://planmybaraat.com";
 // Same hero imagery used for each package on the packages overview page,
 // kept here so the detail page hero stays visually consistent with it.
 const PACKAGE_HERO_IMAGES: Record<string, string> = {
-  "raj-tilak": "/Gallery/03383d918e604d8219861621704ab186.jpg",
+  "raj-tilak": "/Assests/packages/raj-tilak-premium.jpeg",
   rajwada: "/Gallery/AMN_0591-scaled-Medium.webp",
   maharaja: "/Gallery/Homepage.png",
   signature: "/Gallery/AMN_9633-scaled-Medium.webp",

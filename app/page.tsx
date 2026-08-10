@@ -21,8 +21,8 @@ import {
   Truck,
 } from "lucide-react";
 
+import HomePackagesShowcase from "@/components/HomePackagesShowcase";
 import LeadCaptureForm from "@/components/LeadCaptureForm";
-import HomeWelcomePopup from "@/components/HomeWelcomePopup";
 import HomeWhatsAppPlanner from "@/components/HomeWhatsAppPlanner";
 import Reveal from "@/components/Reveal";
 import SiteFooter from "@/components/SiteFooter";
@@ -145,7 +145,7 @@ const PACKAGES = [
     tagline: "A Royal Beginning",
     description:
       "The essential premium Baraat experience with a DJ truck, dhol, Chhatri lights, vintage entry and safa team.",
-    image: "/Assests/packages/raj-tilak-v2.png",
+    image: "/Assests/packages/raj-tilak-premium.jpeg",
     featured: false,
   },
   {
@@ -182,7 +182,7 @@ const PACKAGES = [
 
 const GALLERY = [
   {
-    src: "/Assests/packages/raj-tilak-v2.png",
+    src: "/Assests/packages/raj-tilak-premium.jpeg",
     alt: "Groom making a royal horse entry beneath illuminated Chhatris",
     width: 1536,
     height: 1024,
@@ -305,7 +305,6 @@ const faqSchema = {
 export default function HomePage() {
   return (
     <div className="home-page relative flex min-h-screen flex-col bg-white font-sans text-[#010101]">
-      <HomeWelcomePopup />
       <SiteHeader variant="contact" />
 
       <main className="flex-grow">
@@ -321,7 +320,7 @@ export default function HomePage() {
           <div className="home-hero-overlay" aria-hidden="true" />
           <div className="home-hero-grid" aria-hidden="true" />
 
-          <div className="relative z-10 mx-auto flex min-h-[44rem] max-w-7xl flex-col items-center px-5 py-20 sm:px-8 sm:py-24 lg:min-h-[46rem] lg:px-10 lg:py-28 xl:flex-row xl:justify-between xl:gap-10">
+          <div className="relative z-10 mx-auto flex min-h-[44rem] max-w-7xl flex-col items-center px-5 py-20 sm:px-8 sm:py-24 lg:min-h-[46rem] lg:flex-row lg:justify-between lg:gap-6 lg:px-10 lg:py-20 xl:gap-10 xl:py-24">
             <div className="w-full min-w-0 max-w-4xl">
               <div className="hero-label-row mb-7">
                 <span className="hero-label-line" aria-hidden="true" />
@@ -388,7 +387,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="home-hero-lead-form mt-10 flex w-full justify-center xl:mt-0 xl:w-auto xl:max-w-md xl:shrink-0 xl:justify-start">
+            <div className="home-hero-lead-form mt-10 flex w-full justify-center lg:mt-0 lg:w-[25rem] lg:max-w-[42%] lg:shrink-0 lg:justify-start xl:w-[29rem]">
               <LeadCaptureForm variant="hero" showPackageField={false} />
             </div>
           </div>
@@ -533,6 +532,8 @@ export default function HomePage() {
           </div>
         </section>
 
+        <HomePackagesShowcase />
+
         <section className="border-y border-[#010101]/10 bg-[#010101]/[0.018]">
           <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
             <div className="grid items-end gap-8 xl:grid-cols-[1fr_0.72fr] xl:gap-16">
@@ -595,7 +596,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="packages" className="bg-white">
+        {false && <section id="legacy-packages" className="bg-white">
           <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
             <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
               <div className="max-w-3xl">
@@ -685,7 +686,7 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-        </section>
+        </section>}
 
         <section className="bg-[#010101] text-white">
           <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">

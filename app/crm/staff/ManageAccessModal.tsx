@@ -122,9 +122,9 @@ export default function ManageAccessModal({ staff, onClose, onSaved }: ManageAcc
                       onClick={() => toggleSection(sec.key)}
                       aria-pressed={sectionAccess[sec.key]}
                       aria-label={`Toggle ${sec.label}`}
-                      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${sectionAccess[sec.key] ? 'bg-red-600' : 'bg-gray-200'}`}
+                      className={`inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-colors ${sectionAccess[sec.key] ? 'bg-red-600' : 'bg-gray-200'}`}
                     >
-                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${sectionAccess[sec.key] ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                      <span className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${sectionAccess[sec.key] ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
                   </label>
                 ))}
@@ -152,9 +152,9 @@ export default function ManageAccessModal({ staff, onClose, onSaved }: ManageAcc
                       onClick={() => toggle(mod.key)}
                       aria-pressed={access[mod.key]}
                       aria-label={`Toggle ${mod.label}`}
-                      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${access[mod.key] ? 'bg-red-600' : 'bg-gray-200'}`}
+                      className={`inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-colors ${access[mod.key] ? 'bg-red-600' : 'bg-gray-200'}`}
                     >
-                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${access[mod.key] ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                      <span className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${access[mod.key] ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
                   </label>
                 ))}
@@ -176,3 +176,4 @@ export default function ManageAccessModal({ staff, onClose, onSaved }: ManageAcc
     </div>
   );
 }
+

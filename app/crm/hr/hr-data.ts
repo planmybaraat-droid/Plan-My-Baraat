@@ -6,6 +6,7 @@ import type {
 } from '../lib/types';
 import { INTERN_AGREEMENT_TEMPLATE } from './templates/intern-agreement';
 import { APPOINTMENT_LETTER_TEMPLATE } from './templates/appointment-letter';
+import { EXPERIENCE_LETTER_TEMPLATE } from './templates/experience-letter';
 
 const storage = async <T>(remote: () => Promise<T>, _local: () => T | Promise<T>): Promise<T> =>
   isCrmSupabaseConfigured ? remote() : Promise.reject(new Error(CRM_CONFIGURATION_ERROR));
@@ -114,23 +115,7 @@ PlanMyBaraat — HR Department`,
     ],
     requires_status: 'Intern', is_active: true,
   },
-  {
-    id: 'tpl-experience', letter_type: 'experience_letter', label: 'Experience Letter', icon: 'Award',
-    description: 'Issued to departing employees confirming their tenure and role.',
-    category: 'Exit',
-    body_template: `To Whom It May Concern,
-
-This is to certify that **{{employee_name}}** was employed with **PlanMyBaraat** as **{{designation}}** in the **{{department}}** department from **{{joining_date}}** to **{{last_working_date}}**.
-
-During their tenure, they displayed professionalism, dedication and competence. We wish them success in their future endeavours.
-
-Warm regards,
-PlanMyBaraat — HR Department`,
-    extra_fields: [
-      { key: 'last_working_date', label: 'Last Working Date', type: 'date' },
-    ],
-    requires_status: 'Ex-Employee', is_active: true,
-  },
+  EXPERIENCE_LETTER_TEMPLATE,
   {
     id: 'tpl-relieving', letter_type: 'relieving_letter', label: 'Relieving Letter', icon: 'LogOut',
     description: 'Formally relieves the employee from duties on their last working day.',
@@ -275,18 +260,54 @@ PlanMyBaraat — HR Department`,
   },
 ];
 
+const CANONICAL_LETTER_TEMPLATES: LetterTemplate[] = [
+  INTERN_AGREEMENT_TEMPLATE,
+  APPOINTMENT_LETTER_TEMPLATE,
+  EXPERIENCE_LETTER_TEMPLATE,
+];
+
+const LEGACY_AGREEMENT_TYPE_FALLBACKS: Partial<Record<LetterType, LetterType>> = {
+  intern_agreement: 'internship_letter',
+  appointment_letter: 'offer_letter',
+};
+
+const CANONICAL_LETTER_TYPE_KEY = '__canonical_letter_type';
+
+function getCanonicalLetterTemplate(letterType: LetterType) {
+  return CANONICAL_LETTER_TEMPLATES.find(template => template.letter_type === letterType) ?? null;
+}
+
+async function ensureCanonicalLetterTemplate(letterType: LetterType) {
+  const template = getCanonicalLetterTemplate(letterType);
+  if (!template) return;
+
+  const { error } = await crmSupabase.from('crm_letter_templates').upsert({
+    letter_type: template.letter_type,
+    label: template.label,
+    description: template.description,
+    icon: template.icon,
+    category: template.category,
+    body_template: template.body_template,
+    extra_fields: template.extra_fields,
+    requires_status: template.requires_status,
+    is_active: template.is_active,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'letter_type' });
+
+  if (error) throw new Error(`Unable to prepare ${template.label}: ${error.message}`);
+}
+
 export async function getLetterTemplates(): Promise<LetterTemplate[]> {
   return storage(
     async () => {
       const { data, error } = await crmSupabase.from('crm_letter_templates').select('*').eq('is_active', true).order('category');
       if (error) throw new Error(error.message);
       const templates = (data || []).map(normalizeTemplate);
-      if (!templates.some(template => template.letter_type === INTERN_AGREEMENT_TEMPLATE.letter_type)) {
-        templates.push(INTERN_AGREEMENT_TEMPLATE);
-      }
-      if (!templates.some(template => template.letter_type === APPOINTMENT_LETTER_TEMPLATE.letter_type)) {
-        templates.push(APPOINTMENT_LETTER_TEMPLATE);
-      }
+      CANONICAL_LETTER_TEMPLATES.forEach(canonical => {
+        const index = templates.findIndex(template => template.letter_type === canonical.letter_type);
+        if (index >= 0) templates[index] = canonical;
+        else templates.push(canonical);
+      });
       return templates;
     },
     () => SEED_LETTER_TEMPLATES,
@@ -294,6 +315,9 @@ export async function getLetterTemplates(): Promise<LetterTemplate[]> {
 }
 
 export async function getLetterTemplate(letterType: LetterType): Promise<LetterTemplate | null> {
+  const canonical = getCanonicalLetterTemplate(letterType);
+  if (canonical) return canonical;
+
   return storage(
     async () => {
       const { data, error } = await crmSupabase.from('crm_letter_templates').select('*').eq('letter_type', letterType).maybeSingle();
@@ -309,12 +333,14 @@ export async function getLetterTemplate(letterType: LetterType): Promise<LetterT
 const LETTERS_KEY = 'crm_hr_letters_v1';
 
 function normalizeLetter(row: Record<string, unknown>): EmployeeLetterRecord {
+  const extraFields = (row.extra_fields as Record<string, string | number>) || {};
+  const canonicalLetterType = extraFields[CANONICAL_LETTER_TYPE_KEY];
   return {
     id: String(row.id),
     letter_number: String(row.letter_number),
     employee_id: String(row.employee_id),
-    letter_type: row.letter_type as LetterType,
-    extra_fields: (row.extra_fields as Record<string, string | number>) || {},
+    letter_type: (typeof canonicalLetterType === 'string' ? canonicalLetterType : row.letter_type) as LetterType,
+    extra_fields: extraFields,
     rendered_text: String(row.rendered_text || ''),
     status: (row.status as EmployeeLetterRecord['status']) || 'Generated',
     file_url: row.file_url ? String(row.file_url) : null,
@@ -394,18 +420,36 @@ export async function getEmployeeLetterById(id: string): Promise<EmployeeLetterR
 // do, since the letter number is allocated up front, not by a DB default.
 export async function createEmployeeLetter(payload: EmployeeLetterFormData, generatedByName: string): Promise<EmployeeLetterRecord> {
   return storage(async () => {
+    await ensureCanonicalLetterTemplate(payload.letter_type);
+
+    let storedLetterType = payload.letter_type;
+    let storedExtraFields = payload.extra_fields;
+    let usedLegacyTypeFallback = false;
+
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const letterNumber = await getNextLetterNumber();
       const { data, error } = await crmSupabase.from('crm_employee_letters').insert({
         letter_number: letterNumber,
         employee_id: payload.employee_id,
-        letter_type: payload.letter_type,
-        extra_fields: payload.extra_fields,
+        letter_type: storedLetterType,
+        extra_fields: storedExtraFields,
         rendered_text: payload.rendered_text,
         status: payload.status,
         generated_by_name: generatedByName,
       }).select('*, employee:crm_staff(*)').single();
       if (!error) return normalizeLetter(data);
+      if (error.code === '23503' && !usedLegacyTypeFallback) {
+        const fallbackType = LEGACY_AGREEMENT_TYPE_FALLBACKS[payload.letter_type];
+        if (fallbackType) {
+          storedLetterType = fallbackType;
+          storedExtraFields = {
+            ...payload.extra_fields,
+            [CANONICAL_LETTER_TYPE_KEY]: payload.letter_type,
+          };
+          usedLegacyTypeFallback = true;
+          continue;
+        }
+      }
       if (error.code !== '23505') throw new Error(error.message);
     }
     throw new Error('Unable to allocate a unique letter number. Please try again.');
@@ -428,8 +472,19 @@ export async function createEmployeeLetter(payload: EmployeeLetterFormData, gene
 
 export async function updateEmployeeLetter(id: string, fields: { extra_fields: Record<string, string | number>; rendered_text: string }): Promise<EmployeeLetterRecord> {
   return storage(async () => {
+    const { data: existing, error: existingError } = await crmSupabase
+      .from('crm_employee_letters')
+      .select('extra_fields')
+      .eq('id', id)
+      .maybeSingle();
+    if (existingError) throw new Error(existingError.message);
+    const existingExtraFields = (existing?.extra_fields as Record<string, string | number> | undefined) || {};
+    const canonicalLetterType = existingExtraFields[CANONICAL_LETTER_TYPE_KEY];
+    const extraFields = typeof canonicalLetterType === 'string'
+      ? { ...fields.extra_fields, [CANONICAL_LETTER_TYPE_KEY]: canonicalLetterType }
+      : fields.extra_fields;
     const { data, error } = await crmSupabase.from('crm_employee_letters').update({
-      extra_fields: fields.extra_fields, rendered_text: fields.rendered_text, updated_at: new Date().toISOString(),
+      extra_fields: extraFields, rendered_text: fields.rendered_text, updated_at: new Date().toISOString(),
     }).eq('id', id).select('*, employee:crm_staff(*)').single();
     if (error) throw new Error(error.message);
     return normalizeLetter(data);

@@ -147,13 +147,7 @@ We welcome you to PlanMyBaraat and look forward to a professional and rewarding 
 
 ## FOR PLANMYBARAAT
 
-**Name:** {{authorized_representative}}
-
-**Designation:** {{representative_designation}}
-
-**Signature:** ______________________________
-
-**Date:** {{appointment_date}}
+**Signature:** {{authorized_representative}}
 
 ## ACCEPTED BY THE STAFF MEMBER
 

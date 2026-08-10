@@ -16,6 +16,7 @@ import { resolveModuleAccess, type ModuleKey } from '../../../lib/modulePermissi
 const MODULE_ICONS: Record<ModuleKey, typeof LayoutDashboard> = {
   tasks: ListChecks,
   attendance: CalendarCheck2,
+  leave: CalendarDays,
   leads: UserSearch,
   quotations: FileText,
   agreements: ScrollText,
@@ -28,6 +29,7 @@ const MODULE_ICONS: Record<ModuleKey, typeof LayoutDashboard> = {
 const MODULE_NAV: { key: ModuleKey; href: string; label: string }[] = [
   { key: 'tasks', href: '/workspace/tasks', label: 'My Tasks' },
   { key: 'attendance', href: '/workspace/attendance', label: 'My Attendance' },
+  { key: 'leave', href: '/workspace/leave', label: 'Leave Management' },
   { key: 'leads', href: '/workspace/leads', label: 'My Leads' },
   { key: 'quotations', href: '/workspace/quotations', label: 'My Quotations' },
   { key: 'agreements', href: '/workspace/agreements', label: 'My Agreements' },

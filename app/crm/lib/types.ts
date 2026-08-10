@@ -703,6 +703,31 @@ export interface StaffFilters {
   employment_type: string;
 }
 
+export type LeaveType = 'Casual Leave' | 'Sick Leave' | 'Paid Leave' | 'Unpaid Leave' | 'Other';
+export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+
+export interface LeaveRequest {
+  id: string;
+  request_number: string;
+  staff_id: string;
+  leave_type: LeaveType;
+  from_date: string;
+  to_date: string;
+  number_of_days: number;
+  reason: string;
+  attachment_path: string | null;
+  attachment_name: string | null;
+  status: LeaveStatus;
+  created_by: string;
+  reviewed_by: string | null;
+  reviewed_by_name: string | null;
+  reviewed_at: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+  updated_at: string;
+  staff?: StaffRecord;
+}
+
 // ─── HR Module: Letters ─────────────────────────────────────────────────────
 
 export type LetterType =
@@ -720,6 +745,8 @@ export interface LetterExtraFieldDef {
   label: string;
   type: LetterExtraFieldType;
   default?: string;
+  required?: boolean;
+  hint?: string;
 }
 
 export interface LetterTemplate {

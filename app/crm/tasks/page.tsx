@@ -119,16 +119,24 @@ export default function AdminTasksPage() {
   const [showNew, setShowNew] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [reasonRequest, setReasonRequest] = useState<{ id: string; status: 'Needs Revision' | 'Rejected' } | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     (async () => {
-      const [taskRows, staffRows] = await Promise.all([
-        getTasks(),
-        crmSupabase.from('crm_users').select('id, full_name, role').neq('role', 'admin').neq('role', 'super_admin'),
-      ]);
-      setTasks(taskRows);
-      setStaffOptions((staffRows.data || []).map((r) => ({ id: r.id, name: r.full_name || 'Staff' })));
-      setLoading(false);
+      setError('');
+      try {
+        const [taskRows, staffRows] = await Promise.all([
+          getTasks(),
+          crmSupabase.from('crm_users').select('id, full_name, role').neq('role', 'admin').neq('role', 'super_admin'),
+        ]);
+        if (staffRows.error) throw new Error(staffRows.error.message);
+        setTasks(taskRows);
+        setStaffOptions((staffRows.data || []).map((r) => ({ id: r.id, name: r.full_name || 'Staff' })));
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : 'Could not load tasks.');
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -169,6 +177,7 @@ export default function AdminTasksPage() {
       <CrmHeader title="Tasks" subtitle="Assign and track work across your team" onMenuClick={open}
         actions={<button onClick={() => setShowNew(true)} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3.5 py-2 text-xs font-bold text-white"><Plus size={15} /> <span className="hidden sm:inline">Assign task</span></button>} />
       <div className="space-y-4 p-4 sm:p-6">
+        {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
         {loading ? (
           <div className="flex h-60 items-center justify-center rounded-2xl border border-gray-200 bg-white"><span className="h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-red-600" /></div>
         ) : !tasks.length ? (

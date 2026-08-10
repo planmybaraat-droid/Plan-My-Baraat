@@ -10,6 +10,7 @@
 export type ModuleKey =
   | 'tasks'
   | 'attendance'
+  | 'leave'
   | 'leads'
   | 'quotations'
   | 'agreements'
@@ -29,6 +30,7 @@ export interface ModuleDef {
 export const WORKSPACE_MODULES: ModuleDef[] = [
   { key: 'tasks', label: 'My Tasks', description: 'Tasks assigned to this staff member', path: '/workspace/tasks' },
   { key: 'attendance', label: 'My Attendance', description: 'Punch in/out and attendance history', path: '/workspace/attendance' },
+  { key: 'leave', label: 'Leave Management', description: 'Request leave and track approval status', path: '/workspace/leave' },
   { key: 'leads', label: 'My Leads', description: 'Customer leads assigned to this staff member', path: '/workspace/leads' },
   { key: 'quotations', label: 'My Quotations', description: 'View quotations for assigned clients', path: '/workspace/quotations' },
   { key: 'agreements', label: 'My Agreements', description: 'View and create client agreements', path: '/workspace/agreements', canCreate: true },
@@ -78,3 +80,4 @@ export function accessibleModules(
 export function defaultModuleAccess(): Required<ModuleAccessMap> {
   return MODULE_KEYS.reduce((acc, key) => ({ ...acc, [key]: false }), {} as Required<ModuleAccessMap>);
 }
+

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Users, UserSearch, ClipboardCheck, ReceiptText, Loader2, CalendarDays,
   ChevronLeft, ChevronRight, UserPlus, Cake, UserCog, ListChecks,
-  CheckCircle2, Loader as LoaderIcon, Hourglass, AlertCircle,
+  CheckCircle2, Loader as LoaderIcon, Hourglass, AlertCircle, CalendarRange,
 } from 'lucide-react';
 import CrmHeader from './components/CrmHeader';
 import { useSidebar } from './sidebar-context';
@@ -20,6 +20,8 @@ import type { CalendarEvent, BirthdayEvent } from './event-calendar/event-calend
 import type { StaffRecord } from './lib/types';
 import { useCrmProfile } from './lib/useCrmProfile';
 import { isCrmManagerRole } from '../../lib/crmSectionPermissions';
+import type { Vendor } from './lib/types';
+import DownloadCenterCard from './components/DownloadCenterCard';
 
 interface StaffRosterRow {
   staff: StaffRecord;
@@ -55,9 +57,11 @@ export default function CrmDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [vendorTotal, setVendorTotal] = useState(0);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [leadTotal, setLeadTotal] = useState(0);
   const [agreementsPending, setAgreementsPending] = useState(0);
   const [invoicesOverdue, setInvoicesOverdue] = useState(0);
+  const [pendingLeave, setPendingLeave] = useState(0);
   const [staffRoster, setStaffRoster] = useState<StaffRosterRow[]>([]);
   const [taskCounts, setTaskCounts] = useState({ completed: 0, inProgress: 0, pending: 0, overdue: 0, total: 0 });
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -84,10 +88,15 @@ export default function CrmDashboard() {
         ]);
 
         setVendorTotal(vendors.length);
+        setVendors(vendors);
         setLeadTotal(leads.length);
         setAgreementsPending(agreements.filter((a) => ['Draft', 'Sent'].includes(a.status)).length);
         setInvoicesOverdue(invoices.filter((i) => effectiveInvoiceStatus(i) === 'Overdue').length);
         setEvents(deriveConfirmedEvents(agreements, invoices));
+        if (!isManager) {
+          const { count } = await crmSupabase.from('crm_leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'Pending');
+          setPendingLeave(count || 0);
+        }
 
         const tasks = (taskRows.data || []) as { status: string; due_date: string | null }[];
         setTaskCounts({
@@ -224,7 +233,7 @@ export default function CrmDashboard() {
               </Link>
             </div>
           ) : (
-            <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-5">
               <Link href="/crm/vendors" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
                 <div className="flex items-center gap-3">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><Users size={19} /></span>
@@ -253,8 +262,17 @@ export default function CrmDashboard() {
                 </div>
                 <p className="mt-2.5 text-[11px] font-bold text-amber-600">View all invoices →</p>
               </Link>
+              <Link href="/crm/leave" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><CalendarRange size={19} /></span>
+                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{pendingLeave}</p><p className="text-[11px] font-semibold text-gray-400">Leave Pending</p></div>
+                </div>
+                <p className="mt-2.5 text-[11px] font-bold text-violet-600">Review requests →</p>
+              </Link>
             </div>
           )}
+
+          <DownloadCenterCard vendors={vendors} canDownloadVendors={!isManager} />
 
           {/* Staff On Duty Today + Tasks Overview */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

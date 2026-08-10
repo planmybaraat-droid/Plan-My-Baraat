@@ -102,6 +102,10 @@ export function renderLetterText(template: string, employee: {
   address?: string | null; mobile?: string | null; work_location?: string | null;
 }, extra: Record<string, string | number>) {
   const today = formatAgreementDate(new Date().toISOString().slice(0, 10));
+  const extraValues = Object.fromEntries(Object.entries(extra).map(([key, value]) => [
+    key,
+    /_date$/.test(key) && typeof value === 'string' && value ? formatAgreementDate(value) : String(value ?? ''),
+  ]));
   const values: Record<string, string> = {
     employee_name: employee.full_name,
     designation: employee.designation || employee.job_title,
@@ -111,17 +115,16 @@ export function renderLetterText(template: string, employee: {
     employee_mobile: employee.mobile || '',
     work_location: employee.work_location || 'PlanMyBaraat Office, Vadodara',
     date: today,
-    ...Object.fromEntries(Object.entries(extra).map(([key, value]) => [
-      key,
-      /_date$/.test(key) && typeof value === 'string' && value ? formatAgreementDate(value) : String(value ?? ''),
-    ])),
+    ...extraValues,
+    experience_end_display: extraValues.experience_end_date || 'Till Date',
   };
   return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => values[key] ?? '');
 }
 
 export function fieldDefault(field: LetterExtraFieldDef, employee?: { current_salary?: number }) {
-  if (field.default) return field.default;
+  if (field.default !== undefined) return field.default;
   if (field.key === 'current_salary' && employee?.current_salary) return String(employee.current_salary);
+  if (field.required === false) return '';
   if (field.type === 'date') return new Date().toISOString().slice(0, 10);
   return '';
 }

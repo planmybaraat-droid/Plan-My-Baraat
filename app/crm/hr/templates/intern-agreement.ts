@@ -1,5 +1,21 @@
 import type { LetterTemplate } from '../../lib/types';
 
+function buildStaffAgreementBody(source: string) {
+  return source
+    .replace(
+      /\n# 4\. WEBSITE-DEVELOPMENT RESPONSIBILITIES[\s\S]*?(?=\n# 6\. WORK REPORTING AND PERFORMANCE STANDARDS)/,
+      '',
+    )
+    .replace(/^# (\d+)\./gm, (heading, value: string) => {
+      const number = Number(value);
+      return number >= 6 ? `# ${number - 2}.` : heading;
+    })
+    .replaceAll('Internship', 'Employment')
+    .replaceAll('internship', 'employment')
+    .replaceAll('Interns', 'Staff Members')
+    .replaceAll('Intern', 'Staff Member');
+}
+
 export const INTERN_AGREEMENT_TEMPLATE: LetterTemplate = {
   id: 'tpl-intern-agreement',
   letter_type: 'intern_agreement',
@@ -22,7 +38,7 @@ export const INTERN_AGREEMENT_TEMPLATE: LetterTemplate = {
     { key: 'authorized_representative', label: 'Authorised Representative', type: 'text', default: 'Ronak Dave' },
     { key: 'representative_designation', label: 'Representative Designation', type: 'text', default: 'Founder / Authorised Representative' },
   ],
-  body_template: String.raw`# AGREEMENT
+  body_template: buildStaffAgreementBody(String.raw`# AGREEMENT
 
 This Agreement is executed on **{{agreement_date}}** between:
 
@@ -513,17 +529,9 @@ I confirm that I have understood and accepted the terms and conditions stated in
 
 ## FOR PLANMYBARAAT
 
-**Name:** {{authorized_representative}}
+**Signature:** {{authorized_representative}}
 
-**Designation:** {{representative_designation}}
-
-**Date:** {{agreement_date}}
-
-**Signature:** ______________________________
-
-**Company Stamp:** __________________________
-
-## INTERN
+## STAFF MEMBER
 
 **Name:** {{employee_name}}
 
@@ -533,9 +541,5 @@ I confirm that I have understood and accepted the terms and conditions stated in
 
 **Address:** {{employee_address}}
 
-**Contact Number:** {{employee_mobile}}`
-    .replaceAll('Internship', 'Employment')
-    .replaceAll('internship', 'employment')
-    .replaceAll('Interns', 'Staff Members')
-    .replaceAll('Intern', 'Staff Member'),
+**Contact Number:** {{employee_mobile}}`),
 };

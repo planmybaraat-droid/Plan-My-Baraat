@@ -90,7 +90,12 @@ export default function LetterWizard({ template, existingLetter }: { template: L
     return renderLetterText(template.body_template, { ...selectedEmployee, designation }, extra);
   }, [selectedEmployee, designation, extra, template.body_template]);
 
-  const eligibleForExperience = template.requires_status
+  // Experience letters describe service from joining through Till Date or a
+  // chosen date, so they are available for current staff as well as leavers.
+  // Other letter types keep their existing lifecycle rules.
+  const eligibleForExperience = template.letter_type === 'experience_letter' || !template.requires_status
+    ? true
+    : template.requires_status
     ? selectedEmployee?.hr_lifecycle_status === template.requires_status
     : true;
 
@@ -140,7 +145,7 @@ export default function LetterWizard({ template, existingLetter }: { template: L
       return false;
     }
     if (target === 2) {
-      const missing = template.extra_fields.find(field => !String(extra[field.key] ?? '').trim());
+      const missing = template.extra_fields.find(field => field.required !== false && !String(extra[field.key] ?? '').trim());
       if (missing) { setError(`${missing.label} is required.`); return false; }
     }
     return true;
@@ -191,10 +196,16 @@ export default function LetterWizard({ template, existingLetter }: { template: L
     const pages = Array.from(documentRef.current.querySelectorAll<HTMLElement>('[data-pdf-page]'));
     if (!pages.length) return null;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-    for (let index = 0; index < pages.length; index += 1) {
-      const canvas = await html2canvas(pages[index], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, windowWidth: 794 });
-      if (index > 0) pdf.addPage('a4', 'portrait');
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+    documentRef.current.classList.add('letter-pdf-capture');
+    try {
+      await document.fonts.ready;
+      for (let index = 0; index < pages.length; index += 1) {
+        const canvas = await html2canvas(pages[index], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, windowWidth: 794 });
+        if (index > 0) pdf.addPage('a4', 'portrait');
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+      }
+    } finally {
+      documentRef.current.classList.remove('letter-pdf-capture');
     }
     pdf.setProperties({ title: `${generatedLetter?.letter_number} - ${selectedEmployee?.full_name}`, subject: template.label, author: 'PlanMyBaraat', creator: 'PlanMyBaraat CRM' });
     return pdf;
@@ -367,7 +378,7 @@ export default function LetterWizard({ template, existingLetter }: { template: L
               ) : (
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   {template.extra_fields.map((field: LetterExtraFieldDef) => (
-                    <Field key={field.key} label={field.label} required className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
+                    <Field key={field.key} label={field.label} required={field.required !== false} hint={field.hint} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
                       {field.type === 'textarea' ? (
                         <textarea rows={4} value={String(extra[field.key] ?? '')} onChange={e => setExtra(cur => ({ ...cur, [field.key]: e.target.value }))} />
                       ) : (

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, UserSearch, MoreHorizontal,
   Building2, Tag, Package, Calculator, Settings, X, ChevronRight, LogOut, MessageSquare, ScrollText, ReceiptText, FileText, UserCog, CalendarCheck2, ListChecks, Bell, CalendarDays, Handshake,
-  FileSignature, FolderCheck, Wallet,
+  FileSignature, FolderCheck, Wallet, CalendarRange,
 } from 'lucide-react';
 import { crmSupabase } from '../lib/supabase-crm';
 import { useCrmProfile, initialsFrom } from '../lib/useCrmProfile';
@@ -44,6 +44,7 @@ const sidebarSections: { label: string; items: SidebarItem[] }[] = [
     { href: '/crm/staff', label: 'Staff', icon: UserCog, sectionKey: 'staff' },
     { href: '/crm/tasks', label: 'Tasks', icon: ListChecks, sectionKey: 'tasks' },
     { href: '/crm/attendance', label: 'Attendance', icon: CalendarCheck2, sectionKey: 'attendance' },
+    { href: '/crm/leave', label: 'Leave Management', icon: CalendarRange, adminOnly: true },
     { href: '/crm/vendors', label: 'Vendors', icon: Users, adminOnly: true },
   ] },
   { label: 'HR management', items: [

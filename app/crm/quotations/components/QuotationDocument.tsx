@@ -51,7 +51,7 @@ function ServiceCard({ service, number, pricingMode }: { service: QuotationServi
 
 const QuotationDocument = forwardRef<HTMLDivElement, { quotation: QuotationRecord }>(function QuotationDocument({ quotation }, ref) {
   const [qr, setQr] = useState('');
-  const services = quotation.services.filter(service => service.enabled);
+  const services = (quotation.services || []).filter(service => service.enabled);
   const chunks = useMemo(() => {
     const size = 7;
     return Array.from({ length: Math.max(1, Math.ceil(services.length / size)) }, (_, index) => services.slice(index * size, index * size + size));
@@ -60,7 +60,7 @@ const QuotationDocument = forwardRef<HTMLDivElement, { quotation: QuotationRecor
 
   useEffect(() => {
     const url = typeof window === 'undefined' ? quotation.quotation_number : `${window.location.origin}/verify/${quotation.verification_code}`;
-    QRCode.toDataURL(url, { width: 120, margin: 0, color: { dark: '#111111', light: '#ffffff' } }).then(setQr);
+    QRCode.toDataURL(url, { width: 120, margin: 0, color: { dark: '#111111', light: '#ffffff' } }).then(setQr).catch(() => setQr(''));
   }, [quotation.verification_code, quotation.quotation_number]);
 
   return <div ref={ref} className="quotation-document">

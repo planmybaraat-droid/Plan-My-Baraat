@@ -69,10 +69,12 @@ For a new Supabase project, run these in the SQL editor in order:
 
 1. `app/crm/schema.sql`
 2. `app/crm/production-completion.sql`
+3. `app/crm/leave-management.sql`
 
 The second migration completes the auth/staff, attendance, quotations, tasks,
 notifications, HR/payroll, verification, storage, and RLS objects used by the
 application. It also removes only the fixed UUID demo rows from the legacy
-schema. Create the first administrator in Supabase Auth, then update that
+schema. The third adds the centralized leave workflow, secure review actions,
+notifications, and approved-leave attendance synchronization. Create the first administrator in Supabase Auth, then update that
 user's `crm_users.role` to `super_admin`. Staff accounts should subsequently be
 created from Admin → Staff so Auth, `crm_users`, and `crm_staff` stay linked.

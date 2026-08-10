@@ -1,71 +1,16 @@
 import type { AgreementFormData, AgreementService, AgreementStatus } from '../lib/types';
+import {
+  SERVICE_COLOR_OPTIONS, SERVICE_DECORATION_OPTIONS,
+  SERVICE_NAMES, SERVICE_OPTIONS, SERVICE_PURPOSE_OPTIONS,
+} from '../../../lib/businessCatalog';
+
+export {
+  SERVICE_AVAILABILITY_NOTE, SERVICE_COLOR_OPTIONS, SERVICE_DECORATION_OPTIONS,
+  SERVICE_MULTI_OPTIONS, SERVICE_NAMES, SERVICE_OPTIONS, SERVICE_PURPOSE_OPTIONS,
+} from '../../../lib/businessCatalog';
 
 export const AGREEMENT_STATUSES: AgreementStatus[] = ['Draft', 'Sent', 'Signed', 'Completed', 'Cancelled'];
 export const AGREEMENT_PACKAGES = ['Raj Tilak', 'Rajwada', 'Maharaja', 'Signature', 'Custom'] as const;
-
-export const SERVICE_NAMES = [
-  'DJ On Wheels', 'Vintage Car', 'Buggy', 'Horse', 'Royal Elephant', 'Helicopter', 'Premium ATV Bikes',
-  'Premium Cars', 'Drink on Wheels', 'Exclusive Sound', 'DJ Artist', 'Anchor',
-  'Dhol', 'Brass Band', 'Chhatri', 'Ganga Aarti', 'Moving LED', 'LED Letters', 'CO2 Gun',
-  'Confetti Gun', 'Fake Money Gun', 'Hand Pyro', 'CO2 Jet', 'Low Fog',
-  'Paper Blast', 'Smoke Bubble', 'Fireworks', 'Props', 'Carnival Artist',
-  'Professional Bouncer', 'Safa', 'Safa Team', 'Dedicated Manager',
-  'Live Streaming', 'QR Gallery',
-] as const;
-
-export const SERVICE_OPTIONS: Record<string, string[]> = {
-  'DJ On Wheels': ['Premium DJ Truck', 'Mini DJ Truck', 'Flex DJ Truck', 'American DJ Truck', 'Concert DJ Truck (Trolla)'],
-  'Vintage Car': ['Premium Rolls Royce', 'American Rolls Royce', 'Convertible Vintage Car'],
-  Buggy: ['AC Buggy', '2 Horse Buggy', '4 Horse Buggy', 'Royal Buggy', 'LED Buggy', 'Floral Buggy'],
-  Horse: ['Ghoda', 'Ghodi'],
-  'Premium Cars': ['Convertible', 'Rolls Royce', 'Vanity Van', 'Luxury XUV'],
-  'Exclusive Sound': ['Premium Line Array', 'Concert Sound'],
-  'DJ Artist': ['Professional DJ Artist', 'Celebrity DJ', 'International DJ'],
-  Anchor: ['Premium Anchor', 'Bollywood Anchor', 'Traditional Anchor'],
-  Dhol: ['Punjabi Dhol with Artist', 'Nashik Dhol with Artist', 'Rajasthani Dhol with Artist'],
-  'Brass Band': ['11 Piece', '21 Piece', '31 Piece'],
-  Chhatri: ['Royal Classic', 'Royal LED', 'Royal Floral LED'],
-  'Carnival Artist': [
-    '1 Jungler, 1 Unicyclist, 1 Still Walker, 1 Twins Head',
-    '1 Headless Man, 1 Dwarf Men, 1 Mirror Man, 1 Disco Man',
-    '1 Chained Lion, 2 Carnival Girls',
-  ],
-};
-
-// Optional colour add-on, shown alongside the service option dropdown only
-// for services listed here.
-export const SERVICE_COLOR_OPTIONS: Record<string, string[]> = {
-  'Vintage Car': ['Red', 'White'],
-};
-
-// Optional decoration add-on, shown alongside the service option dropdown
-// only for services listed here.
-export const SERVICE_DECORATION_OPTIONS: Record<string, string[]> = {
-  Horse: ['With Decoration', 'Without Decoration'],
-  'Royal Elephant': ['With Decoration', 'Without Decoration'],
-  'Premium ATV Bikes': ['With Decoration', 'Without Decoration'],
-};
-
-// Optional usage/purpose add-on, shown alongside the service option dropdown
-// only for services listed here.
-export const SERVICE_PURPOSE_OPTIONS: Record<string, string[]> = {
-  'Premium ATV Bikes': ['For Haldi', 'For Baraat'],
-};
-
-// Optional multi-select add-on (rendered as checkboxes, more than one may be
-// chosen at once), shown alongside the service option dropdown only for
-// services listed here.
-export const SERVICE_MULTI_OPTIONS: Record<string, string[]> = {
-  'Drink on Wheels': ['With Mocktail', 'With Cocktail', 'With Caterers'],
-};
-
-// Fixed, non-editable notice shown under the service name for services
-// listed here — currently used to flag that arrival vehicles carrying real
-// animals/aircraft depend on availability at the time of confirmation.
-export const SERVICE_AVAILABILITY_NOTE: Record<string, string> = {
-  Helicopter: 'Subject to availability at the time of confirmation.',
-  'Royal Elephant': 'Subject to availability at the time of confirmation.',
-};
 
 export const PACKAGE_DEFAULTS: Record<string, { price: number; services: string[] }> = {
   'Raj Tilak': { price: 125000, services: ['DJ On Wheels', 'Dhol', 'Chhatri', 'Dedicated Manager'] },

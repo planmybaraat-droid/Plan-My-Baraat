@@ -62,6 +62,7 @@ function parseBody(text: string, bulletNumberedTerms = false): BodyBlock[] {
     }
     if (line.startsWith('## ')) {
       flushParagraph(); flushList();
+      insideNumberedTerms = false;
       blocks.push({ type: 'subheading', text: line.slice(3) });
       return;
     }
@@ -83,6 +84,19 @@ function parseBody(text: string, bulletNumberedTerms = false): BodyBlock[] {
   return blocks;
 }
 
+function CompanySignature({ text }: { text: string }) {
+  const signatory = text.replace(/^\*\*Signature:\*\*\s*/i, '').replaceAll('**', '').trim() || 'Ronak Dave';
+  return (
+    <div className="letter-doc-signature letter-doc-authorized-signature">
+      <div className="letter-doc-stamp-wrap">
+        <img src="/agreement-signature.png" alt="Company stamp and authorized signature" className="letter-doc-stamp" />
+      </div>
+      <p className="letter-doc-signee">{signatory}</p>
+      <p className="letter-doc-signee-title">PlanMyBaraat</p>
+    </div>
+  );
+}
+
 function LetterBody({ text, blocks, compact }: { text?: string; blocks?: BodyBlock[]; compact: boolean }) {
   const content = blocks || parseBody(text || '', compact);
   return (
@@ -94,11 +108,11 @@ function LetterBody({ text, blocks, compact }: { text?: string; blocks?: BodyBlo
         const previousSubheadingText = previousSubheading && previousSubheading.type !== 'list' ? previousSubheading.text : '';
         if (block.type === 'list') {
           const companyListSignature = block.items.length === 1 && /^\*\*Signature:\*\*/i.test(block.items[0]) && previousSubheadingText.toUpperCase().includes('PLANMYBARAAT');
-          if (companyListSignature) return <div key={index} className="letter-doc-authorized-signature"><div className="letter-doc-stamp-wrap"><img src="/agreement-signature.png" alt="Company stamp and authorized signature" className="letter-doc-stamp" /></div><ul className="letter-doc-list"><li><InlineText text={block.items[0]} /></li></ul></div>;
+          if (companyListSignature) return <CompanySignature key={index} text={block.items[0]} />;
           return <ul key={index} className="letter-doc-list">{block.items.map((item, itemIndex) => <li key={itemIndex}><InlineText text={item} /></li>)}</ul>;
         }
         const companySignature = /^\*\*Signature:\*\*/i.test(block.text) && previousSubheadingText.toUpperCase().includes('PLANMYBARAAT');
-        if (companySignature) return <div key={index} className="letter-doc-authorized-signature"><div className="letter-doc-stamp-wrap"><img src="/agreement-signature.png" alt="Company stamp and authorized signature" className="letter-doc-stamp" /></div><p><InlineText text={block.text} /></p></div>;
+        if (companySignature) return <CompanySignature key={index} text={block.text} />;
         return <p key={index}><InlineText text={block.text} /></p>;
       })}
     </div>
@@ -201,7 +215,13 @@ const LetterDocument = forwardRef<HTMLDivElement, LetterDocumentProps>(function 
                 </div>
               )}
 
-              {firstPage && !isCertificate && <p className="letter-doc-subject"><span>Subject:</span> {template.label} — {employee?.full_name}</p>}
+              {firstPage && !isCertificate && (
+                <div className="letter-doc-subject">
+                  <span className="letter-doc-subject-highlight" aria-hidden="true" />
+                  <span className="letter-doc-subject-label">Subject:</span>
+                  <span className="letter-doc-subject-text">{template.label} — {employee?.full_name}</span>
+                </div>
+              )}
 
               <LetterBody
                 text={typeof pageBody === 'string' ? pageBody : undefined}

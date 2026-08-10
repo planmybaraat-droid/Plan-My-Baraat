@@ -1,8 +1,7 @@
-import { CRM_CONFIGURATION_ERROR, crmSupabase } from '../lib/supabase-crm';
+import { CRM_CONFIGURATION_ERROR, crmSupabase, isCrmSupabaseConfigured } from '../lib/supabase-crm';
 import type { QuotationActivity, QuotationFilters, QuotationFormData, QuotationRecord } from '../lib/types';
 
 const STORAGE_KEY = 'crm_quotations';
-const configured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder-url'));
 
 function localRecords(): QuotationRecord[] {
   if (typeof window === 'undefined') return [];
@@ -14,6 +13,9 @@ function rowToRecord(row: Record<string, unknown>): QuotationRecord {
   const payload = (row.payload || {}) as QuotationFormData;
   return {
     ...payload,
+    services: Array.isArray(payload.services) ? payload.services : [],
+    revisions: Array.isArray(payload.revisions) ? payload.revisions : [],
+    activity: Array.isArray(payload.activity) ? payload.activity : [],
     id: String(row.id),
     quotation_number: String(row.quotation_number || payload.quotation_number),
     client_name: String(row.client_name || payload.client_name),
@@ -30,7 +32,10 @@ function rowToRecord(row: Record<string, unknown>): QuotationRecord {
     gst_percent: Number(row.gst_percent ?? payload.gst_percent ?? 0),
     total_amount: Number(row.total_amount ?? payload.total_amount ?? 0),
     converted_agreement_id: String(row.converted_agreement_id || payload.converted_agreement_id || ''),
-    created_at: String(row.created_at), updated_at: String(row.updated_at),
+    created_date: String(payload.created_date || row.created_at || '').slice(0, 10),
+    taxable_value: Number(payload.taxable_value ?? row.subtotal ?? 0) - Number(row.discount ?? payload.discount ?? 0),
+    gst_amount: Number(payload.gst_amount ?? Math.max(0, Number(row.total_amount ?? 0) - (Number(row.subtotal ?? 0) - Number(row.discount ?? 0)))),
+    created_at: String(row.created_at || ''), updated_at: String(row.updated_at || ''),
     verification_code: String(row.verification_code || ''),
   };
 }
@@ -47,7 +52,7 @@ function recordToRow(payload: QuotationFormData) {
 }
 
 async function storage<T>(remote: () => Promise<T>, _local: () => T | Promise<T>): Promise<T> {
-  if (!configured) throw new Error(CRM_CONFIGURATION_ERROR);
+  if (!isCrmSupabaseConfigured) throw new Error(CRM_CONFIGURATION_ERROR);
   return remote();
 }
 
@@ -89,7 +94,7 @@ export async function getQuotationById(id: string) {
 export async function createQuotation(payload: QuotationFormData) {
   const now = new Date().toISOString();
   const activity: QuotationActivity = { id: `quote-activity-${Date.now()}`, type: 'created', title: 'Quotation created', detail: `${payload.quotation_number} created as draft.`, actor: payload.created_by_name || 'CRM Staff', created_at: now };
-  let prepared: QuotationFormData = { ...payload, activity: [activity, ...payload.activity] };
+  let prepared: QuotationFormData = { ...payload, services: payload.services || [], revisions: payload.revisions || [], activity: [activity, ...(payload.activity || [])] };
   return storage(async () => {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const { data, error } = await crmSupabase.from('crm_quotations').insert(recordToRow(prepared)).select().single();
@@ -115,8 +120,8 @@ export async function updateQuotation(id: string, payload: QuotationFormData, su
   void _revisions; void _activity; void _id; void _created; void _updated;
   const revised: QuotationFormData = {
     ...payload, version: previous.version + 1,
-    revisions: [{ version: previous.version, created_at: now, created_by: payload.created_by_name || 'CRM Staff', summary, snapshot }, ...previous.revisions],
-    activity: [{ id: `quote-activity-${Date.now()}`, type: previous.status === payload.status ? 'updated' : 'status', title: previous.status === payload.status ? 'Quotation revised' : `Status changed to ${payload.status}`, detail: summary, actor: payload.created_by_name || 'CRM Staff', created_at: now }, ...previous.activity],
+    revisions: [{ version: previous.version, created_at: now, created_by: payload.created_by_name || 'CRM Staff', summary, snapshot }, ...(previous.revisions || [])],
+    activity: [{ id: `quote-activity-${Date.now()}`, type: previous.status === payload.status ? 'updated' : 'status', title: previous.status === payload.status ? 'Quotation revised' : `Status changed to ${payload.status}`, detail: summary, actor: payload.created_by_name || 'CRM Staff', created_at: now }, ...(previous.activity || [])],
   };
   return storage(async () => {
     const { data, error } = await crmSupabase.from('crm_quotations').update(recordToRow(revised)).eq('id', id).select().single();

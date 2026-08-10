@@ -56,7 +56,7 @@ const PACKAGES = [
     tagline: "A Royal Beginning",
     description:
       "A polished, high-energy Baraat foundation with the essential sound, tradition and royal-entry elements thoughtfully coordinated.",
-    image: "/Assests/packages/raj-tilak-v2.png",
+    image: "/Assests/packages/raj-tilak-premium.jpeg",
     imageAlt: "A groom making a royal horse entry at his Baraat",
     featured: false,
     inclusions: [
