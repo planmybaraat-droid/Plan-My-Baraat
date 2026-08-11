@@ -89,6 +89,7 @@ export default function TeamChat() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [configured, setConfigured] = useState<boolean | null>(null);
   const instanceId = useRef(Math.random().toString(36).slice(2)).current;
   const fileInput = useRef<HTMLInputElement>(null);
   const messagesEnd = useRef<HTMLDivElement>(null);
@@ -99,11 +100,13 @@ export default function TeamChat() {
       const response = await fetch('/api/crm/chat', { cache: 'no-store' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to load Team Chat.');
+      setConfigured(data.configured !== false);
       setCurrentUser(data.currentUser);
       setUsers(data.users || []);
       setMessages((data.messages || []).filter((message: ChatMessage) => !message.deleted));
       setError('');
     } catch (loadError) {
+      setConfigured(false);
       setError(loadError instanceof Error ? loadError.message : 'Unable to load Team Chat.');
     } finally {
       setLoading(false);
@@ -234,7 +237,7 @@ export default function TeamChat() {
 
   return (
     <>
-      {!open && (
+      {!open && configured !== false && (
         <button
           type="button"
           onClick={() => { setOpen(true); load(true); }}

@@ -25,10 +25,15 @@ function formatTime(t: string | null | undefined) {
 
 function workingHours(record: AttendanceRecord | null | undefined) {
   if (!record?.check_in) return null;
+  if (record.punch_in_at) {
+    const end = record.punch_out_at ? new Date(record.punch_out_at).getTime() : Date.now();
+    const minutes = Math.max(0, Math.floor((end - new Date(record.punch_in_at).getTime()) / 60000));
+    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  }
   const [inH, inM] = record.check_in.split(':').map(Number);
   const end = record.check_out ? record.check_out.split(':').map(Number) : (() => { const now = new Date(); return [now.getHours(), now.getMinutes()]; })();
-  const minutes = (end[0] * 60 + end[1]) - (inH * 60 + inM);
-  if (minutes < 0) return null;
+  let minutes = (end[0] * 60 + end[1]) - (inH * 60 + inM);
+  if (minutes < 0) minutes += 24 * 60;
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 

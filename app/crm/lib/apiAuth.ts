@@ -48,7 +48,7 @@ export async function requireCrmAdmin(req?: NextRequest) {
     return { ok: false as const, status: 403, message: 'Only active admins can do this.' };
   }
 
-  return { ok: true as const, user };
+  return { ok: true as const, user, supabase };
 }
 
 const CHAT_ROLES = ['admin', 'super_admin', 'staff', 'sales', 'manager', 'accountant'];

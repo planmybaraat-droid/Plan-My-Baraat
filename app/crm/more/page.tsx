@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Building2, Tag, Package, Calculator, Settings, ChevronRight, HelpCircle, LogOut, ReceiptText, FileText, ScrollText, UserCog, CalendarCheck2, ListChecks
+  Building2, Tag, Package, Calculator, Settings, ChevronRight, HelpCircle, LogOut, ReceiptText, FileText, ScrollText, UserCog, CalendarCheck2, ListChecks, ClipboardList
 } from 'lucide-react';
 import CrmHeader from '../components/CrmHeader';
 import { useSidebar } from '../sidebar-context';
@@ -35,6 +35,8 @@ export default function MorePage() {
     { href: '/crm/staff', label: 'Staff', desc: 'Manage team profiles, roles and shifts', icon: UserCog, sectionKey: 'staff' },
     { href: '/crm/tasks', label: 'Tasks', desc: 'Assign and review work across your team', icon: ListChecks, sectionKey: 'tasks' },
     { href: '/crm/attendance', label: 'Attendance', desc: 'Daily attendance, timings and monthly summaries', icon: CalendarCheck2, sectionKey: 'attendance' },
+    { href: '/crm/daily-work-reports', label: 'Daily Work Reports', desc: 'Review date-wise work reported by staff', icon: ClipboardList, sectionKey: 'dailyWorkReports' },
+    { href: '/crm/leave', label: 'Leave Management', desc: 'Review and decide staff leave requests', icon: CalendarCheck2, sectionKey: 'leaveManagement' },
     { href: '/crm/hr', label: 'HR Overview', desc: 'Company-wide HR summary', icon: UserCog, sectionKey: 'hrOverview' },
     { href: '/crm/hr/letters', label: 'Letters', desc: 'Generate and manage employee letters', icon: ScrollText, sectionKey: 'letters' },
     { href: '/crm/hr/kyc', label: 'KYC & Documents', desc: 'Manage employee KYC documents', icon: FileText, sectionKey: 'kyc' },

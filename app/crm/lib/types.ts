@@ -691,6 +691,10 @@ export interface AttendanceRecord {
   punch_out_device?: string | null;
   punch_in_browser?: string | null;
   punch_out_browser?: string | null;
+  punch_in_at?: string | null;
+  punch_out_at?: string | null;
+  is_locked?: boolean;
+  lock_at?: string | null;
   created_at?: string;
   updated_at?: string;
   staff?: StaffRecord;

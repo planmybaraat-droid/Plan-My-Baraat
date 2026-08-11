@@ -27,9 +27,9 @@ export async function getMyStaffProfile() {
 }
 
 export async function getTodayAttendance(): Promise<AttendanceRecord | null> {
-  const today = new Date().toISOString().slice(0, 10);
-  const { data } = await crmSupabase.from('crm_attendance').select('*').eq('attendance_date', today).maybeSingle();
-  return data as AttendanceRecord | null;
+  const { data, error } = await crmSupabase.rpc('crm_get_my_attendance_state');
+  if (error) throw new Error(error.message);
+  return ((data as { record?: AttendanceRecord | null } | null)?.record || null) as AttendanceRecord | null;
 }
 
 // Used by the dashboard calendar — one row per day for the given month

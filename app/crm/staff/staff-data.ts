@@ -1,5 +1,6 @@
 import { CRM_CONFIGURATION_ERROR, crmSupabase, isCrmSupabaseConfigured } from '../lib/supabase-crm';
 import type { AttendanceRecord, StaffFilters, StaffFormData, StaffRecord } from '../lib/types';
+import { adminSaveAttendance } from '../lib/attendance-policy';
 
 const STAFF_KEY = 'crm_staff_records_v1';
 const ATTENDANCE_KEY = 'crm_attendance_records_v1';
@@ -149,9 +150,7 @@ export async function getAttendance(from: string, to = from) {
   return storage(async () => { const { data, error } = await crmSupabase.from('crm_attendance').select('*,staff:crm_staff(*)').gte('attendance_date', from).lte('attendance_date', to).order('attendance_date', { ascending: false }); if (error) throw new Error(error.message); return (data || []).map(row => normalizeAttendance(row)); }, () => readLocal<AttendanceRecord>(ATTENDANCE_KEY).filter(item => item.attendance_date >= from && item.attendance_date <= to));
 }
 
-export async function saveAttendance(rows: AttendanceRecord[]) {
-  return storage(async () => {
-    const payload = rows.map(row => ({ staff_id: row.staff_id, attendance_date: row.attendance_date, status: row.status, check_in: row.check_in || null, check_out: row.check_out || null, break_minutes: row.break_minutes, overtime_minutes: row.overtime_minutes, note: row.note || null, updated_at: new Date().toISOString() }));
-    const { data, error } = await crmSupabase.from('crm_attendance').upsert(payload, { onConflict: 'created_by,staff_id,attendance_date' }).select(); if (error) throw new Error(error.message); return (data || []).map(row => normalizeAttendance(row));
-  }, () => { const stored = readLocal<AttendanceRecord>(ATTENDANCE_KEY); rows.forEach(row => { const index = stored.findIndex(item => item.staff_id === row.staff_id && item.attendance_date === row.attendance_date); const next = { ...row, id: index >= 0 ? stored[index].id : `attendance-${Date.now()}-${row.staff_id}`, updated_at: new Date().toISOString() }; if (index >= 0) stored[index] = next; else stored.push(next); }); writeLocal(ATTENDANCE_KEY, stored); return rows; });
+export async function saveAttendance(rows: AttendanceRecord[], correctionReason?: string) {
+  if (!isCrmSupabaseConfigured) throw new Error(CRM_CONFIGURATION_ERROR);
+  return (await adminSaveAttendance(rows, correctionReason)).map(row => normalizeAttendance(row as unknown as Record<string, unknown>));
 }

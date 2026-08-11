@@ -9,6 +9,8 @@ export type CrmSectionKey =
   | 'staff'
   | 'tasks'
   | 'attendance'
+  | 'dailyWorkReports'
+  | 'leaveManagement'
   | 'hrOverview'
   | 'letters'
   | 'kyc'
@@ -26,6 +28,8 @@ export const CRM_SECTIONS: CrmSectionDef[] = [
   { key: 'staff', label: 'Staff', description: 'View and edit staff profiles', path: '/crm/staff' },
   { key: 'tasks', label: 'Tasks', description: 'Assign and track tasks company-wide', path: '/crm/tasks' },
   { key: 'attendance', label: 'Attendance', description: 'View and manage attendance records', path: '/crm/attendance' },
+  { key: 'dailyWorkReports', label: 'Daily Work Reports', description: 'Review date-wise work reported by staff', path: '/crm/daily-work-reports' },
+  { key: 'leaveManagement', label: 'Leave Management', description: 'Review and decide staff leave requests', path: '/crm/leave' },
   { key: 'hrOverview', label: 'HR Overview', description: 'View the HR summary dashboard', path: '/crm/hr' },
   { key: 'letters', label: 'Letters', description: 'Generate and manage employee letters', path: '/crm/hr/letters' },
   { key: 'kyc', label: 'KYC & Documents', description: 'Manage employee KYC documents', path: '/crm/hr/kyc' },

@@ -5,5 +5,19 @@
     "NEXT_PUBLIC_SITE_URL": "https://planmybaraat.com",
     "NEXT_PUBLIC_SUPABASE_URL": "https://pldkbuwpdqbfrmkxlcqm.supabase.co",
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_wZ2pdO4IjohC3NAZ3aktUw_g5EIus3f"
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/daily-staff-report",
+      "schedule": "30 23 * * *"
+    },
+    {
+      "path": "/api/cron/daily-staff-report?retry=1",
+      "schedule": "45 23 * * *"
+    },
+    {
+      "path": "/api/cron/daily-staff-report?retry=2",
+      "schedule": "0 0 * * *"
+    }
+  ]
 }

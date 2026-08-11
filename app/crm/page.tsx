@@ -19,7 +19,7 @@ import { deriveConfirmedEvents, getStaffBirthdaysForYears } from './event-calend
 import type { CalendarEvent, BirthdayEvent } from './event-calendar/event-calendar-data';
 import type { StaffRecord } from './lib/types';
 import { useCrmProfile } from './lib/useCrmProfile';
-import { isCrmManagerRole } from '../../lib/crmSectionPermissions';
+import { isCrmManagerRole, resolveSectionAccess } from '../../lib/crmSectionPermissions';
 import type { Vendor } from './lib/types';
 import DownloadCenterCard from './components/DownloadCenterCard';
 
@@ -54,6 +54,7 @@ export default function CrmDashboard() {
   const { open } = useSidebar();
   const { profile } = useCrmProfile();
   const isManager = isCrmManagerRole(profile?.role);
+  const canReviewLeave = !isManager || resolveSectionAccess(profile?.role, profile?.sectionAccess, 'leaveManagement');
   const [loading, setLoading] = useState(true);
 
   const [vendorTotal, setVendorTotal] = useState(0);
@@ -93,7 +94,7 @@ export default function CrmDashboard() {
         setAgreementsPending(agreements.filter((a) => ['Draft', 'Sent'].includes(a.status)).length);
         setInvoicesOverdue(invoices.filter((i) => effectiveInvoiceStatus(i) === 'Overdue').length);
         setEvents(deriveConfirmedEvents(agreements, invoices));
-        if (!isManager) {
+        if (canReviewLeave) {
           const { count } = await crmSupabase.from('crm_leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'Pending');
           setPendingLeave(count || 0);
         }
@@ -147,7 +148,7 @@ export default function CrmDashboard() {
         setBirthdays(await getStaffBirthdaysForYears([year - 1, year, year + 1]));
       } catch (err) { console.error(err); }
     })();
-  }, [isManager]);
+  }, [isManager, canReviewLeave]);
 
   const monthDays = useMemo(() => {
     const first = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
@@ -209,7 +210,7 @@ export default function CrmDashboard() {
         <div className="space-y-4 p-4 sm:p-5">
           {/* KPI row */}
           {isManager ? (
-            <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-3">
+            <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
               <Link href="/crm/staff" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
                 <div className="flex items-center gap-3">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><UserCog size={19} /></span>
@@ -231,6 +232,10 @@ export default function CrmDashboard() {
                 </div>
                 <p className="mt-2.5 text-[11px] font-bold text-amber-600">View tasks →</p>
               </Link>
+              {canReviewLeave && <Link href="/crm/leave" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><CalendarRange size={19} /></span><div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{pendingLeave}</p><p className="text-[11px] font-semibold text-gray-400">Leave pending</p></div></div>
+                <p className="mt-2.5 text-[11px] font-bold text-violet-600">Review requests →</p>
+              </Link>}
             </div>
           ) : (
             <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-5">

@@ -77,14 +77,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(isLegacyAdminPanel ? '/crm/unauthorized' : '/workspace', request.url));
     }
 
-    // Leave decisions are restricted to Admin/Super Admin. Managers cannot
-    // bypass the hidden navigation item by typing the URL directly.
-    if (profile.role === 'manager' && (pathname === '/crm/leave' || pathname.startsWith('/crm/leave/'))) {
-      const redirectUrl = new URL('/crm', request.url);
-      redirectUrl.searchParams.set('access_denied', 'leave');
-      return NextResponse.redirect(redirectUrl);
-    }
-
     // Server-side section gate for Manager accounts: a Manager can't reach
     // a hidden CRM section by typing its URL directly even if it's hidden
     // from their sidebar. Dashboard, Notifications, and Settings stay open

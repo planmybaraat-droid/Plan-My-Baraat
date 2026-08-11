@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Bell, Menu } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCrmNotifications } from '../lib/useCrmNotifications';
 
 interface CrmHeaderProps {
@@ -15,6 +16,7 @@ interface CrmHeaderProps {
 }
 
 export default function CrmHeader({ title, subtitle, onMenuClick, actions, notificationsHref = '/crm/notifications' }: CrmHeaderProps) {
+  const router = useRouter();
   const { items, unreadCount, markRead, markAllRead } = useCrmNotifications();
   const [open, setOpen] = useState(false);
 
@@ -56,7 +58,7 @@ export default function CrmHeader({ title, subtitle, onMenuClick, actions, notif
                     ) : items.slice(0, 8).map((n) => (
                       <button
                         key={n.id}
-                        onClick={() => { if (!n.is_read) markRead(n.id); setOpen(false); }}
+                        onClick={() => { if (!n.is_read) markRead(n.id); setOpen(false); if (n.link) router.push(n.link); }}
                         className={`block w-full border-b border-gray-50 px-4 py-3 text-left last:border-0 hover:bg-gray-50 ${!n.is_read ? 'bg-red-50/40' : ''}`}
                       >
                         <p className="text-xs font-bold text-gray-800">{n.title}</p>

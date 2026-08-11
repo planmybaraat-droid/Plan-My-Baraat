@@ -95,6 +95,6 @@ export default function DownloadCenterCard({ vendors, canDownloadVendors = true,
         <button type="button" disabled={Boolean(busy) || !packageId} onClick={() => download({ type: 'package', packageId })} className="shrink-0 rounded-lg bg-gray-950 px-3 py-2 text-[10px] font-bold text-white hover:bg-red-600 disabled:opacity-50">{busy === packageId ? 'Preparing...' : 'Package PDF'}</button>
       </div>
     </div>
-    <div className="catalog-render-host" aria-hidden="true"><BusinessCatalogDocument ref={documentRef} request={request} vendors={documentVendors} /></div>
+    {busy && <div className="catalog-render-host" aria-hidden="true"><BusinessCatalogDocument ref={documentRef} request={request} vendors={documentVendors} /></div>}
   </section>;
 }

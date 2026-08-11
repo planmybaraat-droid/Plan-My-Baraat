@@ -9,6 +9,7 @@ import { useCrmNotifications } from '../lib/useCrmNotifications';
 const TYPE_DOT: Record<string, string> = {
   task_assigned: 'bg-blue-500', task_completed: 'bg-emerald-500', task_rejected: 'bg-red-500', task_needs_revision: 'bg-amber-500',
   attendance_punch_in: 'bg-emerald-500', attendance_punch_out: 'bg-gray-400',
+  attendance_reminder: 'bg-amber-500', attendance_punch_out_reminder: 'bg-orange-500', attendance_lock_reminder: 'bg-red-500', daily_work_report_reminder: 'bg-blue-500',
   lead_assigned: 'bg-purple-500', quotation_submitted: 'bg-blue-500', agreement_submitted: 'bg-blue-500',
 };
 

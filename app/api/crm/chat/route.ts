@@ -99,7 +99,15 @@ export async function GET(req: NextRequest) {
   const gate = await requireCrmMember(req);
   if (!gate.ok) return NextResponse.json({ error: gate.message }, { status: gate.status });
   if (!isSupabaseAdminConfigured || !supabaseAdmin) {
-    return NextResponse.json({ error: 'Chat service is not configured.' }, { status: 503 });
+    // Team Chat is an optional service-role feature. Return a healthy,
+    // explicit disabled state so pages do not continuously poll a 503 in
+    // development or in deployments that intentionally omit the key.
+    return NextResponse.json({
+      configured: false,
+      currentUser: gate.profile,
+      users: [],
+      messages: [],
+    });
   }
 
   const [usersResult, messagesResult, groupMessagesResult] = await Promise.all([
@@ -140,6 +148,7 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   return NextResponse.json({
+    configured: true,
     currentUser: gate.profile,
     users: usersResult.data || [],
     messages: await serializeMessages(messageRows as Array<Record<string, unknown>>),

@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CalendarCheck2, Clock, Camera } from 'lucide-react';
+import { CalendarCheck2, Clock, Camera, LockKeyhole } from 'lucide-react';
 import CrmHeader from '../../crm/components/CrmHeader';
 import { useSidebar } from '../../crm/sidebar-context';
 import { crmSupabase } from '../../crm/lib/supabase-crm';
 import { getSelfieUrl } from '../lib/attendance-data';
 import type { AttendanceRecord } from '../../crm/lib/types';
+import { attendanceIsLocked, DEFAULT_ATTENDANCE_SETTINGS, getAttendanceSettings, type AttendanceSettings } from '../../crm/lib/attendance-policy';
 
 const STATUS_STYLE: Record<string, string> = {
   Present: 'bg-emerald-50 text-emerald-700', Absent: 'bg-red-50 text-red-700', 'Half Day': 'bg-amber-50 text-amber-700',
@@ -25,26 +26,28 @@ function hoursBetween(inTime: string | null, outTime: string | null) {
   if (!inTime || !outTime) return '—';
   const [ih, im] = inTime.split(':').map(Number);
   const [oh, om] = outTime.split(':').map(Number);
-  const minutes = (oh * 60 + om) - (ih * 60 + im);
-  if (minutes < 0) return '—';
+  let minutes = (oh * 60 + om) - (ih * 60 + im);
+  if (minutes < 0) minutes += 24 * 60;
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
 export default function MyAttendancePage() {
   const { open } = useSidebar();
   const [rows, setRows] = useState<AttendanceRecord[]>([]);
+  const [settings, setSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       // RLS already scopes this to rows this staff member punched themselves
       // (created_by = auth.uid()), so no extra filtering is needed here.
-      const { data } = await crmSupabase
+      const [{ data }, loadedSettings] = await Promise.all([crmSupabase
         .from('crm_attendance')
         .select('*')
         .order('attendance_date', { ascending: false })
-        .limit(60);
+        .limit(60), getAttendanceSettings().catch(() => DEFAULT_ATTENDANCE_SETTINGS)]);
       setRows((data || []) as AttendanceRecord[]);
+      setSettings(loadedSettings);
       setLoading(false);
     })();
   }, []);
@@ -66,7 +69,7 @@ export default function MyAttendancePage() {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {rows.map((r) => (
+              {rows.map((r) => { const locked=attendanceIsLocked(r.attendance_date,settings); return (
                 <div key={r.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-6">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900">{new Date(`${r.attendance_date}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</p>
@@ -79,10 +82,11 @@ export default function MyAttendancePage() {
                   <div className="flex flex-wrap items-center gap-2">
                     {r.punch_in_selfie_url && <SelfieButton path={r.punch_in_selfie_url} label="In selfie" />}
                     {r.punch_out_selfie_url && <SelfieButton path={r.punch_out_selfie_url} label="Out selfie" />}
+                    {locked && <span className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-2.5 py-1 text-[9px] font-black uppercase text-white"><LockKeyhole size={10}/> Locked</span>}
                     <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[r.status] || 'bg-gray-100 text-gray-600'}`}>{r.status}</span>
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
           )}
         </div>

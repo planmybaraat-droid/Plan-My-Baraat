@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, ListChecks, CalendarCheck2, UserSearch, FileText, ScrollText, Bell, UserCircle, Settings, X, ChevronRight, LogOut,
-  ReceiptText, Package, CalendarDays, Lock, Handshake,
+  ReceiptText, Package, CalendarDays, Lock, Handshake, ClipboardList,
 } from 'lucide-react';
 import { crmSupabase } from '../../crm/lib/supabase-crm';
 import { useCrmProfile, initialsFrom } from '../../crm/lib/useCrmProfile';
@@ -82,6 +82,7 @@ export default function WorkspaceSidebar({ mobileOpen, onClose }: WorkspaceSideb
   const grantedModules = MODULE_NAV.filter((item) => resolveModuleAccess(profile?.role, profile?.moduleAccess, item.key));
   const navItems: { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
     { href: '/workspace', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+    { href: '/workspace/daily-work-report', label: 'Daily Work Report', icon: ClipboardList },
     ...grantedModules.map((item) => ({ href: item.href, label: item.label, icon: MODULE_ICONS[item.key] })),
     ...UTILITY_NAV,
   ];
