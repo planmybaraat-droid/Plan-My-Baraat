@@ -15,7 +15,8 @@ export type CrmSectionKey =
   | 'letters'
   | 'kyc'
   | 'salaryPayroll'
-  | 'eventCalendar';
+  | 'eventCalendar'
+  | 'eventJobs';
 
 export interface CrmSectionDef {
   key: CrmSectionKey;
@@ -35,6 +36,7 @@ export const CRM_SECTIONS: CrmSectionDef[] = [
   { key: 'kyc', label: 'KYC & Documents', description: 'Manage employee KYC documents', path: '/crm/hr/kyc' },
   { key: 'salaryPayroll', label: 'Salary & Payroll', description: 'Manage salary records and payroll', path: '/crm/hr/payroll' },
   { key: 'eventCalendar', label: 'Event Calendar', description: 'View the event calendar', path: '/crm/event-calendar' },
+  { key: 'eventJobs', label: 'Event Jobs', description: 'Monitor and manage confirmed event workflows', path: '/crm/event-jobs' },
 ];
 
 export const CRM_SECTION_KEYS: CrmSectionKey[] = CRM_SECTIONS.map((m) => m.key);

@@ -77,7 +77,9 @@ export async function getAllModuleAccess(): Promise<Record<string, { role: strin
 }
 
 export async function updateStaffModuleAccess(staffId: string, moduleAccess: Record<string, boolean>) {
-  return staffApi('PATCH', { staff_id: staffId, action: 'update_permissions', module_access: moduleAccess });
+  const { data, error } = await crmSupabase.rpc('crm_update_staff_access', { p_staff: staffId, p_access: moduleAccess, p_mode: 'module' });
+  if (error) throw new Error(error.message);
+  return { ok: true, module_access: (data as Record<string, boolean>) || moduleAccess };
 }
 
 // -- CRM section access (Manager role) --------------------------------------
@@ -90,7 +92,9 @@ export async function getUserSectionAccess(userId: string): Promise<{ role: stri
 }
 
 export async function updateStaffSectionAccess(staffId: string, sectionAccess: Record<string, boolean>) {
-  return staffApi('PATCH', { staff_id: staffId, action: 'update_section_access', crm_section_access: sectionAccess });
+  const { data, error } = await crmSupabase.rpc('crm_update_staff_access', { p_staff: staffId, p_access: sectionAccess, p_mode: 'section' });
+  if (error) throw new Error(error.message);
+  return { ok: true, crm_section_access: (data as Record<string, boolean>) || sectionAccess };
 }
 
 // Single round trip used by the Manage Access modal, which needs to know the

@@ -7,6 +7,8 @@ import BrandedLoader from '../crm/components/BrandedLoader';
 import { SidebarContext } from '../crm/sidebar-context';
 import { crmSupabase, isCrmSupabaseConfigured } from '../crm/lib/supabase-crm';
 import TeamChat from '../crm/components/TeamChat';
+import BirthdayCelebration from './components/BirthdayCelebration';
+import RealtimeNotificationToast from './components/RealtimeNotificationToast';
 
 const PUBLIC_WORKSPACE_ROUTES = ['/workspace/login', '/workspace/session-expired'];
 
@@ -68,6 +70,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           <main className="crm-main flex-1 overflow-y-auto">{children}</main>
         </div>
         <TeamChat />
+        <RealtimeNotificationToast />
+        <BirthdayCelebration />
       </div>
     </SidebarContext.Provider>
   );

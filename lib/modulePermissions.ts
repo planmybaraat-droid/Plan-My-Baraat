@@ -17,7 +17,8 @@ export type ModuleKey =
   | 'vendorAgreements'
   | 'invoices'
   | 'packages'
-  | 'calendar';
+  | 'calendar'
+  | 'eventJobs';
 
 export interface ModuleDef {
   key: ModuleKey;
@@ -38,6 +39,7 @@ export const WORKSPACE_MODULES: ModuleDef[] = [
   { key: 'invoices', label: 'My Invoices', description: 'View and create invoices & payment receipts', path: '/workspace/invoices', canCreate: true },
   { key: 'packages', label: 'Packages', description: 'View the baraat package catalogue', path: '/workspace/packages' },
   { key: 'calendar', label: 'Event Calendar', description: 'View confirmed events on the shared calendar', path: '/workspace/event-calendar' },
+  { key: 'eventJobs', label: 'My Event Jobs', description: 'View assigned event workflows and complete operational stages', path: '/workspace/event-jobs' },
 ];
 
 export const MODULE_KEYS: ModuleKey[] = WORKSPACE_MODULES.map((m) => m.key);

@@ -27,6 +27,8 @@ export async function getTasks() {
   const { data: taskRows, error: taskError } = await crmSupabase
     .from('crm_tasks')
     .select('*')
+    .is('event_job_id', null)
+    .is('event_job_stage_id', null)
     .order('due_date', { ascending: true, nullsFirst: false });
   if (taskError) throw new Error(taskError.message);
 

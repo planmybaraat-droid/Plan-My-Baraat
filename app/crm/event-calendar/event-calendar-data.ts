@@ -1,6 +1,4 @@
-import { getAgreements } from '../lib/supabase-crm';
-import { getInvoices } from '../invoices/invoice-data';
-import { getStaff } from '../staff/staff-data';
+import { crmSupabase } from '../lib/supabase-crm';
 import type { AgreementRecord, InvoiceRecord, StaffRecord } from '../lib/types';
 
 export interface BirthdayEvent {
@@ -27,8 +25,9 @@ export function deriveBirthdaysForYears(staff: StaffRecord[], years: number[]): 
 }
 
 export async function getStaffBirthdaysForYears(years: number[]): Promise<BirthdayEvent[]> {
-  const staff = await getStaff();
-  return deriveBirthdaysForYears(staff, years);
+  const {data,error}=await crmSupabase.rpc('crm_get_shared_calendar_birthdays',{p_years:years});
+  if(error)throw new Error(error.message);
+  return (data||[]).map((row:{staff_id:string;full_name:string;date:string})=>({...row,date:String(row.date)}));
 }
 
 export interface CalendarEvent {
@@ -85,6 +84,7 @@ export function deriveConfirmedEvents(agreements: AgreementRecord[], invoices: I
 }
 
 export async function getConfirmedEvents(): Promise<CalendarEvent[]> {
-  const [agreements, invoices] = await Promise.all([getAgreements(), getInvoices()]);
-  return deriveConfirmedEvents(agreements, invoices);
+  const {data,error}=await crmSupabase.rpc('crm_get_shared_calendar_events');
+  if(error)throw new Error(error.message);
+  return (data||[]) as CalendarEvent[];
 }
