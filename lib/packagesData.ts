@@ -9,299 +9,332 @@ export interface PackageFaq {
   a: string;
 }
 
+export type PackageComparisonKey =
+  | "djTruck"
+  | "groomEntry"
+  | "sound"
+  | "ledPanel"
+  | "dhol"
+  | "chhatri"
+  | "liquidCo2"
+  | "confetti"
+  | "pyro"
+  | "host"
+  | "performer"
+  | "nameBoards"
+  | "bouncers"
+  | "addOns"
+  | "safas";
+
 export interface BaraatPackage {
   id: string;
   name: string;
+  shortName: string;
+  number: string;
   tagline: string;
   description: string;
+  image: string;
+  imageAlt: string;
+  featured?: boolean;
+  custom?: boolean;
   features: string[];
+  comparison: Record<PackageComparisonKey, string>;
   longDescription: string;
   bestFor: string[];
   highlights: PackageHighlight[];
   faqs: PackageFaq[];
 }
 
+export interface PackageComparisonGroup {
+  title: string;
+  rows: { key: PackageComparisonKey; label: string }[];
+}
+
+export const PACKAGE_COMPARISON_GROUPS: PackageComparisonGroup[] = [
+  {
+    title: "Package foundation",
+    rows: [
+      { key: "djTruck", label: "DJ truck" },
+      { key: "groomEntry", label: "Groom entry choice" },
+      { key: "sound", label: "Sound experience" },
+      { key: "ledPanel", label: "Moving LED panel" },
+    ],
+  },
+  {
+    title: "Music & royal formation",
+    rows: [
+      { key: "dhol", label: "Punjabi dhol" },
+      { key: "chhatri", label: "Royal Chhatri lights" },
+      { key: "safas", label: "Safa package" },
+    ],
+  },
+  {
+    title: "Effects & entertainment",
+    rows: [
+      { key: "liquidCo2", label: "Liquid CO2 gun" },
+      { key: "confetti", label: "Confetti effect" },
+      { key: "pyro", label: "Pyro guns" },
+      { key: "host", label: "Hype host / anchor" },
+      { key: "performer", label: "Gorilla entertainer" },
+    ],
+  },
+  {
+    title: "Personalization & support",
+    rows: [
+      { key: "nameBoards", label: "Personalized name boards" },
+      { key: "bouncers", label: "Professional bouncers" },
+      { key: "addOns", label: "Optional add-ons" },
+    ],
+  },
+];
+
+const included = "Included";
+const customChoice = "Customized to your event";
+
 export const BARAAT_PACKAGES: BaraatPackage[] = [
   {
     id: "raj-tilak",
     name: "Raj Tilak Package",
-    tagline: "A Royal Beginning",
-    description: "Perfect for a royal & memorable baraat entry.",
+    shortName: "Raj Tilak",
+    number: "01",
+    tagline: "The Essential Royal Entry",
+    description:
+      "A complete premium Baraat foundation with a mini DJ truck, JBL sound, live dhol, royal lighting, effects and Safas for up to 31 guests.",
+    image: "/Assests/packages/raj-tilak-premium.jpeg",
+    imageAlt: "Raj Tilak royal groom entry experience",
     features: [
-      "Mini Double Decker Truck - High Energy Baraat Entry",
-      "Professional DJ Operator Artist - Non-Stop Entertainment",
-      "Exclusive Sound Quality - Crystal Clear, Powerful, Premium",
-      "Liquid CO2 Gun - For a Dazzling Entry",
-      "2 Punjabi Dhol - Traditional Vibes",
-      "8 Chhatri Lights - Royal Traditional Look",
-      "Vintage Car / Baggi - Royal & Classic Entry",
-      "Safa Team by My Safa - For Groom & Baraati",
+      "Mini DJ Truck - Compact mobile celebration setup",
+      "Groom Entry Choice - Vintage car, Baggi or horse",
+      "JBL Premium Sound - Clear, high-energy outdoor audio",
+      "Moving LED Panel - Dynamic visuals throughout the procession",
+      "2 Punjabi Dhol - Live traditional rhythm",
+      "6 Royal Chhatri Lights - Illuminated ceremonial formation",
+      "Liquid CO2 Gun - High-impact entry effect",
+      "12 Pyro Guns - Coordinated celebration highlights",
+      "Professional Safa Team - Styling for up to 31 Safas",
     ],
-    longDescription: `The Raj Tilak package is where it all begins. It's our entry-level offering, built for families who want a proper baraat entry — with a real double-decker DJ truck, live dhol players, a vintage car for the groom, and safa styling for the full baraati group — without spending on effects they don't need.
+    comparison: {
+      djTruck: "Mini DJ Truck",
+      groomEntry: "Vintage car / Baggi / Horse",
+      sound: "JBL premium sound",
+      ledPanel: included,
+      dhol: "2 Punjabi Dhol",
+      chhatri: "6 Royal Chhatris",
+      liquidCo2: included,
+      confetti: "—",
+      pyro: "12 Pyro Guns",
+      host: "—",
+      performer: "—",
+      nameBoards: "—",
+      bouncers: "—",
+      addOns: "Available on request",
+      safas: "Up to 31 Safas",
+    },
+    longDescription: `Raj Tilak is designed for families who want the complete Baraat experience in a focused, premium format. A mini DJ truck with JBL sound and a moving LED panel drives the celebration, while two Punjabi dhol players and six illuminated Chhatris create the traditional royal formation.
 
-The truck is a mini double-decker with a professional DJ onboard and a sound system loud enough to fill the street. Two Punjabi dhol players walk alongside, keeping the rhythm going from the moment the procession starts. Eight chhatri lights give the procession a royal, traditional look after dark.
-
-The Liquid CO2 gun adds a burst of fog at just the right moment — when the groom steps out of the vintage car or baggi and enters the venue. It's a single dramatic effect that photographs and videos extremely well.
-
-The safa team from My Safa ties turbans for the groom and the baraati group before the procession. That means no last-minute scrambling and no uneven turbans in the photos. They arrive early, work quickly, and everyone is ready before the procession steps off.
-
-If you're planning a mid-size baraat and want it done properly without unnecessary extras, Raj Tilak is the right call.`,
+The groom can enter in a vintage car, Baggi or on horseback. A Liquid CO2 effect and 12 coordinated pyro guns add visual impact at planned moments, while the professional Safa team prepares up to 31 guests before the procession begins.`,
     bestFor: [
-      "Families planning a baraat of 50–150 guests",
-      "Venues with narrower roads or tighter entry points",
-      "Budget-conscious bookings that still want a premium feel",
-      "Day baraats where pyro and LED effects matter less",
-      "First-time bookings with PlanMyBaraat",
+      "Intimate to mid-sized Baraats",
+      "Families wanting all essential services in one package",
+      "Venues with compact approach roads",
+      "Celebrations requiring Safas for up to 31 guests",
     ],
     highlights: [
-      {
-        icon: "🚌",
-        heading: "Mini Double Decker DJ Truck",
-        body: "A proper double-decker truck with a professional DJ and crystal-clear sound — enough to fill any street and get the crowd dancing before the procession even starts.",
-      },
-      {
-        icon: "🥁",
-        heading: "2 Punjabi Dhol Players",
-        body: "Live dhol is what separates a real baraat from a quiet procession. Two players walking with the crowd keeps the energy up the entire route.",
-      },
-      {
-        icon: "🎊",
-        heading: "Vintage Car + Safa Team",
-        body: "The groom arrives in a vintage car or baggi, turbaned by My Safa's professional team. The full baraati group gets safa styling too — so everyone looks the part.",
-      },
+      { icon: "🚚", heading: "Complete Mini DJ Truck", body: "JBL sound and a moving LED panel in a compact, procession-ready setup." },
+      { icon: "🥁", heading: "Royal Live Formation", body: "Two Punjabi dhol players and six Chhatri lights keep the entry energetic and traditional." },
+      { icon: "👑", heading: "31-Safa Package", body: "Professional Safa styling for the groom and up to 31 members of the Baraat party." },
     ],
     faqs: [
-      {
-        q: "What does the Raj Tilak package cost?",
-        a: "Pricing depends on your city, venue, date, and route length. We give real quotes on WhatsApp — usually within the hour. Message us with your wedding date and area and we'll get back to you fast.",
-      },
-      {
-        q: "Is a vintage car always included, or is it optional?",
-        a: "A vintage car or baggi is included in every Raj Tilak booking. You don't need to arrange one separately. If you want an upgraded American vintage car, that's available in the Signature package.",
-      },
-      {
-        q: "Can I add more dhol players to Raj Tilak?",
-        a: "Yes. Raj Tilak includes 2 dhol players as standard, but you can add more for an additional cost. Just mention it when you enquire and we'll include it in your quote.",
-      },
-      {
-        q: "Does the safa team cover the entire baraati group?",
-        a: "Yes. The My Safa team ties turbans for the groom and the full baraati group, not just the groom. They arrive early enough that everyone is ready before the procession starts.",
-      },
+      { q: "How can we get a quote for Raj Tilak?", a: "Message us on WhatsApp with your event date, city, venue and guest count. We will confirm availability and share a clear event-specific quote." },
+      { q: "Which groom entry can we select?", a: "You can choose one entry from a vintage car, Baggi or horse, subject to availability for your date and city." },
+      { q: "Can we increase the dhol, Chhatri or Safa count?", a: "Yes. Raj Tilak is a starting package and can be upgraded based on your guest count and procession plan." },
     ],
   },
   {
     id: "rajwada",
     name: "Rajwada Package",
-    tagline: "The Grand Celebration",
-    description: "A grander baraat entry with more music, lights, and entertainment.",
+    shortName: "Rajwada",
+    number: "02",
+    tagline: "More Energy. More Celebration.",
+    description:
+      "An upgraded mini-truck Baraat with RCF sound, more dhol and Chhatris, confetti, a hype host and Safas for up to 51 guests.",
+    image: "/Assests/packages/rajwada-v2.png",
+    imageAlt: "Rajwada grand Baraat celebration",
+    featured: true,
     features: [
-      "Mini Double Decker DJ Truck - Full Body Custom Flex Branding",
-      "Professional DJ Artist - Premium Sound Quality",
-      "Liquid CO2 Gun",
-      "4 Punjabi Dhol",
-      "10 Premium Chhatri Lights",
-      "1 Teddy / Gorilla Artist",
-      "Vintage Car / Baggi",
-      "Safa Team by My Safa",
+      "Mini DJ Truck - Upgraded mobile production setup",
+      "Groom Entry Choice - Vintage car, Baggi, horse or ATV bike",
+      "RCF Premium Sound - Powerful concert-style clarity",
+      "Moving LED Panel - Dynamic celebration visuals",
+      "4 Punjabi Dhol - Bigger live traditional energy",
+      "10 Royal Chhatri Lights - Fuller illuminated formation",
+      "Liquid CO2 Gun - High-impact entry effect",
+      "Confetti Effect - A camera-ready celebration moment",
+      "20 Pyro Guns - Coordinated visual highlights",
+      "Hype Host / Anchor - Keeps guests engaged and the flow moving",
+      "Professional Safa Team - Styling for up to 51 Safas",
     ],
-    longDescription: `Rajwada takes everything in Raj Tilak and turns it up. The truck gets full-body custom flex branding — your family's name, the couple's name, a wedding theme — whatever you want printed across the entire vehicle. It becomes a moving billboard for the celebration.
+    comparison: {
+      djTruck: "Mini DJ Truck",
+      groomEntry: "Vintage car / Baggi / Horse / ATV",
+      sound: "RCF premium sound",
+      ledPanel: included,
+      dhol: "4 Punjabi Dhol",
+      chhatri: "10 Royal Chhatris",
+      liquidCo2: included,
+      confetti: included,
+      pyro: "20 Pyro Guns",
+      host: included,
+      performer: "—",
+      nameBoards: "—",
+      bouncers: "—",
+      addOns: "Available on request",
+      safas: "Up to 51 Safas",
+    },
+    longDescription: `Rajwada steps up the scale with upgraded RCF sound, four Punjabi dhol players and ten royal Chhatri lights. The groom can choose a vintage car, Baggi, horse or ATV bike, giving the entry more flexibility and personality.
 
-Four dhol players instead of two means the music carries further and the crowd energy stays higher, especially in larger or more spread-out processions. Ten premium chhatri lights (up from eight) fill more of the street with colour and movement.
-
-The biggest addition in Rajwada is the Teddy or Gorilla artist — a costumed performer who walks and dances with the baraati crowd, keeping the energy alive and entertaining guests of all ages. This one element makes the procession visually memorable in a way that pure sound and lights don't.
-
-The vintage car and safa team are included just as in Raj Tilak, and the DJ setup is upgraded to premium sound quality. If you want your baraat to feel like a proper celebration — not just a procession from point A to B — Rajwada gives you the tools to do that.`,
+Liquid CO2, confetti and 20 planned pyro guns create a stronger visual sequence. A dedicated hype host or anchor keeps guests involved and coordinates energy through the route, while the Safa team prepares up to 51 guests.`,
     bestFor: [
-      "Baraats with 100–250 guests",
-      "Families who want custom branding on the truck",
-      "Evening baraats where lights and atmosphere matter",
-      "Wedding parties that want crowd entertainment beyond just music",
-      "Venues with open roads and more space for the procession",
+      "Mid-sized and energetic Baraats",
+      "Families wanting a host to engage the procession",
+      "Evening entries with stronger visual effects",
+      "Celebrations requiring Safas for up to 51 guests",
     ],
     highlights: [
-      {
-        icon: "🎨",
-        heading: "Full Body Custom Flex Branding",
-        body: "The entire truck is wrapped with custom artwork — your family name, the couple's name, your wedding theme. A procession that doubles as a statement.",
-      },
-      {
-        icon: "🥁",
-        heading: "4 Punjabi Dhol Players",
-        body: "Doubling the dhol count fills larger spaces and keeps a bigger crowd moving. Four players create the kind of rhythm that gets even reluctant guests onto the street.",
-      },
-      {
-        icon: "🐻",
-        heading: "Teddy / Gorilla Entertainer",
-        body: "A costumed performer who dances with the crowd, engages children and guests, and keeps the energy alive across the entire procession route.",
-      },
+      { icon: "🔊", heading: "RCF Premium Sound", body: "An upgraded audio experience built for a larger, more energetic procession." },
+      { icon: "🎉", heading: "Confetti + 20 Pyro Guns", body: "Layered effects planned around the strongest entry and celebration moments." },
+      { icon: "🎤", heading: "Hype Host / Anchor", body: "A dedicated host keeps guests involved and supports smooth procession flow." },
     ],
     faqs: [
-      {
-        q: "What can we print on the custom truck branding?",
-        a: "Almost anything — the bride and groom's names, your family name, a wedding hashtag, a theme-based design, or a combination. Share your idea on WhatsApp and we'll tell you what's possible with your booking timeline.",
-      },
-      {
-        q: "How early do we need to confirm the branding artwork?",
-        a: "At least 5–7 days before the wedding so the flex print can be produced and fitted to the truck. If you book last-minute, the truck still comes but branding may not be possible.",
-      },
-      {
-        q: "Is the Gorilla / Teddy artist appropriate for families with children?",
-        a: "Yes. The costumed artist is trained to be engaging and non-scary for younger guests while still being entertaining for adults. Most families love this addition.",
-      },
-      {
-        q: "What's the main upgrade from Raj Tilak to Rajwada?",
-        a: "Custom truck branding, 2 extra dhol players, 2 extra chhatri lights, and the Gorilla/Teddy entertainer. If you want a more festive, visually customised procession, Rajwada is worth the step up.",
-      },
+      { q: "What is the main upgrade from Raj Tilak?", a: "Rajwada adds RCF sound, more dhol and Chhatris, confetti, 20 pyro guns, an ATV entry option, a hype host and a larger 51-Safa package." },
+      { q: "Is the ATV bike included as a groom-entry choice?", a: "Yes. You can choose one available option from a vintage car, Baggi, horse or ATV bike." },
+      { q: "What does the hype host do?", a: "The host engages guests, supports announcements and helps maintain energy and timing across the procession." },
     ],
   },
   {
     id: "maharaja",
     name: "Maharaja Package",
-    tagline: "Luxury Beyond Expectations",
-    description: "A luxury-packed baraat experience with custom branding and effects.",
+    shortName: "Maharaja",
+    number: "03",
+    tagline: "The Grand Production",
+    description:
+      "A full-scale American DJ truck experience with RCF sound or a brass band, six dhol, 35 pyro guns, entertainment and Safas for up to 81 guests.",
+    image: "/Assests/packages/maharaja-v2.png",
+    imageAlt: "Maharaja American DJ truck Baraat production",
     features: [
-      "Mini Double Decker DJ Truck - Custom Theme Branding",
-      "Professional DJ Artist - Premium Concert Sound & Intelligent Lighting",
-      "Moving LED Panels - High Definition Visual Experience",
-      "Custom Groom Name LED Letters",
-      "Liquid CO2 Gun",
-      "Confetti CO2 Gun",
-      "Hand Pyro Gun",
-      "6 Punjabi Dhol",
-      "12 Umbrella Lights (Premium Chhatri)",
-      "Professional DJ Jockey",
-      "CO2 Jet Effects",
-      "2 Professional Bouncers",
-      "Vintage Car / Baggi",
-      "Safa Team by My Safa",
+      "DJ American Truck - Full-scale mobile celebration production",
+      "Groom Entry Choice - Vintage car, Baggi, horse or ATV bike",
+      "RCF Sound or Brass Band - Choose your preferred music experience",
+      "Moving LED Panel - High-impact dynamic visuals",
+      "6 Punjabi Dhol - Powerful live rhythm",
+      "20 Royal Chhatri Lights - Grand illuminated procession formation",
+      "Liquid CO2 Gun - High-impact entry effect",
+      "Confetti Effect - Premium celebration reveal",
+      "35 Pyro Guns - Large coordinated visual sequence",
+      "Hype Host / Anchor - Crowd engagement and procession energy",
+      "Gorilla Entertainer - Interactive guest entertainment",
+      "2 Personalized Name Boards - Custom visual identity for the entry",
+      "Flexible Add-ons - Extra personalization options",
+      "Professional Safa Team - Styling for up to 81 Safas",
     ],
-    longDescription: `The Maharaja package is where the baraat stops being just a procession and becomes a full production. Every element is designed to create a visual and sonic experience that your guests talk about for months.
+    comparison: {
+      djTruck: "DJ American Truck",
+      groomEntry: "Vintage car / Baggi / Horse / ATV",
+      sound: "RCF sound or Brass Band",
+      ledPanel: included,
+      dhol: "6 Punjabi Dhol",
+      chhatri: "20 Royal Chhatris",
+      liquidCo2: included,
+      confetti: included,
+      pyro: "35 Pyro Guns",
+      host: included,
+      performer: "1 Gorilla Entertainer",
+      nameBoards: "2 Personalized Boards",
+      bouncers: "Available as add-on",
+      addOns: "Flexible add-ons included",
+      safas: "Up to 81 Safas",
+    },
+    longDescription: `Maharaja turns the Baraat into a complete moving production. The DJ American Truck carries a moving LED panel and your choice of premium RCF sound or a brass-band experience. Six Punjabi dhol players and twenty royal Chhatris create a procession with real scale.
 
-The truck comes with moving LED panels — high-definition displays that can show custom content, the groom's name, or dynamic visuals synced to the music. The DJ is a professional jockey running concert-level sound with intelligent lighting control. Six dhol players and 12 premium umbrella chhatri lights fill even the largest venue approaches.
-
-Three types of effects are stacked in Maharaja: Liquid CO2 for fog bursts, Confetti CO2 for a celebratory shower, and a Hand Pyro Gun for directed flame effects. CO2 jet cannons add choreographed blasts timed with key moments in the procession. Together, they turn the groom's arrival into a moment that looks like a film set.
-
-The groom's name in custom LED letters is a Maharaja exclusive. It travels in the procession, visible from a distance, and creates the central photo backdrop when the groom arrives at the venue entrance.
-
-Two professional bouncers manage crowd flow and keep the procession orderly — important when there are hundreds of guests and multiple effect timings to coordinate. The vintage car and safa team complete the package.`,
+The effect sequence includes Liquid CO2, confetti and 35 pyro guns. A hype host and Gorilla entertainer keep the crowd engaged, while two personalized name boards give the entry a custom identity. The Safa team prepares up to 81 guests, with flexible add-ons available for further personalization.`,
     bestFor: [
-      "Large baraats of 200–400 guests",
-      "Evening or night-time processions",
-      "Families wanting a cinematic, highly photographed entry",
-      "Weddings at large venue complexes with open approach roads",
-      "Couples who want their name in lights — literally",
+      "Large premium Baraats",
+      "Families wanting an American DJ truck production",
+      "Processions needing strong entertainment and personalization",
+      "Celebrations requiring Safas for up to 81 guests",
     ],
     highlights: [
-      {
-        icon: "📺",
-        heading: "Moving LED Panels + Groom Name Letters",
-        body: "High-definition LED displays on the truck plus custom LED letters spelling the groom's name. A visual centrepiece that photographs like nothing else.",
-      },
-      {
-        icon: "🎆",
-        heading: "Triple Effect Stack",
-        body: "Liquid CO2, Confetti CO2, and Hand Pyro create a layered effects sequence. Each moment in the procession can have its own visual punctuation.",
-      },
-      {
-        icon: "🎵",
-        heading: "Concert-Level Sound & 6 Dhol",
-        body: "Professional DJ jockey on intelligent concert sound, backed by six live dhol players. The music carries across the largest open spaces and keeps every guest moving.",
-      },
+      { icon: "🚛", heading: "DJ American Truck", body: "A full-scale mobile production platform with moving LED visuals." },
+      { icon: "🎆", heading: "35-Gun Pyro Sequence", body: "A large coordinated visual sequence with Liquid CO2 and confetti." },
+      { icon: "✨", heading: "Personalized Entertainment", body: "Hype host, Gorilla entertainer and two custom name boards make the entry distinctly yours." },
     ],
     faqs: [
-      {
-        q: "Are the pyro effects safe for guests walking nearby?",
-        a: "Yes. All pyro effects used in Maharaja — Hand Pyro and CO2 jets — are professional-grade and operated by trained staff. They are designed for outdoor procession use and maintain a safe distance from guests.",
-      },
-      {
-        q: "Can the LED panels show custom video content or just the groom's name?",
-        a: "The moving LED panels can display dynamic visuals and the groom's name. Custom video content requires prior coordination — mention it when enquiring and we'll advise based on your timeline.",
-      },
-      {
-        q: "What do the 2 professional bouncers actually do?",
-        a: "They manage crowd flow, keep guests from walking in front of the truck, coordinate effect timing with the DJ, and ensure the procession moves smoothly from start to venue arrival.",
-      },
-      {
-        q: "Is Maharaja available for daytime baraats?",
-        a: "Yes, though LED panels and pyro effects are significantly more dramatic after dark. If your baraat is daytime, we can advise which elements deliver the most impact in daylight — just mention the timing when you enquire.",
-      },
+      { q: "Can we choose between RCF sound and a brass band?", a: "Yes. Maharaja allows you to choose the preferred sound experience, subject to date and city availability." },
+      { q: "Are the two name boards personalized?", a: "Yes. The two boards can be personalized for the groom, couple or family theme once the artwork is confirmed." },
+      { q: "Are bouncers available with Maharaja?", a: "Professional bouncers can be added based on guest count, venue approach and crowd-management requirements." },
     ],
   },
   {
     id: "signature",
-    name: "Signature Package",
-    tagline: "The Ultimate Royal Experience",
-    description: "Our most complete, top-tier baraat production — the ultimate royal experience.",
+    name: "Signature Custom Package",
+    shortName: "Signature Custom",
+    number: "04",
+    tagline: "Built Completely Around You",
+    description:
+      "A fully customized American DJ truck production where the music, royal formation, effects, entertainment, support team and add-ons are built around your event.",
+    image: "/Assests/packages/signature-v2.png",
+    imageAlt: "Signature fully customized Baraat production",
+    custom: true,
     features: [
-      "Sound & Light - Professional Concert Sound & Intelligent Lighting",
-      "Pyro Highlight on Entry - Grand Entry with Pyro Effects",
-      "Confetti CO2 Gun - Premium Confetti CO2 Gun",
-      "Hand Pyro Gun - Safe & Spectacular Hand Pyro Gun",
-      "American Vintage Car",
-      "4 Professional Bouncers - Trained & Professional Security",
-      "Professional DJ Jockey - Experienced DJ Jockey",
-      "Entertainer Artist - Live Entertainer & Crowd Engagement",
-      "Fake Money Gun - Fun Cash for Grand Celebration",
-      "Moving LED Panels - High Resolution Moving LED Panels",
-      "Custom Groom Name LED Letters - Customized as per Groom's Name",
-      "Liquid CO2 Gun - High Pressure Liquid CO2 Effect",
-      "4 Punjabi Dhol - High Energy Dhol Team",
-      "10 Premium Chhatri Lights - Royal Premium Chhatri Lights",
-      "Teddy / Gorilla Artist - Fun & Interactive Entertainment",
-      "Safa Team by My Safa - Royal Safa Team for Groom & Baraatis",
+      "DJ American Truck - Full-scale custom production",
+      "Groom Entry Choice - Vintage car, Baggi, horse or ATV bike",
+      "RCF Sound or Brass Band - Selected around your celebration style",
+      "Moving LED Panel - Personalized visual content",
+      "Punjabi Dhol Team - Count planned for your procession scale",
+      "Royal Chhatri Formation - Count and design planned for your venue",
+      "Liquid CO2, Confetti & Pyro - Custom effect sequence",
+      "Hype Host / Anchor - Professional crowd engagement",
+      "Gorilla Entertainer - Optional interactive performance",
+      "Personalized Name Boards - Designed for your event",
+      "Professional Bouncers - Team sized for guest flow and safety",
+      "Flexible Add-ons - Choose the experiences that matter to you",
+      "Professional Safa Team - Up to 81 Safas, expandable on request",
     ],
-    longDescription: `The Signature package is the full production. Every element PlanMyBaraat offers is included — nothing held back, nothing to add on. If you want the biggest, most cinematic baraat entry possible, this is the one.
+    comparison: {
+      djTruck: "DJ American Truck",
+      groomEntry: customChoice,
+      sound: "RCF sound / Brass Band / Custom",
+      ledPanel: customChoice,
+      dhol: customChoice,
+      chhatri: customChoice,
+      liquidCo2: customChoice,
+      confetti: customChoice,
+      pyro: customChoice,
+      host: customChoice,
+      performer: "Optional",
+      nameBoards: customChoice,
+      bouncers: customChoice,
+      addOns: "Fully flexible",
+      safas: "Up to 81, expandable",
+    },
+    longDescription: `Signature Custom is created from the ground up for celebrations that need a distinctive production. The DJ American Truck, groom-entry vehicle, music format, LED content, dhol team and Chhatri formation are selected around your venue, route, guest count and visual direction.
 
-The truck runs concert-level sound with intelligent lighting. A professional DJ jockey controls the music. Moving high-resolution LED panels display dynamic visuals, and the groom's name appears in custom LED letters that travel with the procession and frame the final arrival perfectly.
-
-Five effect types are available: Pyro highlights timed to the venue entry, Confetti CO2 showers, Hand Pyro guns, Liquid CO2 fog, and a Fake Money Gun for a celebratory, cinematic touch that guests absolutely love. An entertainer artist and a Gorilla/Teddy performer keep crowd energy high across every part of the procession route.
-
-The groom rides in an American vintage car — an upgrade from the standard vintage car or baggi in other packages. This is a full classic American automobile, and it makes the groom's arrival a visually distinct moment from any other element.
-
-Four professional bouncers manage the entire procession — crowd flow, effect coordination, guest safety, and timing. Four dhol players and ten premium chhatri lights round out the procession.
-
-The My Safa team provides full turban styling for the groom and the entire baraati group. The Signature package is the one families book when they've decided the baraat is the centrepiece of the wedding, and they want it done at the highest level.`,
+CO2, confetti and pyro effects are choreographed as a custom sequence. The host, entertainers, name boards, professional bouncers, Safa team and additional experiences are then sized around the final plan. Your proposal is prepared after the event location, route and final production requirements are confirmed on WhatsApp.`,
     bestFor: [
-      "Large, high-profile baraats of 300+ guests",
-      "Weddings where the baraat is the centrepiece event",
-      "Families who want every effect and element in one package",
-      "Night baraats at premium venue complexes",
-      "Grooms who want an American vintage car rather than a standard baggi",
+      "High-profile and destination celebrations",
+      "Families wanting a one-of-one Baraat production",
+      "Large guest counts and complex venue approaches",
+      "Events requiring custom entertainment, effects and support",
     ],
     highlights: [
-      {
-        icon: "🚗",
-        heading: "American Vintage Car",
-        body: "A full classic American automobile for the groom's arrival — a significant visual step up from a standard vintage car or baggi, and a photograph centrepiece.",
-      },
-      {
-        icon: "🎇",
-        heading: "Five-Layer Effects Stack",
-        body: "Pyro on entry, Confetti CO2, Hand Pyro, Liquid CO2 fog, and a Fake Money Gun. Every moment in the procession can be punctuated with a different visual effect.",
-      },
-      {
-        icon: "👑",
-        heading: "Full Entertainment Package",
-        body: "Live entertainer artist, Gorilla/Teddy performer, 4 dhol players, professional DJ jockey, and 4 bouncers. Nothing is missing. The entire team works together on your booking.",
-      },
+      { icon: "🪄", heading: "Designed From Scratch", body: "Every major service is selected and sized around your event instead of a fixed checklist." },
+      { icon: "🎬", heading: "Custom Production Sequence", body: "Music, visuals, effects and the groom entry are choreographed as one experience." },
+      { icon: "🤝", heading: "One Specialist Team", body: "Artists, operators, bouncers and Safa teams are coordinated through one event plan." },
     ],
     faqs: [
-      {
-        q: "What's the difference between Maharaja and Signature?",
-        a: "Signature adds the American vintage car (vs standard), a Fake Money Gun, a live entertainer artist, a Gorilla/Teddy performer, 2 extra bouncers, and a Pyro Highlight timed to the venue entry. Maharaja is excellent — Signature is the complete package.",
-      },
-      {
-        q: "How far in advance should we book the Signature package?",
-        a: "At least 4–6 weeks in advance during wedding season (November to February). Signature requires the most coordination — truck, DJ, effects team, 4 bouncers, entertainer artist, safa team, and the American vintage car all need to be locked in together.",
-      },
-      {
-        q: "Can the Fake Money Gun be used inside the venue?",
-        a: "The Fake Money Gun works best outdoors during the procession, where the bills fly freely and get caught on camera. Inside a venue with aircon or tight spaces, the effect is smaller. We'll advise based on your venue layout.",
-      },
-      {
-        q: "Is everything in Signature handled by one team or multiple vendors?",
-        a: "One booking, one team. Every element — truck, DJ, dhol, effects operators, bouncers, entertainer, safa team — is coordinated under a single PlanMyBaraat booking. You don't have to manage multiple vendors or timelines.",
-      },
+      { q: "How is the Signature Custom quote prepared?", a: "The final quote depends on the dhol and Chhatri count, entertainment, effect sequence, bouncer team, entry vehicle, add-ons, city and venue logistics. Share your brief on WhatsApp for an event-specific proposal." },
+      { q: "Can we start from Maharaja and add only a few upgrades?", a: "Yes. Signature Custom can begin with any package foundation and add or change only the services that matter to your event." },
+      { q: "How early should we plan a custom package?", a: "Four to six weeks is recommended during peak wedding season so vehicles, artists, production and personalized assets can be secured together." },
     ],
   },
 ];

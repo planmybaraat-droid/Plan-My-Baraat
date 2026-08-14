@@ -123,7 +123,7 @@ export default function PackageCustomizer() {
           <option>Raj Tilak Package</option>
           <option>Rajwada Package</option>
           <option>Maharaja Package</option>
-          <option>Signature Package</option>
+          <option>Signature Custom Package</option>
           <option>Build from scratch</option>
         </select>
       </label>

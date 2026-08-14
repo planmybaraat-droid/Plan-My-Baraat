@@ -15,6 +15,7 @@ interface SiteHeaderProps {
 const NAV_ITEMS = [
   { href: "/", label: "Home", sectionId: "home", pageHref: "/" },
   { href: "/packages", label: "Packages", sectionId: "packages", pageHref: "/packages" },
+  { href: "/compare-packages", label: "Compare Packages", sectionId: "compare-packages", pageHref: "/compare-packages" },
   { href: "/#about", label: "About Us", sectionId: "about", pageHref: "/about" },
   { href: "/gallery", label: "Gallery", sectionId: "gallery", pageHref: "/gallery" },
   { href: "/#testimonials", label: "Testimonials", sectionId: "testimonials", pageHref: "/testimonials" },

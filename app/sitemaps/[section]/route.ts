@@ -26,6 +26,7 @@ function getUrlsForSection(section: string) {
       `${BASE_URL}/contact`,
       `${BASE_URL}/gallery`,
       `${BASE_URL}/packages`,
+      `${BASE_URL}/compare-packages`,
       `${BASE_URL}/testimonials`,
     ];
   }

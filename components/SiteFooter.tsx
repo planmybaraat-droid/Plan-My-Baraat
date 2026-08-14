@@ -11,6 +11,7 @@ import {
 const QUICK_LINKS = [
   { href: "/", label: "Home" },
   { href: "/packages", label: "Packages" },
+  { href: "/compare-packages", label: "Compare Packages" },
   { href: "/about", label: "About Us" },
   { href: "/gallery", label: "Gallery" },
   { href: "/testimonials", label: "Testimonials" },
@@ -21,7 +22,8 @@ const PACKAGE_LINKS = [
   { href: "/packages#raj-tilak", label: "Raj Tilak Package" },
   { href: "/packages#rajwada", label: "Rajwada Package" },
   { href: "/packages#maharaja", label: "Maharaja Package" },
-  { href: "/packages#signature", label: "Signature Package" },
+  { href: "/packages#signature", label: "Signature Custom Package" },
+  { href: "/compare-packages", label: "Compare All Packages" },
   { href: "/packages#customize", label: "Customize a Package" },
 ];
 
