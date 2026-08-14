@@ -26,6 +26,7 @@ const MODULE_ICONS: Record<ModuleKey, typeof LayoutDashboard> = {
   packages: Package,
   calendar: CalendarDays,
   eventJobs: BriefcaseBusiness,
+  myLetters: FileText,
 };
 
 const MODULE_NAV: { key: ModuleKey; href: string; label: string }[] = [
@@ -40,6 +41,7 @@ const MODULE_NAV: { key: ModuleKey; href: string; label: string }[] = [
   { key: 'packages', href: '/workspace/packages', label: 'Packages' },
   { key: 'calendar', href: '/workspace/event-calendar', label: 'Event Calendar' },
   { key: 'eventJobs', href: '/workspace/event-jobs', label: 'Event Jobs' },
+  { key: 'myLetters', href: '/workspace/my-letters', label: 'My Letters' },
 ];
 
 const UTILITY_NAV = [

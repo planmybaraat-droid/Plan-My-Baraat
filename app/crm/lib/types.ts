@@ -698,6 +698,33 @@ export interface AttendanceRecord {
   created_at?: string;
   updated_at?: string;
   staff?: StaffRecord;
+  breaks?: AttendanceBreakRecord[];
+}
+
+export interface AttendanceBreakRecord {
+  id: string;
+  attendance_id: string;
+  staff_id: string;
+  break_start_at: string;
+  break_end_at: string | null;
+  duration_minutes: number;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type AttendanceWorkState = 'not_punched_in' | 'working' | 'on_break' | 'completed';
+
+export interface MyAttendanceState {
+  record: AttendanceRecord | null;
+  breaks: AttendanceBreakRecord[];
+  active_break: AttendanceBreakRecord | null;
+  state: AttendanceWorkState;
+  total_break_minutes: number;
+  shift_minutes: number;
+  net_working_minutes: number;
+  is_locked?: boolean;
+  lock_at?: string | null;
 }
 
 export interface StaffFilters {

@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Camera, CheckCircle2, Clock, ListChecks, LogOut as PunchOutIcon, UserSearch, Bell, TimerReset, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
+import { Camera, CheckCircle2, Clock, Coffee, ListChecks, LogOut as PunchOutIcon, UserSearch, Bell, TimerReset, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
 import CrmHeader from '../crm/components/CrmHeader';
 import { useSidebar } from '../crm/sidebar-context';
 import { useCrmProfile } from '../crm/lib/useCrmProfile';
 import { useCrmNotifications } from '../crm/lib/useCrmNotifications';
 import { crmSupabase, getVendors } from '../crm/lib/supabase-crm';
 import SelfieCapture from './components/SelfieCapture';
-import { getTodayAttendance, getSelfieUrl, punchIn, punchOut, getMonthAttendance } from './lib/attendance-data';
-import type { AttendanceRecord, Vendor } from '../crm/lib/types';
+import { endBreak, getTodayAttendanceState, getSelfieUrl, punchIn, punchOut, getMonthAttendance, startBreak } from './lib/attendance-data';
+import type { AttendanceBreakRecord, MyAttendanceState, Vendor } from '../crm/lib/types';
 import { useSearchParams } from 'next/navigation';
 import { resolveModuleAccess } from '../../lib/modulePermissions';
 import DownloadCenterCard from '../crm/components/DownloadCenterCard';
@@ -23,18 +23,14 @@ function formatTime(t: string | null | undefined) {
   return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
 }
 
-function workingHours(record: AttendanceRecord | null | undefined) {
-  if (!record?.check_in) return null;
-  if (record.punch_in_at) {
-    const end = record.punch_out_at ? new Date(record.punch_out_at).getTime() : Date.now();
-    const minutes = Math.max(0, Math.floor((end - new Date(record.punch_in_at).getTime()) / 60000));
-    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-  }
-  const [inH, inM] = record.check_in.split(':').map(Number);
-  const end = record.check_out ? record.check_out.split(':').map(Number) : (() => { const now = new Date(); return [now.getHours(), now.getMinutes()]; })();
-  let minutes = (end[0] * 60 + end[1]) - (inH * 60 + inM);
-  if (minutes < 0) minutes += 24 * 60;
-  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+function formatMinutes(minutes: number | null | undefined) {
+  const safe = Math.max(0, Number(minutes || 0));
+  return `${Math.floor(safe / 60)}h ${safe % 60}m`;
+}
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return '—';
+  return new Date(value).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 function greeting() {
@@ -68,7 +64,7 @@ export default function WorkspaceDashboard() {
   const canTasks = resolveModuleAccess(profile?.role, profile?.moduleAccess, 'tasks');
   const canLeads = resolveModuleAccess(profile?.role, profile?.moduleAccess, 'leads');
   const { items: notifications } = useCrmNotifications();
-  const [attendance, setAttendance] = useState<AttendanceRecord | null | undefined>(undefined);
+  const [attendanceState, setAttendanceState] = useState<MyAttendanceState | undefined>(undefined);
   const [capturing, setCapturing] = useState<'in' | 'out' | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -79,8 +75,9 @@ export default function WorkspaceDashboard() {
   const [canDownloadVendors, setCanDownloadVendors] = useState(true);
   const [monthCursor, setMonthCursor] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [monthMap, setMonthMap] = useState<Record<string, string>>({});
+  const attendance = attendanceState?.record;
 
-  const loadAttendance = useCallback(async () => setAttendance(await getTodayAttendance()), []);
+  const loadAttendance = useCallback(async () => setAttendanceState(await getTodayAttendanceState()), []);
 
   useEffect(() => {
     loadAttendance();
@@ -114,6 +111,19 @@ export default function WorkspaceDashboard() {
       setMonthMap(await getMonthAttendance(monthCursor.year, monthCursor.month));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Something went wrong.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleBreak = async (action: 'start' | 'end') => {
+    if (busy) return;
+    setBusy(true); setError('');
+    try {
+      if (action === 'start') await startBreak(); else await endBreak();
+      await loadAttendance();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to update your break.');
     } finally {
       setBusy(false);
     }
@@ -197,8 +207,8 @@ export default function WorkspaceDashboard() {
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><TimerReset size={16} /></span>
               <div className="min-w-0">
-                <p className="text-lg font-black leading-tight tracking-tight text-gray-950 tabular-nums">{workingHours(attendance) || '—'}</p>
-                <p className="text-[10.5px] font-semibold leading-tight text-gray-400">Working Hours</p>
+                <p className="text-lg font-black leading-tight tracking-tight text-gray-950 tabular-nums">{attendance?.check_in ? formatMinutes(attendanceState?.net_working_minutes) : '—'}</p>
+                <p className="text-[10.5px] font-semibold leading-tight text-gray-400">Net Working</p>
               </div>
             </div>
             <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600">Today</p>
@@ -224,22 +234,30 @@ export default function WorkspaceDashboard() {
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
               <p className="text-sm font-black text-gray-950">Today&apos;s Attendance</p>
-              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${attendance?.check_in ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>{attendance?.check_in ? (attendance.check_out ? 'Day Complete' : 'Punched In') : 'Not Punched In'}</span>
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${attendanceState?.state === 'on_break' ? 'bg-amber-50 text-amber-700' : attendance?.check_in ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>{attendanceState?.state === 'on_break' ? 'On Break' : attendanceState?.state === 'working' ? 'Working' : attendanceState?.state === 'completed' ? 'Day Complete' : 'Not Punched In'}</span>
             </div>
             <div className="grid grid-cols-3 gap-2 px-5 py-5 text-center">
               <div><p className="text-base font-black tracking-tight text-gray-950 tabular-nums">{formatTime(attendance?.check_in)}</p><p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Check In</p></div>
               <div><p className="text-base font-black tracking-tight text-gray-950 tabular-nums">{formatTime(attendance?.check_out)}</p><p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Check Out</p></div>
-              <div><p className="text-base font-black tracking-tight text-gray-950 tabular-nums">{workingHours(attendance) || '—'}</p><p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Working Hours</p></div>
+              <div><p className="text-base font-black tracking-tight text-gray-950 tabular-nums">{attendance?.check_in ? formatMinutes(attendanceState?.net_working_minutes) : '—'}</p><p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Net Working</p></div>
             </div>
             <div className="space-y-2.5 px-5 pb-5">
+              {!!attendanceState?.breaks.length && (
+                <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+                  <div className="flex items-center justify-between gap-3"><p className="text-[10px] font-black uppercase tracking-wider text-gray-500">Today&apos;s breaks</p><span className="text-[10px] font-bold text-gray-500">Total {formatMinutes(attendanceState.total_break_minutes)}</span></div>
+                  <div className="mt-2 space-y-2">{attendanceState.breaks.map((item: AttendanceBreakRecord, index: number) => <div key={item.id} className="flex items-center justify-between gap-3 text-xs"><span className="font-semibold text-gray-600">Break {index + 1}</span><span className="text-right tabular-nums text-gray-500">{formatDateTime(item.break_start_at)} → {item.break_end_at ? formatDateTime(item.break_end_at) : 'Active'}{item.break_end_at ? ` · ${item.duration_minutes} min` : ''}</span></div>)}</div>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 {attendance?.punch_in_selfie_url && <SelfieLink path={attendance.punch_in_selfie_url} label="In selfie" />}
                 {attendance?.punch_out_selfie_url && <SelfieLink path={attendance.punch_out_selfie_url} label="Out selfie" />}
               </div>
               {!attendance?.check_in ? (
-                <button onClick={() => setCapturing('in')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-bold text-white"><Camera size={15} /> Punch In</button>
-              ) : !attendance?.check_out ? (
-                <button onClick={() => setCapturing('out')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-3 text-xs font-bold text-white"><PunchOutIcon size={15} /> Punch Out</button>
+                <button disabled={busy} onClick={() => setCapturing('in')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Camera size={15} /> Punch In</button>
+              ) : attendanceState?.state === 'on_break' ? (
+                <button disabled={busy} onClick={() => handleBreak('end')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Coffee size={15} /> {busy ? 'Ending break...' : 'End Break'}</button>
+              ) : attendanceState?.state === 'working' ? (
+                <div className="grid gap-2 sm:grid-cols-2"><button disabled={busy} onClick={() => handleBreak('start')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Coffee size={15} /> {busy ? 'Please wait...' : 'Start Break'}</button><button disabled={busy} onClick={() => setCapturing('out')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><PunchOutIcon size={15} /> Punch Out</button></div>
               ) : (
                 <span className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-700"><CheckCircle2 size={14} /> Done for today</span>
               )}

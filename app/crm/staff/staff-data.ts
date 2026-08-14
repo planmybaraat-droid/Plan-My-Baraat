@@ -1,5 +1,5 @@
 import { CRM_CONFIGURATION_ERROR, crmSupabase, isCrmSupabaseConfigured } from '../lib/supabase-crm';
-import type { AttendanceRecord, StaffFilters, StaffFormData, StaffRecord } from '../lib/types';
+import type { AttendanceBreakRecord, AttendanceRecord, StaffFilters, StaffFormData, StaffRecord } from '../lib/types';
 import { adminSaveAttendance } from '../lib/attendance-policy';
 
 const STAFF_KEY = 'crm_staff_records_v1';
@@ -147,11 +147,11 @@ export async function deleteStaff(id: string) {
 }
 
 function normalizeAttendance(row: Record<string, unknown>): AttendanceRecord {
-  return { id: String(row.id || ''), staff_id: String(row.staff_id), attendance_date: String(row.attendance_date), status: row.status as AttendanceRecord['status'], check_in: String(row.check_in || '').slice(0, 5), check_out: String(row.check_out || '').slice(0, 5), break_minutes: Number(row.break_minutes || 0), overtime_minutes: Number(row.overtime_minutes || 0), note: String(row.note || ''), created_at: String(row.created_at || ''), updated_at: String(row.updated_at || ''), staff: row.staff ? normalizeStaff(row.staff as Record<string, unknown>) : undefined };
+  return { id: String(row.id || ''), staff_id: String(row.staff_id), attendance_date: String(row.attendance_date), status: row.status as AttendanceRecord['status'], check_in: String(row.check_in || '').slice(0, 5), check_out: String(row.check_out || '').slice(0, 5), break_minutes: Number(row.break_minutes || 0), overtime_minutes: Number(row.overtime_minutes || 0), note: String(row.note || ''), punch_in_at: row.punch_in_at ? String(row.punch_in_at) : null, punch_out_at: row.punch_out_at ? String(row.punch_out_at) : null, created_at: String(row.created_at || ''), updated_at: String(row.updated_at || ''), breaks: Array.isArray(row.breaks) ? row.breaks as AttendanceBreakRecord[] : [], staff: row.staff ? normalizeStaff(row.staff as Record<string, unknown>) : undefined };
 }
 
 export async function getAttendance(from: string, to = from) {
-  return storage(async () => { const { data, error } = await crmSupabase.from('crm_attendance').select('*,staff:crm_staff(*)').gte('attendance_date', from).lte('attendance_date', to).order('attendance_date', { ascending: false }); if (error) throw new Error(error.message); return (data || []).map(row => normalizeAttendance(row)); }, () => readLocal<AttendanceRecord>(ATTENDANCE_KEY).filter(item => item.attendance_date >= from && item.attendance_date <= to));
+  return storage(async () => { const { data, error } = await crmSupabase.from('crm_attendance').select('*,staff:crm_staff(*),breaks:crm_attendance_breaks(*)').gte('attendance_date', from).lte('attendance_date', to).order('attendance_date', { ascending: false }); if (error) throw new Error(error.message); return (data || []).map(row => normalizeAttendance(row)); }, () => readLocal<AttendanceRecord>(ATTENDANCE_KEY).filter(item => item.attendance_date >= from && item.attendance_date <= to));
 }
 
 export async function saveAttendance(rows: AttendanceRecord[], correctionReason?: string) {

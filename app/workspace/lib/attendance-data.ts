@@ -1,5 +1,5 @@
 import { crmSupabase } from '../../crm/lib/supabase-crm';
-import type { AttendanceRecord } from '../../crm/lib/types';
+import type { AttendanceBreakRecord, AttendanceRecord, MyAttendanceState } from '../../crm/lib/types';
 
 function detectBrowser() {
   const ua = navigator.userAgent;
@@ -26,10 +26,25 @@ export async function getMyStaffProfile() {
   return data;
 }
 
-export async function getTodayAttendance(): Promise<AttendanceRecord | null> {
+export async function getTodayAttendanceState(): Promise<MyAttendanceState> {
   const { data, error } = await crmSupabase.rpc('crm_get_my_attendance_state');
   if (error) throw new Error(error.message);
-  return ((data as { record?: AttendanceRecord | null } | null)?.record || null) as AttendanceRecord | null;
+  const state = (data || {}) as Partial<MyAttendanceState>;
+  return {
+    record: state.record || null,
+    breaks: state.breaks || [],
+    active_break: state.active_break || null,
+    state: state.state || 'not_punched_in',
+    total_break_minutes: Number(state.total_break_minutes || 0),
+    shift_minutes: Number(state.shift_minutes || 0),
+    net_working_minutes: Number(state.net_working_minutes || 0),
+    is_locked: !!state.is_locked,
+    lock_at: state.lock_at || null,
+  };
+}
+
+export async function getTodayAttendance(): Promise<AttendanceRecord | null> {
+  return (await getTodayAttendanceState()).record;
 }
 
 // Used by the dashboard calendar — one row per day for the given month
@@ -69,6 +84,18 @@ export async function punchOut(selfie: Blob) {
   const { data, error } = await crmSupabase.rpc('punch_out', { p_selfie_url: path, p_device: detectDevice(), p_browser: detectBrowser(), p_ip: null });
   if (error) throw new Error(error.message);
   return data as AttendanceRecord;
+}
+
+export async function startBreak(): Promise<AttendanceBreakRecord> {
+  const { data, error } = await crmSupabase.rpc('crm_start_attendance_break');
+  if (error) throw new Error(error.message);
+  return data as AttendanceBreakRecord;
+}
+
+export async function endBreak(): Promise<AttendanceBreakRecord> {
+  const { data, error } = await crmSupabase.rpc('crm_end_attendance_break');
+  if (error) throw new Error(error.message);
+  return data as AttendanceBreakRecord;
 }
 
 export async function getSelfieUrl(path: string) {

@@ -94,18 +94,11 @@ export async function getQuotationById(id: string) {
 export async function createQuotation(payload: QuotationFormData) {
   const now = new Date().toISOString();
   const activity: QuotationActivity = { id: `quote-activity-${Date.now()}`, type: 'created', title: 'Quotation created', detail: `${payload.quotation_number} created as draft.`, actor: payload.created_by_name || 'CRM Staff', created_at: now };
-  let prepared: QuotationFormData = { ...payload, services: payload.services || [], revisions: payload.revisions || [], activity: [activity, ...(payload.activity || [])] };
+  const prepared: QuotationFormData = { ...payload, services: payload.services || [], revisions: payload.revisions || [], activity: [activity, ...(payload.activity || [])] };
   return storage(async () => {
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const { data, error } = await crmSupabase.from('crm_quotations').insert(recordToRow(prepared)).select().single();
-      if (!error) return rowToRecord(data);
-      if (error.code !== '23505') throw new Error(error.message);
-      const { data: existing } = await crmSupabase.from('crm_quotations').select('*').eq('quotation_number', prepared.quotation_number).maybeSingle();
-      if (existing && String(existing.client_name) === prepared.client_name && String(existing.mobile) === prepared.mobile && String(existing.event_date || '') === prepared.event_date && Number(existing.total_amount) === prepared.total_amount) return rowToRecord(existing);
-      const nextNumber = await getNextQuotationNumber();
-      prepared = { ...prepared, quotation_number: nextNumber, activity: prepared.activity.map((item, index) => index === 0 ? { ...item, detail: `${nextNumber} created as draft.` } : item) };
-    }
-    throw new Error('Unable to allocate a unique quotation number.');
+    const { data, error } = await crmSupabase.rpc('crm_create_quotation', { p_payload: prepared });
+    if (error) throw new Error(error.message);
+    return rowToRecord(data as Record<string, unknown>);
   }, () => {
     const record: QuotationRecord = { ...prepared, id: `quotation-${Date.now()}`, created_at: now, updated_at: now, verification_code: crypto.randomUUID().replace(/-/g, '').slice(0, 16) };
     saveLocal([record, ...localRecords()]); return record;

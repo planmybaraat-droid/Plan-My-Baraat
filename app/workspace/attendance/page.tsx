@@ -6,7 +6,7 @@ import CrmHeader from '../../crm/components/CrmHeader';
 import { useSidebar } from '../../crm/sidebar-context';
 import { crmSupabase } from '../../crm/lib/supabase-crm';
 import { getSelfieUrl } from '../lib/attendance-data';
-import type { AttendanceRecord } from '../../crm/lib/types';
+import type { AttendanceBreakRecord, AttendanceRecord } from '../../crm/lib/types';
 import { attendanceIsLocked, DEFAULT_ATTENDANCE_SETTINGS, getAttendanceSettings, type AttendanceSettings } from '../../crm/lib/attendance-policy';
 
 const STATUS_STYLE: Record<string, string> = {
@@ -31,6 +31,18 @@ function hoursBetween(inTime: string | null, outTime: string | null) {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
+function formatMinutes(minutes: number) {
+  const safe = Math.max(0, Number(minutes || 0));
+  return `${Math.floor(safe / 60)}h ${safe % 60}m`;
+}
+
+function netMinutes(row: AttendanceRecord) {
+  if (!row.check_in || !row.check_out) return null;
+  const [ih, im] = row.check_in.split(':').map(Number); const [oh, om] = row.check_out.split(':').map(Number);
+  let total=(oh*60+om)-(ih*60+im); if(total<0) total+=1440;
+  return Math.max(0,total-Number(row.break_minutes||0));
+}
+
 export default function MyAttendancePage() {
   const { open } = useSidebar();
   const [rows, setRows] = useState<AttendanceRecord[]>([]);
@@ -43,7 +55,7 @@ export default function MyAttendancePage() {
       // (created_by = auth.uid()), so no extra filtering is needed here.
       const [{ data }, loadedSettings] = await Promise.all([crmSupabase
         .from('crm_attendance')
-        .select('*')
+        .select('*,breaks:crm_attendance_breaks(*)')
         .order('attendance_date', { ascending: false })
         .limit(60), getAttendanceSettings().catch(() => DEFAULT_ATTENDANCE_SETTINGS)]);
       setRows((data || []) as AttendanceRecord[]);
@@ -76,8 +88,11 @@ export default function MyAttendancePage() {
                     <div className="mt-1 flex flex-wrap gap-3 text-xs text-gray-400">
                       {r.check_in && <span className="flex items-center gap-1"><Clock size={11} /> In {formatTime(r.check_in)}</span>}
                       {r.check_out && <span className="flex items-center gap-1"><Clock size={11} /> Out {formatTime(r.check_out)}</span>}
-                      <span className="font-semibold text-gray-500">{hoursBetween(r.check_in, r.check_out)}</span>
+                      <span className="font-semibold text-gray-500">Shift {hoursBetween(r.check_in, r.check_out)}</span>
+                      {!!r.break_minutes && <span>Break {formatMinutes(r.break_minutes)}</span>}
+                      {netMinutes(r)!==null && <span className="font-bold text-gray-600">Net {formatMinutes(netMinutes(r)!)}</span>}
                     </div>
+                    {!!r.breaks?.length && <div className="mt-2 flex flex-wrap gap-1.5">{r.breaks.map((item: AttendanceBreakRecord,index:number)=><span key={item.id} className="rounded-lg border border-gray-100 bg-gray-50 px-2 py-1 text-[9px] font-semibold text-gray-500">Break {index+1}: {formatTime(new Date(item.break_start_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false}))} → {item.break_end_at?formatTime(new Date(item.break_end_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false})):'Active'}{item.break_end_at?` · ${item.duration_minutes} min`:''}</span>)}</div>}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {r.punch_in_selfie_url && <SelfieButton path={r.punch_in_selfie_url} label="In selfie" />}

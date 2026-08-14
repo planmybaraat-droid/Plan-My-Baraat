@@ -13,6 +13,7 @@ import {
 } from '../../hr-data';
 import { fieldDefault, formatAgreementDate, letterIcon, renderLetterText } from '../../hr-config';
 import LetterDocument from './LetterDocument';
+import { buildLetterPdf } from '../pdf-export';
 
 const STEPS = [
   { label: 'Employee', icon: Users },
@@ -192,23 +193,10 @@ export default function LetterWizard({ template, existingLetter }: { template: L
 
   const buildPdf = async () => {
     if (!documentRef.current) return null;
-    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
-    const pages = Array.from(documentRef.current.querySelectorAll<HTMLElement>('[data-pdf-page]'));
-    if (!pages.length) return null;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-    documentRef.current.classList.add('letter-pdf-capture');
-    try {
-      await document.fonts.ready;
-      for (let index = 0; index < pages.length; index += 1) {
-        const canvas = await html2canvas(pages[index], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, windowWidth: 794 });
-        if (index > 0) pdf.addPage('a4', 'portrait');
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
-      }
-    } finally {
-      documentRef.current.classList.remove('letter-pdf-capture');
-    }
-    pdf.setProperties({ title: `${generatedLetter?.letter_number} - ${selectedEmployee?.full_name}`, subject: template.label, author: 'PlanMyBaraat', creator: 'PlanMyBaraat CRM' });
-    return pdf;
+    return buildLetterPdf(documentRef.current, {
+      title: `${generatedLetter?.letter_number} - ${selectedEmployee?.full_name}`,
+      subject: template.label,
+    });
   };
 
   const downloadPdf = async () => {

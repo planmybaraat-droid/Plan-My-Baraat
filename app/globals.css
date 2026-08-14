@@ -2008,8 +2008,25 @@ display: grid;
   line-height: 1.35;
 }
 
-.letter-pdf-capture .letter-doc-subject-highlight {
-  transform: translateY(4px);
+/* Keep the same self-hosted Manrope face used by the live preview. The export
+   previously forced Arial, which avoided the old zoom-related glyph collapse
+   but changed bold weights, line breaks and the optical centring of the subject
+   row. The capture now neutralizes preview zoom below, so the real document
+   font is safe to rasterize and the PDF can match the preview exactly. */
+.letter-pdf-capture,
+.letter-pdf-capture * {
+  font-kerning: normal !important;
+  font-variant-ligatures: normal !important;
+  font-stretch: normal !important;
+}
+
+/* The preview uses container-query zoom to fit A4 inside the CRM card. That
+   zoom must never participate in html2canvas, otherwise Chromium reports
+   scaled glyph advances while the canvas paints at full A4 size. */
+.agreement-preview-scroll .agreement-document.letter-pdf-capture,
+.agreement-document.letter-pdf-capture {
+  zoom: 1 !important;
+  transform: none !important;
 }
 
 .letter-doc-body {

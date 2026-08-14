@@ -1,5 +1,5 @@
 import { crmSupabase } from './supabase-crm';
-import type { AttendanceRecord } from './types';
+import type { AttendanceBreakRecord, AttendanceRecord } from './types';
 
 export interface AttendanceSettings {
   id: number;
@@ -76,4 +76,10 @@ export async function getAttendanceAudit(date: string) {
     .order('changed_at', { ascending: false });
   if (error) throw new Error(error.message);
   return (data || []) as AttendanceAuditEntry[];
+}
+
+export async function adminSaveAttendanceBreaks(attendanceId: string, breaks: Array<Pick<AttendanceBreakRecord,'break_start_at'|'break_end_at'>>, reason: string) {
+  const { data,error }=await crmSupabase.rpc('crm_admin_save_attendance_breaks',{p_attendance_id:attendanceId,p_breaks:breaks,p_reason:reason.trim()});
+  if(error)throw new Error(error.message);
+  return (data||[]) as AttendanceBreakRecord[];
 }

@@ -18,7 +18,8 @@ export type ModuleKey =
   | 'invoices'
   | 'packages'
   | 'calendar'
-  | 'eventJobs';
+  | 'eventJobs'
+  | 'myLetters';
 
 export interface ModuleDef {
   key: ModuleKey;
@@ -33,13 +34,14 @@ export const WORKSPACE_MODULES: ModuleDef[] = [
   { key: 'attendance', label: 'My Attendance', description: 'Punch in/out and attendance history', path: '/workspace/attendance' },
   { key: 'leave', label: 'Leave Management', description: 'Request leave and track approval status', path: '/workspace/leave' },
   { key: 'leads', label: 'My Leads', description: 'Customer leads assigned to this staff member', path: '/workspace/leads' },
-  { key: 'quotations', label: 'My Quotations', description: 'View quotations for assigned clients', path: '/workspace/quotations' },
+  { key: 'quotations', label: 'My Quotations', description: 'View and create client quotations', path: '/workspace/quotations', canCreate: true },
   { key: 'agreements', label: 'My Agreements', description: 'View and create client agreements', path: '/workspace/agreements', canCreate: true },
   { key: 'vendorAgreements', label: 'Vendor Agreements', description: 'View and create vendor agreements', path: '/workspace/vendor-agreements', canCreate: true },
   { key: 'invoices', label: 'My Invoices', description: 'View and create invoices & payment receipts', path: '/workspace/invoices', canCreate: true },
   { key: 'packages', label: 'Packages', description: 'View the baraat package catalogue', path: '/workspace/packages' },
   { key: 'calendar', label: 'Event Calendar', description: 'View confirmed events on the shared calendar', path: '/workspace/event-calendar' },
   { key: 'eventJobs', label: 'My Event Jobs', description: 'View assigned event workflows and complete operational stages', path: '/workspace/event-jobs' },
+  { key: 'myLetters', label: 'My Letters', description: 'View and download letters issued to this staff member', path: '/workspace/my-letters' },
 ];
 
 export const MODULE_KEYS: ModuleKey[] = WORKSPACE_MODULES.map((m) => m.key);

@@ -10,6 +10,7 @@ import { useSidebar } from '../../../sidebar-context';
 import { deleteEmployeeLetter, getEmployeeLetterById, getLetterTemplate, getPrivateCrmFileUrl, setEmployeeLetterStatus, updateEmployeeLetterFile } from '../../hr-data';
 import type { EmployeeLetterRecord, LetterTemplate } from '../../../lib/types';
 import LetterDocument from '../components/LetterDocument';
+import { buildLetterPdf } from '../pdf-export';
 
 const STATUS_STYLES: Record<string, string> = {
   Generated: 'bg-emerald-50 text-emerald-700',
@@ -43,22 +44,10 @@ export default function LetterPreviewPage() {
     if (!letter || !documentRef.current) return;
     setBusy(true);
     try {
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
-      const pages = Array.from(documentRef.current.querySelectorAll<HTMLElement>('[data-pdf-page]'));
-      if (!pages.length) return;
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-      documentRef.current.classList.add('letter-pdf-capture');
-      try {
-        await document.fonts.ready;
-        for (let index = 0; index < pages.length; index += 1) {
-          const canvas = await html2canvas(pages[index], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, windowWidth: 794 });
-          if (index > 0) pdf.addPage('a4', 'portrait');
-          pdf.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
-        }
-      } finally {
-        documentRef.current.classList.remove('letter-pdf-capture');
-      }
-      pdf.setProperties({ title: `${letter.letter_number} - ${letter.employee?.full_name}`, subject: template?.label, author: 'PlanMyBaraat', creator: 'PlanMyBaraat CRM' });
+      const pdf = await buildLetterPdf(documentRef.current, {
+        title: `${letter.letter_number} - ${letter.employee?.full_name}`,
+        subject: template?.label,
+      });
       pdf.save(`${letter.letter_number}-${(letter.employee?.full_name || 'employee').replace(/[^a-z0-9]+/gi, '-')}.pdf`);
       const blob = pdf.output('blob');
       const { crmSupabase } = await import('../../../lib/supabase-crm');
