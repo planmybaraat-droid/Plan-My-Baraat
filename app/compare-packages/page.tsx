@@ -6,8 +6,8 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "Compare Baraat Packages | Plan My Baraat",
-  description: "Compare Plan My Baraat packages side by side. Understand DJ trucks, groom entries, sound, dhol, Chhatris, effects, entertainment, Safa capacity and customization in plain language.",
+  title: "Compare Baraat Packages",
+  description: "Compare Baraat packages side by side by truck, groom entry, sound, dhol, Chhatris, effects, entertainment, Safa capacity and customization.",
   alternates: { canonical: "/compare-packages" },
   openGraph: {
     title: "Compare Baraat Packages | Plan My Baraat",

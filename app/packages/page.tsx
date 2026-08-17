@@ -11,8 +11,8 @@ import SiteHeader from "@/components/SiteHeader";
 import { BARAAT_PACKAGES } from "@/lib/packagesData";
 
 export const metadata: Metadata = {
-  title: "Baraat Packages | Compare Royal Baraat Experiences",
-  description: "Explore four Plan My Baraat packages with clear inclusions for DJ trucks, groom entries, sound, dhol, Chhatri lights, effects, entertainment and Safa teams.",
+  title: "Baraat Packages and Inclusions",
+  description: "Explore four customizable Baraat packages with clear inclusions for DJ trucks, groom entries, sound, dhol, Chhatri lights, effects and Safa teams.",
   alternates: { canonical: "/packages" },
   openGraph: {
     title: "Royal Baraat Packages | Plan My Baraat",

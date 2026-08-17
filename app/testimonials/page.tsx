@@ -19,6 +19,7 @@ import Reveal from "@/components/Reveal";
 import InnerPageHero from "@/components/InnerPageHero";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import { ORGANIZATION_ID } from "@/lib/seoHelpers";
 
 export const metadata: Metadata = {
   title: "Client Testimonials",
@@ -151,34 +152,23 @@ const GALLERY_IMAGES = [
 
 const testimonialsSchema = {
   "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Plan My Baraat",
-  url: "https://planmybaraat.com",
-  telephone: "+91-90890-81111",
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    bestRating: "5",
-    ratingCount: "250",
-  },
-  review: TESTIMONIALS.map((testimonial) => ({
-    "@type": "Review",
-    author: {
-      "@type": "Person",
-      name: testimonial.name,
-    },
-    reviewBody: testimonial.quote,
-    reviewRating: {
-      "@type": "Rating",
-      ratingValue: "5",
-      bestRating: "5",
+  "@type": "ItemList",
+  name: "Plan My Baraat client testimonials",
+  itemListElement: TESTIMONIALS.map((testimonial, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    item: {
+      "@type": "Review",
+      itemReviewed: { "@id": ORGANIZATION_ID },
+      author: { "@type": "Person", name: testimonial.name },
+      reviewBody: testimonial.quote,
     },
   })),
 };
 
 function Stars({ className = "" }: { className?: string }) {
   return (
-    <div className={`flex items-center gap-1 text-[#E30B1D] ${className}`} aria-label="5 out of 5 stars">
+    <div className={`flex items-center gap-1 text-[#E30B1D] ${className}`} role="img" aria-label="5 out of 5 stars">
       {Array.from({ length: 5 }).map((_, index) => (
         <Star key={index} className="h-4 w-4 fill-current" aria-hidden="true" />
       ))}

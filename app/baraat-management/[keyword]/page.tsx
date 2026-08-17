@@ -17,6 +17,7 @@ import { BARAAT_KEYWORD_CONTENT } from "@/lib/data/baraatKeywordContent";
 import { BARAAT_PACKAGES } from "@/lib/packagesData";
 import { SITE_IMAGES } from "@/lib/siteImages";
 import { WHATSAPP_NUMBER } from "@/lib/seoHelpers";
+import { isKeywordContentIndexable } from "@/lib/seoQuality";
 import {
   generateJsonLdBreadcrumbGeneric,
   generateJsonLdServiceGeneric,
@@ -66,6 +67,9 @@ export async function generateMetadata({
       title,
       description,
     },
+    robots: isKeywordContentIndexable(content)
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
   };
 }
 

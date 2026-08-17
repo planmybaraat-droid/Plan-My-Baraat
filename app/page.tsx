@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 import HomePackagesShowcase from "@/components/HomePackagesShowcase";
+import { ORGANIZATION_ID } from "@/lib/seoHelpers";
 import LeadCaptureForm from "@/components/LeadCaptureForm";
 import HomeWhatsAppPlanner from "@/components/HomeWhatsAppPlanner";
 import Reveal from "@/components/Reveal";
@@ -29,9 +30,9 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "Premium Baraat Planning Company in India",
+  title: "Premium Baraat Planning in India",
   description:
-    "Plan My Baraat creates premium groom entries with DJ trucks, Baraat on Wheels, vintage cars, Punjabi dhol, safa teams, Chhatri lights, pyrotechnics and complete procession coordination.",
+    "Premium groom entries with DJ trucks, vintage cars, Punjabi dhol, safa teams, Chhatri lights, effects and complete Baraat coordination.",
   keywords: [
     "Baraat planning company",
     "Baraat planner India",
@@ -270,12 +271,7 @@ const serviceSchema = {
   "@type": "Service",
   name: "Premium Baraat Planning Services",
   serviceType: "Baraat planning and groom entry coordination",
-  provider: {
-    "@type": "Organization",
-    name: "Plan My Baraat",
-    url: "https://planmybaraat.com",
-    telephone: "+91-90890-81111",
-  },
+  provider: { "@id": ORGANIZATION_ID },
   areaServed: [
     "Vadodara",
     "Ahmedabad",
@@ -309,14 +305,19 @@ export default function HomePage() {
 
       <main className="flex-grow">
         <section id="home" className="home-hero">
-          <Image
-            src="/Gallery/Homepage.png"
-            alt="A groom celebrating during a premium Plan My Baraat procession"
-            fill
-            priority
-            sizes="100vw"
-            className="home-hero-image"
-          />
+          <picture className="absolute inset-0 block">
+            <source media="(max-width: 640px)" srcSet="/Gallery/Homepage-hero-mobile.webp" />
+            <img
+              src="/Gallery/Homepage-hero.webp"
+              alt="A groom celebrating during a premium Plan My Baraat procession"
+              width="1677"
+              height="938"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              className="home-hero-image h-full w-full"
+            />
+          </picture>
           <div className="home-hero-overlay" aria-hidden="true" />
           <div className="home-hero-grid" aria-hidden="true" />
 
@@ -432,6 +433,7 @@ export default function HomePage() {
                   src="/Gallery/4d2e7c7745bbffba807f98e39b3f9f26.jpg"
                   alt="Groom making a grand Baraat entrance beneath ceremonial umbrellas and pyrotechnics"
                   fill
+                  quality={60}
                   sizes="(max-width: 1023px) 100vw, 43vw"
                   className="object-cover object-[center_44%] transition-transform duration-700 group-hover:scale-[1.025]"
                 />
@@ -821,7 +823,7 @@ export default function HomePage() {
                 <article className="flex h-full flex-col justify-between rounded-2xl border border-[#E30B1D]/20 bg-[#E30B1D]/[0.035] p-7 sm:p-10">
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div className="flex gap-1 text-[#E30B1D]" aria-label="5 out of 5 stars">
+                      <div className="flex gap-1 text-[#E30B1D]" role="img" aria-label="5 out of 5 stars">
                         {Array.from({ length: 5 }).map((_, index) => (
                           <Star key={index} className="h-4 w-4 fill-current" aria-hidden="true" />
                         ))}
@@ -978,11 +980,10 @@ export default function HomePage() {
               <div className="relative flex min-h-[32rem] flex-col justify-between overflow-hidden rounded-2xl border border-white/15 bg-[#010101] p-7 text-white shadow-[0_28px_65px_-40px_rgba(1,1,1,0.8)] sm:min-h-[36rem] sm:p-10 lg:h-full lg:min-h-0">
                 <Image
                   src="/Assests/1000096854.png"
-                  alt=""
+                  alt="Decorated wedding procession entrance with warm celebration lighting"
                   fill
                   sizes="(max-width: 1023px) 100vw, 42vw"
                   className="object-cover object-[center_42%]"
-                  aria-hidden="true"
                 />
                 <div
                   className="absolute inset-0 bg-[linear-gradient(180deg,rgba(1,1,1,0.68)_0%,rgba(1,1,1,0.78)_48%,rgba(1,1,1,0.94)_100%)]"

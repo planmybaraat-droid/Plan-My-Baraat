@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 
 import MetaPixel from "@/components/MetaPixel";
+import ConversionTracking from "@/components/ConversionTracking";
 import { GoogleTagManagerScript, GoogleTagManagerNoScript } from "@/components/GoogleTagManager";
 import { generateJsonLdOrganization, generateJsonLdWebSite } from "@/lib/seoHelpers";
 import "./globals.css";
@@ -79,6 +80,7 @@ export default function RootLayout({
         <GoogleTagManagerScript />
         <GoogleTagManagerNoScript />
         <MetaPixel />
+        <ConversionTracking />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: organizationSchema }}

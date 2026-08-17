@@ -19,6 +19,7 @@ import { BARAAT_KEYWORDS } from "@/lib/data/baraatKeywordList";
 import { BARAAT_PACKAGES } from "@/lib/packagesData";
 import { SITE_IMAGES } from "@/lib/siteImages";
 import { WHATSAPP_NUMBER } from "@/lib/seoHelpers";
+import { isCityContentIndexable } from "@/lib/seoQuality";
 import {
   generateJsonLdBreadcrumbGeneric,
   generateJsonLdServiceGeneric,
@@ -45,7 +46,7 @@ export async function generateMetadata({
   if (!loc || !content) return {};
 
   const title = `Baraat Packages in ${loc.name}`;
-  const description = `DJ truck, dhol team, vintage car, and safa styling for your baraat in ${loc.name}, ${loc.state}. Four curated packages, real pricing guidance, one WhatsApp enquiry.`;
+  const description = `DJ truck, dhol, vintage entry and safa services for Baraats in ${loc.name}, ${loc.state}. Compare packages and request a personalized WhatsApp quote.`;
   const canonical = `/${params.location}`;
 
   return {
@@ -64,6 +65,9 @@ export async function generateMetadata({
       title,
       description,
     },
+    robots: isCityContentIndexable(content)
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
   };
 }
 

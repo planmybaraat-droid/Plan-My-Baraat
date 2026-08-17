@@ -5,7 +5,7 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "Baraat Gallery",
+  title: "Real Baraat Celebration Gallery",
   description:
     "Explore real Plan My Baraat celebrations featuring vintage cars, Chhatri lights, dhol, pyrotechnics, family moments, and grand groom entries.",
   alternates: {

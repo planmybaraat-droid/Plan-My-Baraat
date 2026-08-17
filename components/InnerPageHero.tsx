@@ -17,12 +17,11 @@ export default function InnerPageHero({
     <section className="contact-hero inner-page-hero">
       <Image
         src="/Assests/1000096854.png"
-        alt=""
+        alt="Premium groom entry during a Plan My Baraat celebration"
         fill
         priority
         sizes="100vw"
         className="contact-hero-image"
-        aria-hidden="true"
       />
       <div className="contact-hero-overlay" aria-hidden="true" />
 

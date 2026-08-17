@@ -56,8 +56,8 @@ export const CONTACT_DETAILS = [
   {
     iconName: "Mail",
     label: "Website",
-    value: "www.planmybaraat.com",
-    href: "https://www.planmybaraat.com",
+    value: "planmybaraat.com",
+    href: "https://planmybaraat.com",
   },
   {
     iconName: "MapPin",

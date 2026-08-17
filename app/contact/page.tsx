@@ -49,8 +49,8 @@ const CONTACT_CARDS = [
   },
   {
     label: "Website",
-    value: "www.planmybaraat.com",
-    href: "https://www.planmybaraat.com",
+    value: "planmybaraat.com",
+    href: "https://planmybaraat.com",
     icon: Globe2,
   },
   {
@@ -230,11 +230,10 @@ export default function ContactPage() {
             <div className="relative flex min-h-[32rem] flex-col justify-between overflow-hidden rounded-2xl border border-white/15 bg-[#010101] p-7 text-white shadow-[0_28px_65px_-40px_rgba(1,1,1,0.8)] sm:min-h-[36rem] sm:p-10 lg:min-h-0">
               <Image
                 src="/Assests/1000096850.png"
-                alt=""
+                alt="Plan My Baraat team planning a wedding procession enquiry"
                 fill
                 sizes="(max-width: 1023px) 100vw, 42vw"
                 className="object-cover object-center"
-                aria-hidden="true"
               />
               <div
                 className="absolute inset-0 bg-[linear-gradient(180deg,rgba(1,1,1,0.68)_0%,rgba(1,1,1,0.78)_48%,rgba(1,1,1,0.94)_100%)]"

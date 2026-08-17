@@ -532,7 +532,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .wa-form-sub {
   font-size: 0.82rem;
-  color: rgba(1,1,1,0.5);
+  color: rgba(1,1,1,0.68);
   line-height: 1.6;
   font-family: var(--font-outfit), sans-serif;
 }
@@ -598,7 +598,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .wa-phone-prefix {
   padding: 0.65rem 0.65rem;
   font-size: 0.82rem;
-  color: rgba(1,1,1,0.5);
+  color: rgba(1,1,1,0.72);
   background: rgba(1,1,1,0.04);
   white-space: nowrap;
   border-right: 1px solid rgba(1,1,1,0.12);
@@ -643,7 +643,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .wa-disclaimer {
   text-align: center;
   font-size: 0.72rem;
-  color: #a8a29e;
+  color: #68635f;
   margin-top: 0.9rem;
   font-family: var(--font-outfit), sans-serif;
 }

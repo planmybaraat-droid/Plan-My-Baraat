@@ -75,7 +75,7 @@ export default function SiteHeader({
           >
             Managed by Ronak
           </span>
-          <span className="text-[8px] font-medium uppercase leading-tight tracking-widest text-black/40 transition-all duration-300">
+          <span className="text-[9px] font-semibold uppercase leading-tight tracking-widest text-black/65 transition-all duration-300">
             CEO &amp; Director, Safawala.com
           </span>
         </Link>

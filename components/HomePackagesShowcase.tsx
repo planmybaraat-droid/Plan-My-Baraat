@@ -51,8 +51,7 @@ export default function HomePackagesShowcase() {
                     src={pkg.image}
                     alt={pkg.imageAlt}
                     fill
-                    quality={92}
-                    priority={index === 0}
+                    quality={52}
                     sizes="(max-width: 1023px) 100vw, 39vw"
                     className="object-cover transition-transform duration-700 group-hover:scale-[1.035]"
                   />

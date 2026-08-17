@@ -12,6 +12,8 @@ const QUICK_LINKS = [
   { href: "/", label: "Home" },
   { href: "/packages", label: "Packages" },
   { href: "/compare-packages", label: "Compare Packages" },
+  { href: "/baraat-planning-guide", label: "Planning Guide" },
+  { href: "/service-areas", label: "Service Areas" },
   { href: "/about", label: "About Us" },
   { href: "/gallery", label: "Gallery" },
   { href: "/testimonials", label: "Testimonials" },
@@ -157,7 +159,7 @@ export default function SiteFooter({ variant = "default" }: SiteFooterProps) {
         </div>
 
         <div className="border-t border-[#010101]/10">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-6 text-xs font-semibold text-[#010101]/45 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">
+          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-6 text-xs font-semibold text-[#010101]/68 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">
             <p>© 2026 Plan My Baraat. All rights reserved.</p>
             <a
               href="https://wa.me/919089081111"
@@ -254,12 +256,12 @@ export default function SiteFooter({ variant = "default" }: SiteFooterProps) {
               <li className="flex items-start gap-2.5 text-xs">
                 <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#E30B1D]" />
                 <a
-                  href="https://www.planmybaraat.com"
+                  href="https://planmybaraat.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="transition-colors hover:text-[#E30B1D]"
                 >
-                  www.planmybaraat.com
+                  planmybaraat.com
                 </a>
               </li>
               <li className="flex items-start gap-2.5 text-xs">

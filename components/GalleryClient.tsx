@@ -351,11 +351,10 @@ export default function GalleryClient() {
                 >
                   <Image
                     src={video.thumb}
-                    alt=""
+                    alt={`${video.label} Baraat film thumbnail`}
                     fill
                     sizes="(max-width: 767px) 50vw, (max-width: 1279px) 33vw, (max-width: 1535px) 25vw, 20vw"
                     className="object-cover opacity-70 transition-all duration-700 group-hover:scale-105 group-hover:opacity-85"
-                    aria-hidden="true"
                   />
                   <span className="absolute inset-0 bg-gradient-to-t from-[#010101]/85 via-transparent to-[#010101]/15" />
                   <span className="absolute inset-0 flex items-center justify-center">

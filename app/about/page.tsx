@@ -22,9 +22,9 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "About Plan My Baraat | Premium Baraat Planner in India",
+  title: "About Our Baraat Planning Team",
   description:
-    "Meet Plan My Baraat, a specialist Baraat planning company for groom entries, DJ trucks, vintage cars, dhol, safa, lighting, pyrotechnics and complete procession coordination.",
+    "Meet the specialist team coordinating groom entries, DJ trucks, vintage cars, dhol, safa, lighting, effects and complete Baraat processions.",
   keywords: [
     "Baraat planner",
     "Baraat planning services",
@@ -169,37 +169,6 @@ const FAQS = [
       "It is best to contact us as soon as your wedding date and venue are confirmed. Popular wedding dates, vintage cars and premium moving setups can be reserved early.",
   },
 ] as const;
-
-const organizationSchema = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Plan My Baraat",
-  url: "https://www.planmybaraat.com",
-  email: "planmybaraat@gmail.com",
-  telephone: "+91-90890-81111",
-  description:
-    "A premium Baraat planning company specializing in groom entries, DJ trucks, vintage cars, dhol, safa, Chhatri lights, pyrotechnics and complete procession coordination.",
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: "Studio 501-502, Broadway Signature, Sevasi-Bhayli Canal Ring Road",
-    addressLocality: "Vadodara",
-    addressRegion: "Gujarat",
-    postalCode: "391110",
-    addressCountry: "IN",
-  },
-  areaServed: [
-    "Vadodara",
-    "Ahmedabad",
-    "Surat",
-    "Mumbai",
-    "Delhi",
-    "Bengaluru",
-  ],
-  sameAs: [
-    "https://www.instagram.com/planmybaraatofficial",
-    "https://www.facebook.com/share/1JTGqNsvfx/",
-  ],
-};
 
 export default function AboutPage() {
   return (
@@ -357,11 +326,10 @@ export default function AboutPage() {
                     <article className="about-service-card group relative min-h-[29rem] overflow-hidden rounded-2xl bg-[#010101] text-white sm:min-h-[31rem]">
                       <Image
                         src={service.image}
-                        alt=""
+                        alt={`${service.title} arranged for a premium Baraat celebration`}
                         fill
                         sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw"
                         className={`object-cover transition-transform duration-700 group-hover:scale-105 ${service.position}`}
-                        aria-hidden="true"
                       />
                       <div
                         className="absolute inset-0 bg-[linear-gradient(180deg,rgba(1,1,1,0.12)_8%,rgba(1,1,1,0.30)_46%,rgba(1,1,1,0.94)_100%)]"
@@ -586,12 +554,6 @@ export default function AboutPage() {
 
       <SiteFooter variant="contact" />
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(organizationSchema).replace(/</g, "\\u003c"),
-        }}
-      />
     </div>
   );
 }

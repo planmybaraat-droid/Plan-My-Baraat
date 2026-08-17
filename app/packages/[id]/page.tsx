@@ -40,8 +40,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const pkg = BARAAT_PACKAGES.find((item) => item.id === params.id);
   if (!pkg) return {};
 
-  const title = `${pkg.name} – ${pkg.tagline}`;
-  const description = `${pkg.description} Understand every inclusion, who it suits, customization options and common questions.`;
+  const title = pkg.name;
+  const description = `Explore ${pkg.name}: included entry, sound, dhol, lighting, effects, Safa support, customization options and planning guidance.`;
   const canonical = `/packages/${pkg.id}`;
 
   return {

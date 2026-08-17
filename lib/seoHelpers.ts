@@ -1,6 +1,10 @@
 import { CATEGORIES, Category } from "./data/categories";
 import { CITIES, City } from "./data/cities";
 
+export const SITE_URL = "https://planmybaraat.com";
+export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
+export const WEBSITE_ID = `${SITE_URL}/#website`;
+
 // ─── Slug Utilities ────────────────────────────────────────────────────────────
 
 export function toSlug(text: string): string {
@@ -254,18 +258,14 @@ export function generateJsonLdBreadcrumb(specialty: Category, city: City): strin
 export function generateJsonLdLocalBusiness(specialty: Category, city: City): string {
   const schema = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
+    "@type": "Service",
     name: `PlanMyBaraat – ${specialty.name} in ${city.name}`,
     description: generateMetaDescription(specialty, city),
     url: `https://planmybaraat.com/${specialtyToSlug(specialty)}/${cityToSlug(city)}`,
+    provider: { "@id": ORGANIZATION_ID },
     areaServed: {
       "@type": "City",
       name: city.name,
-    },
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "customer service",
-      availableLanguage: ["English", "Hindi"],
     },
   };
   return JSON.stringify(schema);
@@ -275,9 +275,14 @@ export function generateJsonLdOrganization(): string {
   return JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": ORGANIZATION_ID,
     name: "Plan My Baraat",
-    url: "https://planmybaraat.com",
-    logo: "https://planmybaraat.com/icon-mark-512.png",
+    alternateName: "PlanMyBaraat",
+    url: SITE_URL,
+    logo: {
+      "@type": "ImageObject",
+      url: `${SITE_URL}/icon-mark-512.png`,
+    },
     email: "planmybaraat@gmail.com",
     description:
       "A premium Baraat planning company specializing in groom entries, DJ trucks, vintage cars, dhol, safa teams, lighting, effects and complete procession coordination.",
@@ -291,6 +296,15 @@ export function generateJsonLdOrganization(): string {
       telephone: "+91-9089081111",
       availableLanguage: ["English", "Hindi"],
     },
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Studio 501-502, Broadway Signature, Sevasi-Bhayli Canal Ring Road",
+      addressLocality: "Vadodara",
+      addressRegion: "Gujarat",
+      postalCode: "391110",
+      addressCountry: "IN",
+    },
+    areaServed: ["Vadodara", "Ahmedabad", "Surat", "Gujarat", "India"],
   });
 }
 
@@ -298,9 +312,11 @@ export function generateJsonLdWebSite(): string {
   return JSON.stringify({
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": WEBSITE_ID,
     name: "PlanMyBaraat",
-    url: "https://planmybaraat.com",
+    url: SITE_URL,
     inLanguage: "en-IN",
+    publisher: { "@id": ORGANIZATION_ID },
   });
 }
 
@@ -349,11 +365,7 @@ export function generateJsonLdService(
       "@type": "City",
       name: city.name,
     },
-    provider: {
-      "@type": "Organization",
-      name: "PlanMyBaraat",
-      url: "https://planmybaraat.com",
-    },
+    provider: { "@id": ORGANIZATION_ID },
     url: area
       ? `https://planmybaraat.com/${specialtyToSlug(specialty)}/${cityToSlug(city)}/${areaToSlug(area)}`
       : `https://planmybaraat.com/${specialtyToSlug(specialty)}/${cityToSlug(city)}`,
@@ -393,11 +405,7 @@ export function generateJsonLdServiceGeneric(params: {
       "@type": "Place",
       name: params.areaServedName,
     },
-    provider: {
-      "@type": "Organization",
-      name: "PlanMyBaraat",
-      url: "https://planmybaraat.com",
-    },
+    provider: { "@id": ORGANIZATION_ID },
     url: params.url,
   });
 }
