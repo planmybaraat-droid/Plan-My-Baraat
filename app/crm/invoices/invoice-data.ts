@@ -177,6 +177,18 @@ export async function addInvoicePayment(id: string, input: Omit<InvoicePayment, 
   return updateInvoice(id, { ...invoice, payments: [...(invoice.payments || []), payment], amount_paid: amountPaid, balance_due: balanceDue, status });
 }
 
+export async function updateInvoicePayment(id: string, paymentId: string, input: Omit<InvoicePayment, 'id' | 'receipt_number' | 'created_at'>) {
+  const invoice = await getInvoiceById(id);
+  if (!invoice) throw new Error('Invoice not found');
+  const existing = (invoice.payments || []).find(item => item.id === paymentId);
+  if (!existing) throw new Error('Payment not found');
+  const payments = invoice.payments.map(item => item.id === paymentId ? { ...item, ...input } : item);
+  const amountPaid = Math.max(0, Math.round((invoice.amount_paid - existing.amount + input.amount) * 100) / 100);
+  const balanceDue = Math.max(0, Math.round((invoice.total_amount - amountPaid) * 100) / 100);
+  const status: InvoiceFormData['status'] = balanceDue === 0 ? 'Paid' : amountPaid > 0 ? 'Partially Paid' : 'Issued';
+  return updateInvoice(id, { ...invoice, payments, amount_paid: amountPaid, balance_due: balanceDue, status });
+}
+
 export async function deleteInvoice(id: string) {
   return resilient(
     async () => {

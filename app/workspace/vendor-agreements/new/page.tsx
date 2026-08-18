@@ -40,7 +40,7 @@ export default function NewWorkspaceVendorAgreementPage() {
         actions={<Link href="/workspace/vendor-agreements" className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-gray-950"><ArrowLeft size={15} /> <span className="hidden sm:inline">Vendor Agreements</span></Link>}
       />
       <div className="p-4 sm:p-6">
-        {initialData ? <VendorAgreementForm initialData={initialData} onSubmit={handleSubmit} submitLabel="Generate vendor agreement" /> : (
+        {initialData ? <VendorAgreementForm initialData={initialData} onSubmit={handleSubmit} onSaveDraft={handleSubmit} submitLabel="Generate vendor agreement" /> : (
           <div className="flex h-72 items-center justify-center"><Loader2 size={28} className="animate-spin text-red-600" /></div>
         )}
       </div>

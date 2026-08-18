@@ -55,7 +55,7 @@ export default function MyVendorAgreementsPage() {
                     <p className="truncate text-sm font-bold text-gray-900">{item.vendor_name} <span className="font-mono text-xs font-normal text-gray-400">· {item.vendor_agreement_number}</span></p>
                     <p className="mt-1 text-xs text-gray-400">{item.service_category || 'General'} · {currency(calculateVendorAgreementAmounts(item).estimatedValue)} · Ends {formatAgreementDate(item.agreement_end_date)}</p>
                   </div>
-                  <span className={`w-fit rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[item.status] || 'bg-gray-100 text-gray-600'}`}>{item.status}</span>
+                  <div className="flex items-center gap-2"><span className={`w-fit rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[item.status] || 'bg-gray-100 text-gray-600'}`}>{item.status}</span><Link href={`/workspace/vendor-agreements/${item.id}/edit`} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[10px] font-bold text-gray-700 hover:border-red-200 hover:text-red-600">Edit</Link></div>
                 </div>
               ))}
             </div>

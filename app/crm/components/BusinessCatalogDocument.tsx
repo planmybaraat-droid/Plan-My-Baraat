@@ -4,8 +4,7 @@ import { forwardRef, useEffect, useState } from 'react';
 import { Globe2, Mail, Phone } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { Vendor } from '../lib/types';
-import { MASTER_SERVICES } from '../../../lib/businessCatalog';
-import { BARAAT_PACKAGES } from '../../../lib/packagesData';
+import { DOWNLOAD_CENTER_ADDONS, DOWNLOAD_CENTER_PACKAGES, DOWNLOAD_CENTER_SERVICES } from './download-center-catalog';
 
 export type CatalogDocumentRequest =
   | { type: 'services' }
@@ -28,7 +27,7 @@ function DocumentHeader({ title }: { title: string }) {
 function DocumentFooter({ page, total, qr }: { page: number; total: number; qr: string }) {
   return <footer className="catalog-doc-footer">
     <div className="catalog-doc-footer-contact">
-      <span><Phone size={11} /> +91 90890 81111</span>
+      <span><Phone size={11} /> +91 88306 12287</span>
       <span><Mail size={11} /> hr@planmybaraat.com</span>
       <span><Globe2 size={11} /> www.planmybaraat.com</span>
     </div>
@@ -76,10 +75,10 @@ const BusinessCatalogDocument = forwardRef<HTMLDivElement, BusinessCatalogDocume
   }, []);
 
   if (request.type === 'services') {
-    const pages = chunks(MASTER_SERVICES.filter(service => service.active), 9);
+    const pages = chunks(DOWNLOAD_CENTER_SERVICES.filter(service => service.active), 9);
     return <div ref={ref} className="catalog-document">{pages.map((services, pageIndex) =>
       <Page key={pageIndex} title="All Services" page={pageIndex + 1} total={pages.length} qr={qr}>
-        <PageTitle eyebrow="Master catalogue" title="All Services" copy="The current centralized service catalogue used by client agreements, vendor agreements and quotations." />
+        <PageTitle eyebrow="Master catalogue" title="All Services" copy="Latest services and optional experiences from the current PlanMyBaraat package brochure." />
         <div className="catalog-doc-list">{services.map((service, index) => <article key={service.id} className="catalog-doc-row">
           <b>{String(pageIndex * 9 + index + 1).padStart(2, '0')}</b>
           <div><span>{service.category}</span><h2>{service.name}</h2><p>{service.description}</p>{service.options?.length ? <small>Options: {service.options.join(' · ')}</small> : null}</div>
@@ -103,19 +102,20 @@ const BusinessCatalogDocument = forwardRef<HTMLDivElement, BusinessCatalogDocume
   }
 
   const packages = request.type === 'package'
-    ? BARAAT_PACKAGES.filter(pkg => pkg.id === request.packageId)
-    : BARAAT_PACKAGES;
+    ? DOWNLOAD_CENTER_PACKAGES.filter(pkg => pkg.id === request.packageId)
+    : [...DOWNLOAD_CENTER_PACKAGES, DOWNLOAD_CENTER_ADDONS];
   return <div ref={ref} className="catalog-document">{packages.map((pkg, pageIndex) =>
     <Page key={pkg.id} title={pkg.name} page={pageIndex + 1} total={packages.length} qr={qr}>
-      <PageTitle eyebrow="Website package" title={pkg.name} copy={pkg.tagline} />
-      <section className="catalog-doc-package-intro"><p>{pkg.description}</p><strong>{pkg.features.length} included services & experiences</strong></section>
+      <PageTitle eyebrow={pkg.packageNumber} title={pkg.name} copy={pkg.tagline} />
+      <section className="catalog-doc-package-intro"><div><span>PlanMyBaraat experience</span><p>{pkg.description}</p></div><strong>{pkg.features.length}<small>services & experiences</small></strong></section>
       <div className="catalog-doc-package-services">
-        <h2>Services included</h2>
+        <h2>{pkg.id === 'add-ons' ? 'Available add-ons' : 'What is included'}</h2>
         {pkg.features.map((feature, index) => {
           const [name, ...detail] = feature.split(' - ');
           return <article key={feature}><b>{String(index + 1).padStart(2, '0')}</b><div><h3>{name}</h3>{detail.length ? <p>{detail.join(' - ')}</p> : null}</div></article>;
         })}
       </div>
+      <div className="catalog-doc-package-note"><b>Fully customizable</b><span>Final inclusions are confirmed according to the event date, venue, route and availability.</span><strong>Confirm date availability</strong></div>
     </Page>)}</div>;
 });
 

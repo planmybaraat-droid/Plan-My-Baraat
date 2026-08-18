@@ -39,7 +39,7 @@ export default function EditAgreementPage() {
         actions={<Link href={`/crm/agreements/${params.id}`} className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-gray-950"><ArrowLeft size={15} /> <span className="hidden sm:inline">Back to preview</span></Link>}
       />
       <div className="p-4 sm:p-6">
-        {agreement ? <AgreementForm initialData={agreement} onSubmit={handleSubmit} submitLabel={`Save as v${agreement.version + 1}`} /> : missing ? (
+        {agreement ? <AgreementForm initialData={agreement} onSubmit={handleSubmit} onSaveDraft={handleSubmit} submitLabel={`Save as v${agreement.version + 1}`} /> : missing ? (
           <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center"><p className="font-bold text-gray-900">Agreement not found</p><Link href="/crm/agreements" className="mt-3 inline-block text-sm font-semibold text-red-600">Return to agreements</Link></div>
         ) : <div className="flex h-72 items-center justify-center"><Loader2 size={28} className="animate-spin text-red-600" /></div>}
       </div>

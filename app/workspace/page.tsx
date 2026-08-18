@@ -155,8 +155,8 @@ export default function WorkspaceDashboard() {
     const absent = statuses.filter((s) => s === 'Absent').length;
     const halfDay = statuses.filter((s) => s === 'Half Day').length;
     const leave = statuses.filter((s) => s === 'On Leave').length;
-    const marked = present + absent + halfDay + leave;
-    const pct = marked ? Math.round(((present + halfDay * 0.5) / marked) * 100) : 0;
+    const workingAttendanceDays = present + absent + halfDay;
+    const pct = workingAttendanceDays ? Math.round(((present + halfDay * 0.5) / workingAttendanceDays) * 100) : 0;
     return { present, absent, leave, pct };
   }, [monthMap]);
 

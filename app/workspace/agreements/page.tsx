@@ -48,7 +48,7 @@ export default function MyAgreementsPage() {
                     <p className="truncate text-sm font-bold text-gray-900">{a.client_name} <span className="font-mono text-xs font-normal text-gray-400">· {a.agreement_number}</span></p>
                     <p className="mt-1 text-xs text-gray-400">₹{Number(a.final_amount).toLocaleString('en-IN')} · Event {a.event_date ? new Date(a.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[a.status] || 'bg-gray-100 text-gray-600'}`}>{a.status}</span>
+                  <div className="flex items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[a.status] || 'bg-gray-100 text-gray-600'}`}>{a.status}</span><Link href={`/workspace/agreements/${a.id}/edit`} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[10px] font-bold text-gray-700 hover:border-red-200 hover:text-red-600">Edit</Link></div>
                 </div>
               ))}
             </div>

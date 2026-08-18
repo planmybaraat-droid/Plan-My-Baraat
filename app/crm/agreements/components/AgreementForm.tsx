@@ -15,6 +15,7 @@ import ServiceBlock from './ServiceBlock';
 interface AgreementFormProps {
   initialData: AgreementFormData;
   onSubmit: (data: AgreementFormData) => Promise<void>;
+  onSaveDraft?: (data: AgreementFormData) => Promise<void>;
   submitLabel?: string;
 }
 
@@ -81,10 +82,11 @@ function SectionHeading({ eyebrow, title, copy }: { eyebrow: string; title: stri
   );
 }
 
-export default function AgreementForm({ initialData, onSubmit, submitLabel = 'Save agreement' }: AgreementFormProps) {
+export default function AgreementForm({ initialData, onSubmit, onSaveDraft, submitLabel = 'Save agreement' }: AgreementFormProps) {
   const [data, setData] = useState(initialData);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
   const [error, setError] = useState('');
   const [draftSaved, setDraftSaved] = useState(false);
   // PlanMyBaraat's standard payment policy is a 50% booking amount / 25%
@@ -198,6 +200,17 @@ export default function AgreementForm({ initialData, onSubmit, submitLabel = 'Sa
     } finally {
       setSaving(false);
     }
+  };
+
+  const saveDraft = async () => {
+    if (!onSaveDraft) return;
+    setError(''); setDraftSaving(true);
+    try {
+      await onSaveDraft({ ...data, status: 'Draft', final_amount: amounts.finalAmount, remaining_amount: amounts.outstanding, outstanding: amounts.outstanding });
+      localStorage.removeItem('crm_agreement_working_draft');
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Unable to save draft.');
+    } finally { setDraftSaving(false); }
   };
 
   return (
@@ -428,17 +441,16 @@ export default function AgreementForm({ initialData, onSubmit, submitLabel = 'Sa
               className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
               <ChevronLeft size={15} /> Back
             </button>
-            <span className={`text-[10px] font-bold text-emerald-600 transition-opacity ${draftSaved ? 'opacity-100' : 'opacity-0'}`}>Draft saved locally</span>
+            <span className={`text-[10px] font-bold text-emerald-600 transition-opacity ${draftSaved ? 'opacity-100' : 'opacity-0'}`}>Working copy saved locally</span>
           </div>
-          {step < STEPS.length - 1 ? (
-            <button type="button" onClick={next} className="inline-flex items-center gap-2 rounded-xl bg-gray-950 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-600">
-              Continue <ChevronRight size={15} />
-            </button>
-          ) : (
-            <button type="button" onClick={submit} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-60">
-              <Save size={15} /> {saving ? 'Saving...' : submitLabel}
-            </button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {onSaveDraft && <button type="button" onClick={saveDraft} disabled={saving || draftSaving} className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 disabled:opacity-50"><Save size={15} /> {draftSaving ? 'Saving draft...' : 'Save as draft'}</button>}
+            {step < STEPS.length - 1 ? (
+              <button type="button" onClick={next} disabled={saving || draftSaving} className="inline-flex items-center gap-2 rounded-xl bg-gray-950 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50">Continue <ChevronRight size={15} /></button>
+            ) : (
+              <button type="button" onClick={submit} disabled={saving || draftSaving} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-60"><Save size={15} /> {saving ? 'Saving...' : submitLabel}</button>
+            )}
+          </div>
         </div>
       </div>
     </div>

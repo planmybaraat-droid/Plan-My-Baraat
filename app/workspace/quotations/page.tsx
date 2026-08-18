@@ -34,7 +34,7 @@ export default function MyQuotationsPage() {
                     <p className="truncate text-sm font-bold text-gray-900">{q.client_name} <span className="font-mono text-xs font-normal text-gray-400">· {q.quotation_number}</span></p>
                     <p className="mt-1 text-xs text-gray-400">₹{Number(q.total_amount).toLocaleString('en-IN')} · Valid until {q.valid_until ? new Date(q.valid_until).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[q.status] || 'bg-gray-100 text-gray-600'}`}>{q.status}</span>
+                  <div className="flex items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[q.status] || 'bg-gray-100 text-gray-600'}`}>{q.status}</span><Link href={`/workspace/quotations/${q.id}/edit`} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[10px] font-bold text-gray-700 hover:border-red-200 hover:text-red-600">Edit</Link></div>
                 </div>
               ))}
             </div>

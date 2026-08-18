@@ -1,4 +1,5 @@
 import { crmSupabase } from '../../crm/lib/supabase-crm';
+import { deriveMonthAttendance, DEFAULT_WORKING_DAYS } from '../../crm/lib/attendance-calendar';
 import type { AttendanceBreakRecord, AttendanceRecord, MyAttendanceState } from '../../crm/lib/types';
 
 function detectBrowser() {
@@ -53,14 +54,28 @@ export async function getMonthAttendance(year: number, month: number) {
   const from = `${year}-${String(month + 1).padStart(2, '0')}-01`;
   const toDate = new Date(year, month + 1, 0).getDate();
   const to = `${year}-${String(month + 1).padStart(2, '0')}-${String(toDate).padStart(2, '0')}`;
-  const { data } = await crmSupabase
-    .from('crm_attendance')
-    .select('attendance_date, status')
-    .gte('attendance_date', from)
-    .lte('attendance_date', to);
-  const map: Record<string, string> = {};
-  (data || []).forEach((r: { attendance_date: string; status: string }) => { map[r.attendance_date] = r.status; });
-  return map;
+  const { data: { user } } = await crmSupabase.auth.getUser();
+  const staffResult = user
+    ? await crmSupabase.from('crm_staff').select('id,joining_date').eq('user_id', user.id).maybeSingle()
+    : { data: null, error: null };
+  const leaveQuery = crmSupabase.from('crm_leave_requests').select('from_date,to_date,status')
+    .eq('status', 'Approved').lte('from_date', to).gte('to_date', from);
+  if (staffResult.data?.id) leaveQuery.eq('staff_id', staffResult.data.id);
+  const [attendanceResult, settingsResult, leaveResult] = await Promise.all([
+    crmSupabase.from('crm_attendance').select('attendance_date,status,check_in,punch_in_at').gte('attendance_date', from).lte('attendance_date', to),
+    crmSupabase.from('crm_attendance_settings').select('working_days').eq('id', 1).maybeSingle(),
+    leaveQuery,
+  ]);
+  if (attendanceResult.error) throw new Error(attendanceResult.error.message);
+
+  return deriveMonthAttendance({
+    year,
+    month,
+    records: attendanceResult.data || [],
+    leaveRanges: leaveResult.error ? [] : leaveResult.data || [],
+    workingDays: settingsResult.data?.working_days || DEFAULT_WORKING_DAYS,
+    employmentStartDate: staffResult.data?.joining_date || null,
+  });
 }
 
 async function uploadSelfie(blob: Blob, suffix: 'in' | 'out') {

@@ -18,6 +18,7 @@ import VendorServiceBlock from './VendorServiceBlock';
 interface VendorAgreementFormProps {
   initialData: VendorAgreementFormData;
   onSubmit: (data: VendorAgreementFormData) => Promise<void>;
+  onSaveDraft?: (data: VendorAgreementFormData) => Promise<void>;
   submitLabel?: string;
   isEditing?: boolean;
   // Only set once the vendor agreement already exists in Supabase — lets the
@@ -82,10 +83,11 @@ const TERMS_PREVIEW = [
   { title: 'Digital signature consent', copy: 'The vendor consents to execution of this agreement by digital signature, which carries the same legal validity as a physical signature.' },
 ];
 
-export default function VendorAgreementForm({ initialData, onSubmit, submitLabel = 'Save vendor agreement', isEditing: _isEditing = false, agreementId }: VendorAgreementFormProps) {
+export default function VendorAgreementForm({ initialData, onSubmit, onSaveDraft, submitLabel = 'Save vendor agreement', isEditing: _isEditing = false, agreementId }: VendorAgreementFormProps) {
   const [data, setData] = useState(initialData);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
   const [error, setError] = useState('');
   const [draftSaved, setDraftSaved] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -193,6 +195,15 @@ export default function VendorAgreementForm({ initialData, onSubmit, submitLabel
     } finally {
       setSaving(false);
     }
+  };
+  const saveDraft = async () => {
+    if (!onSaveDraft) return;
+    setError(''); setDraftSaving(true);
+    try {
+      await onSaveDraft({ ...data, status: 'Draft' });
+      localStorage.removeItem('crm_vendor_agreement_working_draft');
+    } catch (submitError) { setError(submitError instanceof Error ? submitError.message : 'Unable to save draft.'); }
+    finally { setDraftSaving(false); }
   };
 
   return (
@@ -500,17 +511,16 @@ export default function VendorAgreementForm({ initialData, onSubmit, submitLabel
               className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
               <ChevronLeft size={15} /> Back
             </button>
-            <span className={`text-[10px] font-bold text-emerald-600 transition-opacity ${draftSaved ? 'opacity-100' : 'opacity-0'}`}>Draft saved locally</span>
+            <span className={`text-[10px] font-bold text-emerald-600 transition-opacity ${draftSaved ? 'opacity-100' : 'opacity-0'}`}>Working copy saved locally</span>
           </div>
-          {step < STEPS.length - 1 ? (
-            <button type="button" onClick={next} className="inline-flex items-center gap-2 rounded-xl bg-gray-950 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-600">
-              Continue <ChevronRight size={15} />
-            </button>
-          ) : (
-            <button type="button" onClick={submit} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-60">
-              <FileCheck2 size={15} /> {saving ? 'Saving...' : submitLabel}
-            </button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {onSaveDraft && <button type="button" onClick={saveDraft} disabled={saving || draftSaving} className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 disabled:opacity-50"><FileCheck2 size={15} /> {draftSaving ? 'Saving draft...' : 'Save as draft'}</button>}
+            {step < STEPS.length - 1 ? (
+              <button type="button" onClick={next} disabled={saving || draftSaving} className="inline-flex items-center gap-2 rounded-xl bg-gray-950 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50">Continue <ChevronRight size={15} /></button>
+            ) : (
+              <button type="button" onClick={submit} disabled={saving || draftSaving} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-60"><FileCheck2 size={15} /> {saving ? 'Saving...' : submitLabel}</button>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ import CrmHeader from '../../../crm/components/CrmHeader';
 import { useSidebar } from '../../../crm/sidebar-context';
 import { getAgreementById, getAgreements } from '../../../crm/lib/supabase-crm';
 import type { AgreementRecord, InvoiceFormData, InvoiceLineItem } from '../../../crm/lib/types';
-import { createInvoice, getNextInvoiceNumber } from '../../../crm/invoices/invoice-data';
+import { createInvoice, getInvoiceById, getNextInvoiceNumber, updateInvoice } from '../../../crm/invoices/invoice-data';
 import { currency, getBusinessProfile, INVOICE_DOCUMENT_TYPES, invoiceAmounts, invoiceDraftFromAgreement } from '../../../crm/invoices/invoice-config';
 
 export default function NewInvoicePage() {
@@ -17,6 +17,7 @@ export default function NewInvoicePage() {
   const [selectedAgreement, setSelectedAgreement] = useState('');
   const [data, setData] = useState<InvoiceFormData | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState('');
   const [error, setError] = useState('');
   const profile = useMemo(() => getBusinessProfile(), []);
 
@@ -24,7 +25,14 @@ export default function NewInvoicePage() {
     async function start() {
       const list = await getAgreements();
       setAgreements(list);
-      const agreementId = new URLSearchParams(window.location.search).get('agreementId') || '';
+      const query = new URLSearchParams(window.location.search);
+      const editId = query.get('edit') || '';
+      if (editId) {
+        const invoice = await getInvoiceById(editId);
+        if (!invoice) { setError('Invoice could not be loaded.'); return; }
+        setEditingId(editId); setSelectedAgreement(invoice.agreement_id); setData(invoice); return;
+      }
+      const agreementId = query.get('agreementId') || '';
       if (agreementId) await chooseAgreement(agreementId);
     }
     start();
@@ -61,7 +69,7 @@ export default function NewInvoicePage() {
     }
     setSaving(true);
     try {
-      const invoice = await createInvoice(recalculate(data));
+      const invoice = editingId ? await updateInvoice(editingId, recalculate(data)) : await createInvoice(recalculate(data));
       router.push(`/workspace/invoices/${invoice.id}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Invoice could not be created.');
@@ -71,14 +79,14 @@ export default function NewInvoicePage() {
 
   return (
     <>
-      <CrmHeader title="Create Invoice" subtitle="Generate a commercial document from a confirmed Baraat Management Contract" onMenuClick={open}
+      <CrmHeader title={editingId ? 'Edit Invoice' : 'Create Invoice'} subtitle={editingId ? `Update ${data?.invoice_number || 'invoice'} without changing its number` : 'Generate a commercial document from a confirmed Baraat Management Contract'} onMenuClick={open}
         actions={<button onClick={() => router.back()} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-600"><ArrowLeft size={15} /> Back</button>} />
       <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
         {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex items-start gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600"><FileCheck2 size={20} /></div><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-red-600">01 / Agreement source</p><h2 className="mt-1 text-xl font-black tracking-tight text-gray-950">Start from an approved agreement</h2><p className="mt-1 text-sm text-gray-400">Client, event, package, GST and recorded payments are imported automatically.</p></div></div>
-          <label className="agreement-field mt-5"><span>Baraat Management Contract</span><select value={selectedAgreement} onChange={e => chooseAgreement(e.target.value)}><option value="">Select an agreement</option>{agreements.map(item => <option key={item.id} value={item.id}>{item.agreement_number} · {item.client_name} · {item.package_name}</option>)}</select></label>
+          <label className="agreement-field mt-5"><span>Baraat Management Contract</span><select value={selectedAgreement} disabled={Boolean(editingId)} onChange={e => chooseAgreement(e.target.value)}><option value="">Select an agreement</option>{agreements.map(item => <option key={item.id} value={item.id}>{item.agreement_number} · {item.client_name} · {item.package_name}</option>)}</select></label>
         </div>
 
         {!data ? <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center"><p className="font-extrabold text-gray-800">Select an agreement to continue</p><p className="mt-1 text-sm text-gray-400">Invoices remain linked to the original agreement for traceability.</p></div> : (
@@ -124,7 +132,7 @@ export default function NewInvoicePage() {
             </section>
 
             {!profile.gstin && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold leading-5 text-amber-800">Business GSTIN and billing details are not configured yet. You can create a draft now, but complete Billing Settings before issuing a tax invoice.</div>}
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => router.back()} className="rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-gray-600">Cancel</button><button type="submit" disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50"><Save size={16} /> {saving ? 'Creating...' : 'Create invoice draft'}</button></div>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => router.back()} className="rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-gray-600">Cancel</button><button type="submit" disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50"><Save size={16} /> {saving ? 'Saving...' : editingId ? 'Save changes' : 'Create invoice draft'}</button></div>
           </form>
         )}
       </div>
