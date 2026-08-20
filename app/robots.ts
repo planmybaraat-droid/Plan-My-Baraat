@@ -15,6 +15,8 @@ export default function robots(): MetadataRoute.Robots {
           "/workspace/",
           "/marketplace",
           "/marketplace/",
+          "/quote-maker",
+          "/quote-maker/",
         ],
       },
     ],

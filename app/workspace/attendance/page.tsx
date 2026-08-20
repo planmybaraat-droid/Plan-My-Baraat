@@ -92,7 +92,13 @@ export default function MyAttendancePage() {
                       {!!r.break_minutes && <span>Break {formatMinutes(r.break_minutes)}</span>}
                       {netMinutes(r)!==null && <span className="font-bold text-gray-600">Net {formatMinutes(netMinutes(r)!)}</span>}
                     </div>
-                    {!!r.breaks?.length && <div className="mt-2 flex flex-wrap gap-1.5">{r.breaks.map((item: AttendanceBreakRecord,index:number)=><span key={item.id} className="rounded-lg border border-gray-100 bg-gray-50 px-2 py-1 text-[9px] font-semibold text-gray-500">Break {index+1}: {formatTime(new Date(item.break_start_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false}))} → {item.break_end_at?formatTime(new Date(item.break_end_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false})):'Active'}{item.break_end_at?` · ${item.duration_minutes} min`:''}</span>)}</div>}
+                    {!!r.breaks?.length && <div className="mt-2 flex flex-wrap items-center gap-1.5">{r.breaks.map((item: AttendanceBreakRecord,index:number)=>(
+                      <span key={item.id} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2 py-1 text-[9px] font-semibold text-gray-500">
+                        Break {index+1}: {formatTime(new Date(item.break_start_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false}))} → {item.break_end_at?formatTime(new Date(item.break_end_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false})):'Active'}{item.break_end_at?` · ${item.duration_minutes} min`:''}
+                        {item.break_start_selfie_url && <SelfieButton path={item.break_start_selfie_url} label="Start" />}
+                        {item.break_end_selfie_url && <SelfieButton path={item.break_end_selfie_url} label="End" />}
+                      </span>
+                    ))}</div>}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {r.punch_in_selfie_url && <SelfieButton path={r.punch_in_selfie_url} label="In selfie" />}

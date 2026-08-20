@@ -8,7 +8,7 @@ import {
 import type { AgreementFormData, AgreementService } from '../../lib/types';
 import {
   AGREEMENT_PACKAGES, AGREEMENT_STATUSES, PACKAGE_DEFAULTS,
-  calculateAgreementAmounts, createService, currency, isInstallmentPaid,
+  calculateAgreementAmounts, createService, currency, isInstallmentPaid, packageInitial,
 } from '../agreement-config';
 import ServiceBlock from './ServiceBlock';
 
@@ -265,11 +265,11 @@ export default function AgreementForm({ initialData, onSubmit, onSaveDraft, subm
           {step === 1 && (
             <>
               <SectionHeading eyebrow="02 / Package & pricing" title="Shape the commercial summary." copy="Package presets enable a recommended service combination. You can customize every included service in the next step." />
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {AGREEMENT_PACKAGES.map(packageName => (
                   <button key={packageName} type="button" onClick={() => applyPackage(packageName)}
                     className={`rounded-2xl border px-3 py-4 text-left transition-all ${data.package_name === packageName ? 'border-red-600 bg-red-50 ring-2 ring-red-100' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
-                    <span className={`mb-3 flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black ${data.package_name === packageName ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-500'}`}>{packageName[0]}</span>
+                    <span className={`mb-3 flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black ${data.package_name === packageName ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-500'}`}>{packageInitial(packageName)}</span>
                     <span className="block text-xs font-extrabold text-gray-900">{packageName}</span>
                     <span className="mt-1 block text-[10px] text-gray-400">{PACKAGE_DEFAULTS[packageName].price ? currency(PACKAGE_DEFAULTS[packageName].price) : 'Build your own'}</span>
                   </button>

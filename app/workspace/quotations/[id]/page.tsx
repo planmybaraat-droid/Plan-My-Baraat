@@ -1,0 +1,67 @@
+'use client';
+
+// Staff-facing quotation detail page — mirrors the admin CRM quotation
+// detail page (app/crm/quotations/[id]/page.tsx) exactly in look, feel and
+// feature set (Download, Print, Email, WhatsApp, Revise, PDF Preview,
+// Activity, Versions) so staff who have quotation access get the same
+// experience admins do. Route access is already gated by middleware.ts via
+// the "quotations" module toggle in Manage Access, same as the rest of
+// /workspace/quotations/* — no separate permission logic needed here.
+//
+// The one intentional difference: converting to a Baraat Management
+// Contract sends staff to their own My Agreements area (workspace has no
+// admin-only agreement detail page), instead of the admin-only
+// /crm/agreements/[id] page.
+
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { Activity, ArrowLeft, Check, CircleAlert, Download, FileCheck2, FileClock, Loader2, Mail, MessageCircle, Pencil, Printer, RefreshCw } from 'lucide-react';
+import CrmHeader from '../../../crm/components/CrmHeader';
+import { useSidebar } from '../../../crm/sidebar-context';
+import type { QuotationRecord, QuotationStatus } from '../../../crm/lib/types';
+import { createAgreement, getNextAgreementNumber } from '../../../crm/lib/supabase-crm';
+import QuotationDocument from '../../../crm/quotations/components/QuotationDocument';
+import { getQuotationById, updateQuotation } from '../../../crm/quotations/quotation-data';
+import { formatQuotationDate, quotationCurrency, quotationToAgreement, QUOTATION_STATUSES } from '../../../crm/quotations/quotation-config';
+
+const TONES: Record<QuotationStatus, string> = { Draft: 'border-gray-200 bg-gray-50 text-gray-700', Sent: 'border-blue-200 bg-blue-50 text-blue-700', Negotiation: 'border-amber-200 bg-amber-50 text-amber-700', Accepted: 'border-emerald-200 bg-emerald-50 text-emerald-700', Rejected: 'border-red-200 bg-red-50 text-red-700', Expired: 'border-orange-200 bg-orange-50 text-orange-700', Converted: 'border-violet-200 bg-violet-50 text-violet-700' };
+
+export default function WorkspaceQuotationDetailPage() {
+  const { open } = useSidebar(); const params = useParams<{ id: string }>(); const router = useRouter(); const documentRef = useRef<HTMLDivElement>(null);
+  const [quotation, setQuotation] = useState<QuotationRecord | null>(null); const [tab, setTab] = useState<'preview' | 'activity' | 'versions'>('preview'); const [busy, setBusy] = useState(''); const [notice, setNotice] = useState(''); const [loadError, setLoadError] = useState('');
+  useEffect(() => { setLoadError(''); getQuotationById(params.id).then(setQuotation).catch(cause => setLoadError(cause instanceof Error ? cause.message : 'Unable to load quotation.')); }, [params.id]);
+  const notify = (value: string) => { setNotice(value); window.setTimeout(() => setNotice(''), 3000); };
+  const changeStatus = async (status: QuotationStatus) => { if (!quotation || quotation.status === status || status === 'Converted') return; setBusy('status'); try { const next = await updateQuotation(quotation.id, { ...quotation, status }, `Status changed from ${quotation.status} to ${status}`); setQuotation(next); notify(`Quotation marked ${status}.`); } catch (error) { notify(error instanceof Error ? error.message : 'Unable to update status.'); } finally { setBusy(''); } };
+  const download = async () => { if (!quotation || !documentRef.current) return; setBusy('download'); try { const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]); const pages = Array.from(documentRef.current.querySelectorAll<HTMLElement>('[data-pdf-page]')); const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true }); for (let index = 0; index < pages.length; index += 1) { const canvas = await html2canvas(pages[index], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, windowWidth: 794 }); if (index) pdf.addPage('a4', 'portrait'); pdf.addImage(canvas.toDataURL('image/jpeg', .94), 'JPEG', 0, 0, 210, 297, undefined, 'FAST'); } pdf.setProperties({ title: `${quotation.quotation_number} - ${quotation.client_name}`, subject: 'PlanMyBaraat Client Quotation', author: 'PlanMyBaraat' }); pdf.save(`${quotation.quotation_number}-${quotation.client_name.replace(/[^a-z0-9]+/gi, '-')}.pdf`); notify('Quotation PDF downloaded.'); } catch (error) { notify(error instanceof Error ? error.message : 'PDF export failed.'); } finally { setBusy(''); } };
+  const share = (channel: 'email' | 'whatsapp') => { if (!quotation) return; const message = `Hello ${quotation.client_name}, your PlanMyBaraat quotation ${quotation.quotation_number} for ${formatQuotationDate(quotation.event_date)} is ready. It is valid until ${formatQuotationDate(quotation.valid_until)}.`; if (channel === 'email') window.location.href = `mailto:${quotation.email}?subject=${encodeURIComponent(`${quotation.quotation_number} | PlanMyBaraat Quotation`)}&body=${encodeURIComponent(`Dear ${quotation.client_name},\n\n${message}\n\nWarm regards,\nPlanMyBaraat`)}`; else window.open(`https://wa.me/${quotation.mobile.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer'); };
+  const convert = async () => {
+    if (!quotation || !['Accepted', 'Converted'].includes(quotation.status)) return;
+    if (quotation.converted_agreement_id) { router.push(`/workspace/agreements/${quotation.converted_agreement_id}/edit`); return; }
+    setBusy('convert');
+    try {
+      const agreementNumber = await getNextAgreementNumber();
+      const agreement = await createAgreement(quotationToAgreement(quotation, agreementNumber));
+      const updated = await updateQuotation(quotation.id, { ...quotation, status: 'Converted', converted_agreement_id: agreement.id }, `Converted to Baraat Management Contract ${agreement.agreement_number}`);
+      setQuotation(updated);
+      notify(`Converted to agreement ${agreement.agreement_number}.`);
+      router.push(`/workspace/agreements/${agreement.id}/edit`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Unable to convert quotation.');
+      setBusy('');
+    }
+  };
+
+  if (!quotation) return <><CrmHeader title="Quotation" subtitle={loadError ? 'Unable to load proposal' : 'Loading proposal'} onMenuClick={open} notificationsHref="/workspace/notifications" /><div className="flex h-96 items-center justify-center">{loadError ? <div className="flex max-w-xl items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-700"><CircleAlert className="shrink-0" size={18} />{loadError}</div> : <Loader2 className="animate-spin text-red-600" />}</div></>;
+  return <><CrmHeader title={quotation.quotation_number} subtitle={`${quotation.client_name} · Version ${quotation.version}`} onMenuClick={open} notificationsHref="/workspace/notifications" actions={<div className="flex gap-2"><Link href="/workspace/quotations" className="hidden items-center gap-1 text-xs font-bold text-gray-400 sm:inline-flex"><ArrowLeft size={14} /> Quotations</Link><Link href={`/workspace/quotations/${quotation.id}/edit`} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-xs font-bold"><Pencil size={14} /> Edit</Link></div>} />
+    <div className="space-y-5 p-4 sm:p-6">
+      <div className="grid gap-4 xl:grid-cols-[1fr_auto]"><div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap justify-between gap-4"><div><div className="flex items-center gap-2"><h2 className="text-xl font-black">{quotation.client_name}</h2><span className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase ${TONES[quotation.status]}`}>{quotation.status}</span></div><p className="mt-1 text-sm text-gray-400">{quotation.package_name} · {formatQuotationDate(quotation.event_date)} · {quotation.venue}</p></div><div><small className="font-bold uppercase tracking-widest text-gray-400">Quotation value</small><p className="mt-1 text-xl font-black text-red-600">{quotationCurrency(quotation.total_amount)}</p></div></div><div className="mt-5 flex flex-wrap items-center gap-2 border-t pt-4"><span className="text-[10px] font-bold uppercase text-gray-400">Status</span>{QUOTATION_STATUSES.filter(value => value !== 'Converted').map(value => <button key={value} disabled={busy === 'status'} onClick={() => changeStatus(value)} className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-bold ${quotation.status === value ? TONES[value] : 'border-gray-200 text-gray-400'}`}>{quotation.status === value && <Check size={11} className="mr-1 inline" />}{value}</button>)}</div></div>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6 xl:grid-cols-3"><button onClick={download} className="agreement-action-button bg-gray-950 text-white"><Download size={17} />{busy === 'download' ? 'Exporting' : 'Download'}</button><button onClick={() => window.print()} className="agreement-action-button"><Printer size={17} />Print</button><button onClick={() => share('email')} className="agreement-action-button"><Mail size={17} />Email</button><button onClick={() => share('whatsapp')} className="agreement-action-button"><MessageCircle size={17} />WhatsApp</button><Link href={`/workspace/quotations/${quotation.id}/edit`} className="agreement-action-button"><RefreshCw size={17} />Revise</Link><button onClick={convert} disabled={!['Accepted', 'Converted'].includes(quotation.status) || busy === 'convert'} className="agreement-action-button bg-red-600 text-white disabled:bg-gray-200 disabled:text-gray-400"><FileCheck2 size={17} />{quotation.converted_agreement_id ? 'Agreement' : 'Convert'}</button></div></div>
+      {quotation.status !== 'Accepted' && quotation.status !== 'Converted' && <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-900">Mark the quotation as Accepted before converting it into a Baraat Management Contract.</div>}
+      {notice && <div className="fixed bottom-5 right-5 z-50 rounded-xl bg-gray-950 px-4 py-3 text-xs font-bold text-white">{notice}</div>}
+      <div className="overflow-x-auto rounded-2xl border bg-white p-1.5"><div className="flex min-w-[420px]">{[['preview', 'PDF Preview', FileCheck2], ['activity', 'Activity', Activity], ['versions', 'Versions', FileClock]].map(([id, label, Icon]) => <button key={String(id)} onClick={() => setTab(id as typeof tab)} className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold ${tab === id ? 'bg-gray-950 text-white' : 'text-gray-400'}`}><Icon size={14} />{String(label)}</button>)}</div></div>
+      {tab === 'preview' && <div className="agreement-preview-shell"><div className="agreement-preview-toolbar"><div><p>Live quotation preview</p><span>Only selected services and populated client fields are displayed.</span></div><button onClick={download} className="rounded-lg bg-red-600 px-3 py-2 text-[10px] font-bold text-white">Export PDF</button></div><div className="agreement-preview-scroll"><QuotationDocument quotation={quotation} ref={documentRef} /></div></div>}
+      {tab === 'activity' && <div className="rounded-2xl border bg-white p-6"><h3 className="font-black">Activity timeline</h3><div className="mt-5 space-y-3">{(quotation.activity || []).map(item => <div key={item.id} className="rounded-xl border p-4"><b className="text-sm">{item.title}</b><p className="mt-1 text-xs text-gray-500">{item.detail}</p><small className="mt-2 block text-gray-400">{item.actor} · {new Date(item.created_at).toLocaleString('en-IN')}</small></div>)}{!(quotation.activity || []).length && <p className="text-sm text-gray-400">No activity has been recorded yet.</p>}</div></div>}
+      {tab === 'versions' && <div className="rounded-2xl border bg-white p-6"><h3 className="font-black">Revision history</h3><div className="mt-5 space-y-3"><div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"><b>Version {quotation.version} · Current</b></div>{(quotation.revisions || []).map(item => <div key={`${item.version}-${item.created_at}`} className="rounded-xl border p-4"><b>Version {item.version}</b><p className="mt-1 text-xs text-gray-500">{item.summary}</p><small className="mt-2 block text-gray-400">{item.created_by} · {new Date(item.created_at).toLocaleString('en-IN')}</small></div>)}</div></div>}
+    </div></>;
+}

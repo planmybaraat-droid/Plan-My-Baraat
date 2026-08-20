@@ -87,6 +87,17 @@ async function uploadSelfie(blob: Blob, suffix: 'in' | 'out') {
   return path;
 }
 
+// Breaks get their own uniquely-named selfie (a staff member can take up to
+// 2 breaks a day, each with a start + end photo) so files never collide.
+async function uploadBreakSelfie(blob: Blob, label: string) {
+  const { data: { user } } = await crmSupabase.auth.getUser();
+  if (!user) throw new Error('Not signed in.');
+  const path = `${user.id}/${new Date().toISOString().slice(0, 10)}-break-${label}-${Date.now()}.jpg`;
+  const { error } = await crmSupabase.storage.from('attendance-selfies').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+  if (error) throw new Error(error.message);
+  return path;
+}
+
 export async function punchIn(selfie: Blob) {
   const path = await uploadSelfie(selfie, 'in');
   const { data, error } = await crmSupabase.rpc('punch_in', { p_selfie_url: path, p_device: detectDevice(), p_browser: detectBrowser(), p_ip: null });
@@ -101,14 +112,16 @@ export async function punchOut(selfie: Blob) {
   return data as AttendanceRecord;
 }
 
-export async function startBreak(): Promise<AttendanceBreakRecord> {
-  const { data, error } = await crmSupabase.rpc('crm_start_attendance_break');
+export async function startBreak(selfie: Blob): Promise<AttendanceBreakRecord> {
+  const path = await uploadBreakSelfie(selfie, 'start');
+  const { data, error } = await crmSupabase.rpc('crm_start_attendance_break', { p_selfie_url: path, p_device: detectDevice(), p_browser: detectBrowser() });
   if (error) throw new Error(error.message);
   return data as AttendanceBreakRecord;
 }
 
-export async function endBreak(): Promise<AttendanceBreakRecord> {
-  const { data, error } = await crmSupabase.rpc('crm_end_attendance_break');
+export async function endBreak(selfie: Blob): Promise<AttendanceBreakRecord> {
+  const path = await uploadBreakSelfie(selfie, 'end');
+  const { data, error } = await crmSupabase.rpc('crm_end_attendance_break', { p_selfie_url: path, p_device: detectDevice(), p_browser: detectBrowser() });
   if (error) throw new Error(error.message);
   return data as AttendanceBreakRecord;
 }

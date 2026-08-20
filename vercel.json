@@ -18,6 +18,10 @@
     {
       "path": "/api/cron/daily-staff-report?retry=2",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/accrue-leave",
+      "schedule": "0 1 1 * *"
     }
   ]
 }

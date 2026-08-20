@@ -30,11 +30,11 @@ export default function MyQuotationsPage() {
             <div className="divide-y divide-gray-100">
               {rows.map((q) => (
                 <div key={q.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-gray-900">{q.client_name} <span className="font-mono text-xs font-normal text-gray-400">· {q.quotation_number}</span></p>
+                  <Link href={`/workspace/quotations/${q.id}`} className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-gray-900 hover:text-red-600">{q.client_name} <span className="font-mono text-xs font-normal text-gray-400">· {q.quotation_number}</span></p>
                     <p className="mt-1 text-xs text-gray-400">₹{Number(q.total_amount).toLocaleString('en-IN')} · Valid until {q.valid_until ? new Date(q.valid_until).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</p>
-                  </div>
-                  <div className="flex items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[q.status] || 'bg-gray-100 text-gray-600'}`}>{q.status}</span><Link href={`/workspace/quotations/${q.id}/edit`} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[10px] font-bold text-gray-700 hover:border-red-200 hover:text-red-600">Edit</Link></div>
+                  </Link>
+                  <div className="flex items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${STATUS_STYLE[q.status] || 'bg-gray-100 text-gray-600'}`}>{q.status}</span><Link href={`/workspace/quotations/${q.id}`} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[10px] font-bold text-gray-700 hover:border-red-200 hover:text-red-600">View</Link><Link href={`/workspace/quotations/${q.id}/edit`} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[10px] font-bold text-gray-700 hover:border-red-200 hover:text-red-600">Edit</Link></div>
                 </div>
               ))}
             </div>

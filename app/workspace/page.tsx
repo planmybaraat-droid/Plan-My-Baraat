@@ -65,7 +65,7 @@ export default function WorkspaceDashboard() {
   const canLeads = resolveModuleAccess(profile?.role, profile?.moduleAccess, 'leads');
   const { items: notifications } = useCrmNotifications();
   const [attendanceState, setAttendanceState] = useState<MyAttendanceState | undefined>(undefined);
-  const [capturing, setCapturing] = useState<'in' | 'out' | null>(null);
+  const [capturing, setCapturing] = useState<'in' | 'out' | 'break-start' | 'break-end' | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [tasks, setTasks] = useState<{ id: string; title: string; status: string; due_date: string | null; progress: number; priority: string }[]>([]);
@@ -105,25 +105,15 @@ export default function WorkspaceDashboard() {
   const handleCapture = async (blob: Blob) => {
     setBusy(true); setError('');
     try {
-      if (capturing === 'in') await punchIn(blob); else await punchOut(blob);
+      if (capturing === 'in') await punchIn(blob);
+      else if (capturing === 'out') await punchOut(blob);
+      else if (capturing === 'break-start') await startBreak(blob);
+      else if (capturing === 'break-end') await endBreak(blob);
       await loadAttendance();
       setCapturing(null);
       setMonthMap(await getMonthAttendance(monthCursor.year, monthCursor.month));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Something went wrong.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleBreak = async (action: 'start' | 'end') => {
-    if (busy) return;
-    setBusy(true); setError('');
-    try {
-      if (action === 'start') await startBreak(); else await endBreak();
-      await loadAttendance();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to update your break.');
     } finally {
       setBusy(false);
     }
@@ -244,8 +234,20 @@ export default function WorkspaceDashboard() {
             <div className="space-y-2.5 px-5 pb-5">
               {!!attendanceState?.breaks.length && (
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-                  <div className="flex items-center justify-between gap-3"><p className="text-[10px] font-black uppercase tracking-wider text-gray-500">Today&apos;s breaks</p><span className="text-[10px] font-bold text-gray-500">Total {formatMinutes(attendanceState.total_break_minutes)}</span></div>
-                  <div className="mt-2 space-y-2">{attendanceState.breaks.map((item: AttendanceBreakRecord, index: number) => <div key={item.id} className="flex items-center justify-between gap-3 text-xs"><span className="font-semibold text-gray-600">Break {index + 1}</span><span className="text-right tabular-nums text-gray-500">{formatDateTime(item.break_start_at)} → {item.break_end_at ? formatDateTime(item.break_end_at) : 'Active'}{item.break_end_at ? ` · ${item.duration_minutes} min` : ''}</span></div>)}</div>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-gray-500">Today&apos;s breaks · {attendanceState.breaks.length}/2 used</p>
+                    <span className="text-[10px] font-bold text-gray-500">Total {formatMinutes(attendanceState.total_break_minutes)}</span>
+                  </div>
+                  <div className="mt-2 space-y-2">{attendanceState.breaks.map((item: AttendanceBreakRecord, index: number) => (
+                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <span className="font-semibold text-gray-600">Break {index + 1}</span>
+                      <span className="text-right tabular-nums text-gray-500">{formatDateTime(item.break_start_at)} → {item.break_end_at ? formatDateTime(item.break_end_at) : 'Active'}{item.break_end_at ? ` · ${item.duration_minutes} min` : ''}</span>
+                      <div className="flex items-center gap-1.5">
+                        {item.break_start_selfie_url && <SelfieLink path={item.break_start_selfie_url} label="Start selfie" />}
+                        {item.break_end_selfie_url && <SelfieLink path={item.break_end_selfie_url} label="End selfie" />}
+                      </div>
+                    </div>
+                  ))}</div>
                 </div>
               )}
               <div className="flex items-center gap-2">
@@ -255,9 +257,16 @@ export default function WorkspaceDashboard() {
               {!attendance?.check_in ? (
                 <button disabled={busy} onClick={() => setCapturing('in')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Camera size={15} /> Punch In</button>
               ) : attendanceState?.state === 'on_break' ? (
-                <button disabled={busy} onClick={() => handleBreak('end')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Coffee size={15} /> {busy ? 'Ending break...' : 'End Break'}</button>
+                <button disabled={busy} onClick={() => setCapturing('break-end')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Coffee size={15} /> End Break</button>
               ) : attendanceState?.state === 'working' ? (
-                <div className="grid gap-2 sm:grid-cols-2"><button disabled={busy} onClick={() => handleBreak('start')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Coffee size={15} /> {busy ? 'Please wait...' : 'Start Break'}</button><button disabled={busy} onClick={() => setCapturing('out')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><PunchOutIcon size={15} /> Punch Out</button></div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {(attendanceState?.breaks.length || 0) < 2 ? (
+                    <button disabled={busy} onClick={() => setCapturing('break-start')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Coffee size={15} /> Start Break</button>
+                  ) : (
+                    <span className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gray-100 px-4 py-3 text-xs font-bold text-gray-400"><Coffee size={15} /> 2/2 breaks used</span>
+                  )}
+                  <button disabled={busy} onClick={() => setCapturing('out')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><PunchOutIcon size={15} /> Punch Out</button>
+                </div>
               ) : (
                 <span className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-700"><CheckCircle2 size={14} /> Done for today</span>
               )}
@@ -332,8 +341,18 @@ export default function WorkspaceDashboard() {
 
       {capturing && (
         <SelfieCapture
-          title={capturing === 'in' ? 'Punch in — take a selfie' : 'Punch out — take a selfie'}
-          confirmLabel={capturing === 'in' ? 'Punch In' : 'Punch Out'}
+          title={
+            capturing === 'in' ? 'Punch in — take a selfie'
+            : capturing === 'out' ? 'Punch out — take a selfie'
+            : capturing === 'break-start' ? 'Start break — take a selfie'
+            : 'End break — take a selfie'
+          }
+          confirmLabel={
+            capturing === 'in' ? 'Punch In'
+            : capturing === 'out' ? 'Punch Out'
+            : capturing === 'break-start' ? 'Start Break'
+            : 'End Break'
+          }
           busy={busy}
           onCapture={handleCapture}
           onClose={() => setCapturing(null)}

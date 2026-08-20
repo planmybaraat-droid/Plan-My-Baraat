@@ -1029,6 +1029,8 @@ function agreementRowToRecord(row: Record<string, unknown>): AgreementRecord {
   const payload = (row.payload ?? {}) as AgreementFormData;
   return {
     ...payload,
+    revisions: Array.isArray(payload.revisions) ? payload.revisions : [],
+    activity: Array.isArray(payload.activity) ? payload.activity : [],
     id: String(row.id),
     agreement_number: String(row.agreement_number ?? payload.agreement_number),
     client_name: String(row.client_name ?? payload.client_name),
@@ -1136,7 +1138,7 @@ export async function createAgreement(payload: AgreementFormData): Promise<Agree
     actor: payload.sales_executive || 'CRM Admin',
     created_at: now,
   };
-  const prepared = { ...payload, activity: [activity, ...payload.activity] };
+  const prepared = { ...payload, activity: [activity, ...(Array.isArray(payload.activity) ? payload.activity : [])] };
   return runQuery(
     async () => {
       let candidate = prepared;
@@ -1222,8 +1224,8 @@ export async function updateAgreement(id: string, payload: AgreementFormData, su
   const prepared: AgreementFormData = {
     ...payload,
     version: previous.version + 1,
-    revisions: [revision, ...previous.revisions],
-    activity: [activity, ...previous.activity],
+    revisions: [revision, ...(Array.isArray(previous.revisions) ? previous.revisions : [])],
+    activity: [activity, ...(Array.isArray(previous.activity) ? previous.activity : [])],
   };
   return runQuery(
     async () => {
@@ -1251,7 +1253,7 @@ export async function appendAgreementActivity(id: string, entry: Omit<AgreementA
     id: `activity-${Date.now()}`,
     created_at: new Date().toISOString(),
   };
-  const payload: AgreementFormData = { ...record, activity: [activity, ...record.activity] };
+  const payload: AgreementFormData = { ...record, activity: [activity, ...(Array.isArray(record.activity) ? record.activity : [])] };
   return runQuery(
     async () => {
       const { error } = await crmSupabase.from('crm_agreements').update({
@@ -1322,6 +1324,8 @@ function vendorAgreementRowToRecord(row: Record<string, unknown>): VendorAgreeme
   const payload = (row.payload ?? {}) as VendorAgreementFormData;
   return {
     ...payload,
+    revisions: Array.isArray(payload.revisions) ? payload.revisions : [],
+    activity: Array.isArray(payload.activity) ? payload.activity : [],
     id: String(row.id),
     vendor_agreement_number: String(row.vendor_agreement_number ?? payload.vendor_agreement_number),
     vendor_name: String(row.vendor_name ?? payload.vendor_name),
@@ -1429,7 +1433,7 @@ export async function createVendorAgreement(payload: VendorAgreementFormData): P
     actor: 'CRM Admin',
     created_at: now,
   };
-  const prepared = { ...payload, activity: [activity, ...payload.activity] };
+  const prepared = { ...payload, activity: [activity, ...(Array.isArray(payload.activity) ? payload.activity : [])] };
   return runQuery(
     async () => {
       let candidate = prepared;
@@ -1509,8 +1513,8 @@ export async function updateVendorAgreement(id: string, payload: VendorAgreement
   const prepared: VendorAgreementFormData = {
     ...payload,
     version: previous.version + 1,
-    revisions: [revision, ...previous.revisions],
-    activity: [activity, ...previous.activity],
+    revisions: [revision, ...(Array.isArray(previous.revisions) ? previous.revisions : [])],
+    activity: [activity, ...(Array.isArray(previous.activity) ? previous.activity : [])],
   };
   return runQuery(
     async () => {
@@ -1538,7 +1542,7 @@ export async function appendVendorAgreementActivity(id: string, entry: Omit<Vend
     id: `activity-${Date.now()}`,
     created_at: new Date().toISOString(),
   };
-  const payload: VendorAgreementFormData = { ...record, activity: [activity, ...record.activity] };
+  const payload: VendorAgreementFormData = { ...record, activity: [activity, ...(Array.isArray(record.activity) ? record.activity : [])] };
   return runQuery(
     async () => {
       const { error } = await crmSupabase.from('crm_vendor_agreements').update({

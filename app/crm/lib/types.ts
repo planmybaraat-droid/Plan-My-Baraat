@@ -253,7 +253,12 @@ export interface AgreementFormData {
   hard_stop_time: string;
   event_coordinator: string;
   sales_executive: string;
-  package_name: 'Raj Tilak' | 'Rajwada' | 'Maharaja' | 'Signature' | 'Custom';
+  // Widened to plain string (rather than a strict literal union of the
+  // current 4 package names) so historical agreements/quotations saved
+  // under the older package names (Raj Tilak, Rajwada, Maharaja, Signature,
+  // Custom) still type-check and display correctly — package names can
+  // change again in future without breaking old records.
+  package_name: string;
   package_price: number;
   discount: number;
   gst_percent: number;
@@ -708,6 +713,8 @@ export interface AttendanceBreakRecord {
   break_start_at: string;
   break_end_at: string | null;
   duration_minutes: number;
+  break_start_selfie_url?: string | null;
+  break_end_selfie_url?: string | null;
   created_by?: string;
   created_at?: string;
   updated_at?: string;

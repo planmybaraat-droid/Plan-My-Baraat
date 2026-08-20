@@ -58,3 +58,24 @@ export async function openLeaveAttachment(path: string) {
   if (error) throw new Error(error.message);
   window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
 }
+
+export interface LeaveBalance { leave_type: 'Paid Leave' | 'Sick Leave'; balance_days: number }
+
+// PL/SL balances for the currently signed-in staff member (used on the
+// staff /workspace/leave page). 12 PL + 12 SL/year, accrued +1 each on the
+// 1st of every active month, uncapped carry-forward. Balance only changes
+// when an admin approves a request — submitting never blocks on balance.
+export async function getMyLeaveBalances(): Promise<LeaveBalance[]> {
+  const { data, error } = await crmSupabase.rpc('crm_get_my_leave_balances');
+  if (error) throw new Error(error.message);
+  return (data || []) as LeaveBalance[];
+}
+
+// Any one staff member's PL/SL balance — admin can look up anyone; a staff
+// member can look up only their own. Used in the admin review modal so the
+// admin can see the balance before approving.
+export async function getStaffLeaveBalance(staffId: string): Promise<LeaveBalance[]> {
+  const { data, error } = await crmSupabase.rpc('crm_get_staff_leave_balance', { p_staff_id: staffId });
+  if (error) throw new Error(error.message);
+  return (data || []) as LeaveBalance[];
+}

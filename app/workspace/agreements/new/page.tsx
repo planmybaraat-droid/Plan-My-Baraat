@@ -40,8 +40,8 @@ export default function NewWorkspaceAgreementPage() {
   }, []);
 
   const handleSubmit = async (data: AgreementFormData) => {
-    await createAgreement(data);
-    router.push('/workspace/agreements');
+    const record = await createAgreement(data);
+    router.push(`/workspace/agreements/${record.id}`);
   };
 
   return (

@@ -27,8 +27,8 @@ export default function NewWorkspaceVendorAgreementPage() {
   }, []);
 
   const handleSubmit = async (data: VendorAgreementFormData) => {
-    await createVendorAgreement(data);
-    router.push('/workspace/vendor-agreements');
+    const record = await createVendorAgreement(data);
+    router.push(`/workspace/vendor-agreements/${record.id}`);
   };
 
   return (

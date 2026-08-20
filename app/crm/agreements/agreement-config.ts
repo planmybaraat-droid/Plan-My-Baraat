@@ -10,15 +10,36 @@ export {
 } from '../../../lib/businessCatalog';
 
 export const AGREEMENT_STATUSES: AgreementStatus[] = ['Draft', 'Sent', 'Signed', 'Completed', 'Cancelled'];
-export const AGREEMENT_PACKAGES = ['Raj Tilak', 'Rajwada', 'Maharaja', 'Signature', 'Custom'] as const;
+// Package lineup (effective 2026-08-19): 3 fixed packages + "The Signature",
+// the fully custom / bespoke tier. The Signature intentionally has no preset
+// services or fixed price below — its name is shown on the PDF, but nothing
+// is auto-added as an addon in the CRM for it; staff builds it manually.
+export const AGREEMENT_PACKAGES = ['The Festive', 'The Grand', 'The Royal', 'The Signature'] as const;
 
 export const PACKAGE_DEFAULTS: Record<string, { price: number; services: string[] }> = {
-  'Raj Tilak': { price: 125000, services: ['DJ On Wheels', 'Dhol', 'Chhatri', 'Dedicated Manager'] },
-  Rajwada: { price: 225000, services: ['DJ On Wheels', 'Vintage Car', 'Dhol', 'Brass Band', 'Chhatri', 'Safa Team', 'Dedicated Manager'] },
-  Maharaja: { price: 375000, services: ['DJ On Wheels', 'Vintage Car', 'Exclusive Sound', 'DJ Artist', 'Dhol', 'Chhatri', 'Moving LED', 'CO2 Gun', 'Confetti Gun', 'Dedicated Manager'] },
-  Signature: { price: 550000, services: ['DJ On Wheels', 'Vintage Car', 'Exclusive Sound', 'DJ Artist', 'Anchor', 'Dhol', 'Brass Band', 'Chhatri', 'Moving LED', 'LED Letters', 'CO2 Gun', 'Confetti Gun', 'Hand Pyro', 'Low Fog', 'Fireworks', 'Professional Bouncer', 'Safa Team', 'Dedicated Manager', 'Live Streaming', 'QR Gallery'] },
-  Custom: { price: 0, services: [] },
+  'The Festive': {
+    price: 139000,
+    services: ['DJ On Wheels', 'Brass Band', 'Vintage Car', 'Buggy', 'Horse', 'Exclusive Sound', 'LED Letters', 'Moving LED', 'Dhol', 'Chhatri', 'CO2 Gun', 'Hand Pyro', 'Dedicated Manager', 'Safa Team'],
+  },
+  'The Grand': {
+    price: 185000,
+    services: ['DJ On Wheels', 'Brass Band', 'Vintage Car', 'Buggy', 'Horse', 'Premium ATV Bikes', 'Carnival Artist', 'LED Letters', 'Exclusive Sound', 'Moving LED', 'Dhol', 'Chhatri', 'CO2 Gun', 'Confetti Gun', 'Hand Pyro', 'Anchor', 'Dedicated Manager', 'Safa Team'],
+  },
+  'The Royal': {
+    price: 215000,
+    services: ['DJ On Wheels', 'Brass Band', 'Vintage Car', 'Buggy', 'Horse', 'Premium ATV Bikes', 'Carnival Artist', 'Exclusive Sound', 'LED Letters', 'Moving LED', 'Dhol', 'Chhatri', 'CO2 Gun', 'Confetti Gun', 'Hand Pyro', 'Anchor', 'Dedicated Manager', 'Safa Team'],
+  },
+  'The Signature': { price: 0, services: [] },
 };
+
+// "The Festive" -> "Festive", "The Signature" -> "Signature" — every current
+// package name starts with "The ", so a plain first-character badge would
+// show "T" for all of them. This strips that shared prefix before taking the
+// initial, and falls back to the raw first character for any package name
+// (present or future) that doesn't start with "The ".
+export function packageInitial(name: string): string {
+  return (name.replace(/^The\s+/i, '').charAt(0) || name.charAt(0) || '?').toUpperCase();
+}
 
 export function createService(name: string, enabled = false, isCustom = false): AgreementService {
   return {
@@ -128,14 +149,14 @@ export function createBlankAgreement(agreementNumber = 'Generating...'): Agreeme
     hard_stop_time: '',
     event_coordinator: '',
     sales_executive: '',
-    package_name: 'Raj Tilak',
-    package_price: PACKAGE_DEFAULTS['Raj Tilak'].price,
+    package_name: 'The Festive',
+    package_price: PACKAGE_DEFAULTS['The Festive'].price,
     discount: 0,
     gst_percent: 18,
     final_amount: 0,
     booking_amount: 0,
     remaining_amount: 0,
-    services: SERVICE_NAMES.map(name => createService(name, PACKAGE_DEFAULTS['Raj Tilak'].services.includes(name))),
+    services: SERVICE_NAMES.map(name => createService(name, PACKAGE_DEFAULTS['The Festive'].services.includes(name))),
     client_notes: '',
     special_requirements: '',
     vendor_instructions: '',

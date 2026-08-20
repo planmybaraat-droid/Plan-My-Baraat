@@ -2392,6 +2392,38 @@ display: grid;
   }
 }
 
+/* ─── Quote Maker (/quote-maker): A4 print styles — same mechanism as
+   Package Maker above, separate id so the two never collide.
+   NOTE: an earlier print rule in this file (".agreement-document, ...")
+   hides every element under body with `visibility: hidden !important`,
+   which is not scoped to the agreement page — it applies globally. Without
+   matching `!important` here, that rule silently wins and the whole print
+   area renders invisible (blank PDF/print output), so every rule below
+   that needs to show through it uses `!important` too. */
+#quote-maker-print-area {
+  display: none !important;
+}
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #quote-maker-print-area,
+  #quote-maker-print-area * {
+    visibility: visible !important;
+  }
+  #quote-maker-print-area {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+  @page {
+    size: A4;
+    margin: 18mm;
+  }
+}
+
 /* ============================================================
    HOME PAGE — premium monochrome Baraat planning system
    ============================================================ */

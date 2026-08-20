@@ -92,7 +92,7 @@ export function createBlankQuotation(quotationNumber = 'Generating...'): Quotati
   const today = new Date();
   const validUntil = new Date(today);
   validUntil.setDate(validUntil.getDate() + 14);
-  const packageName: QuotationFormData['package_name'] = 'Raj Tilak';
+  const packageName: QuotationFormData['package_name'] = 'The Festive';
   const services = SERVICE_NAMES.map(name => createQuotationService(name, PACKAGE_DEFAULTS[packageName].services.includes(name)));
   const base: QuotationFormData = {
     quotation_number: quotationNumber,

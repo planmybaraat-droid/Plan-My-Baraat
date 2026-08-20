@@ -28,8 +28,23 @@ const TERMS = [
   "The Client acknowledges that the use of fireworks, pyrotechnics, CO₂ effects, confetti, smoke effects, and other special effects involves inherent risks. The Client agrees to ensure that all guests follow the instructions of the authorised operators and maintain the prescribed safety distance. Except to the extent caused by the negligence or wilful misconduct of PlanMyBaraat or its personnel, PlanMyBaraat shall not be responsible for any injury, damage, staining of clothing, damage to vehicles, personal belongings, or any other loss arising from the normal use of such special effects during the Event. The Client accepts these risks on behalf of themselves and their guests.",
   "The Parties shall first attempt to resolve a dispute through good-faith discussions within fifteen days of written notice. An unresolved dispute shall be referred to a sole arbitrator under the Arbitration and Conciliation Act, 1996. The seat and venue shall be Vadodara, Gujarat, proceedings shall be in English, and courts at Vadodara shall have jurisdiction for interim relief, enforcement and matters not capable of arbitration.",
   "Any additional cost, damage charge or overcharge arising during the course of the Event, including on account of extended timing, additional services availed on-site or guest conduct, shall be payable by the Client over and above the agreed package amount.",
-  "This Agreement shall be governed by the laws of India and, without prejudice to the arbitration provisions above, all matters, disputes and legal proceedings arising out of or in connection with this Agreement shall be subject to the exclusive jurisdiction of the courts at Vadodara, Gujarat."
+  "This Agreement shall be governed by the laws of India and, without prejudice to the arbitration provisions above, all matters, disputes and legal proceedings arising out of or in connection with this Agreement shall be subject to the exclusive jurisdiction of the courts at Vadodara, Gujarat.",
+  "Crew Safety & Legal Accountability: The Client is strictly responsible for the safety of the DJ operator and crew; any physical violence, harassment, or misconduct by attendees—sober or intoxicated—will result in an immediate stoppage of services, with the Client bearing full liability for all police and legal consequences.",
+  "Equipment Damage & Financial Liability: The Client accepts 100% financial liability for any damage, loss, or vandalism caused to the DJ equipment, sound system, lighting, or assets due to disruptive behavior, alcohol-induced disputes, or guest negligence, and agrees to reimburse repair or replacement costs immediately.",
+  "Procession & Public/Civil Legal Responsibility: For road shows, outdoor processions, or related events, the Client assumes full responsibility for all local permissions and remains solely accountable for any police interventions, family disputes, public disturbances, or legal matters that arise during the event.",
+  "Overtime & Extension Charges: Any extension of performance or operating time beyond the agreed schedule will be billed at an additional rate of **₹20,000 per hour** (or part thereof), subject to crew availability and prior clearance."
 ] as const;
+
+// A clause can mark a short run of text (e.g. a rate) as emphasised by
+// wrapping it in **double asterisks**, without pulling in a full markdown
+// renderer. Splitting on the `**...**` pairs and bolding the odd-indexed
+// pieces keeps every other clause (with no markers) rendering exactly as
+// plain text, unchanged.
+function renderClauseText(text: string) {
+  const pieces = text.split('**');
+  if (pieces.length === 1) return text;
+  return pieces.map((piece, index) => (index % 2 === 1 ? <strong key={index}>{piece}</strong> : piece));
+}
 
 // Each printed page is a fixed 794x1123px (A4-at-96dpi) with `overflow:
 // hidden`, so content that doesn't fit is silently clipped rather than
@@ -40,10 +55,14 @@ const TERMS = [
 // leaves large blank gaps on pages with mostly short clauses, or would
 // silently truncate a page full of long ones.
 function estimateClauseHeight(text: string, isFirstPage: boolean) {
+  // Strip the `**bold**` markers before measuring — they add 4 characters
+  // to the source string but render as zero-width formatting, not text, so
+  // counting them would overstate how many lines the clause wraps to.
+  const renderedLength = text.replace(/\*\*/g, '').length;
   const charsPerLine = isFirstPage ? 123 : 116;
   const lineHeight = isFirstPage ? 13.7 : 15.2;
   const gap = isFirstPage ? 10 : 7;
-  const lines = Math.max(1, Math.ceil(text.length / charsPerLine));
+  const lines = Math.max(1, Math.ceil(renderedLength / charsPerLine));
   return lines * lineHeight + gap;
 }
 
@@ -303,7 +322,7 @@ const AgreementDocument = forwardRef<HTMLDivElement, AgreementDocumentProps>(fun
             )}
 
             <ol className={`agreement-doc-terms ${isFirstTermsPage ? 'agreement-doc-terms-after-payment' : ''}`} start={clauseStart}>
-              {terms.map((term, index) => <li key={clauseStart + index}>{term}</li>)}
+              {terms.map((term, index) => <li key={clauseStart + index}>{renderClauseText(term)}</li>)}
             </ol>
 
           </Page>

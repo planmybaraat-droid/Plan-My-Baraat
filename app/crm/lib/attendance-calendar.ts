@@ -35,6 +35,25 @@ function isApprovedLeave(key: string, ranges: AttendanceLeaveRange[]) {
   return ranges.some((range) => (!range.status || range.status === 'Approved') && range.from_date <= key && range.to_date >= key);
 }
 
+// Company-wide national holidays. These are never marked Absent, regardless
+// of a staff member's working-day schedule or punch history for that date.
+// Independence Day (15 Aug) and Republic Day (26 Jan) fall on the same
+// calendar date every year; Raksha Bandhan follows the lunar calendar, so it
+// shifts each year and needs an explicit per-year lookup.
+const FIXED_ANNUAL_HOLIDAYS = new Set(['08-15', '01-26']); // MM-DD
+
+const RAKSHA_BANDHAN_DATES = new Set([
+  '2024-08-19',
+  '2025-08-09',
+  '2026-08-28',
+  '2027-08-17',
+  '2028-08-05',
+]);
+
+function isCompanyHoliday(key: string) {
+  return FIXED_ANNUAL_HOLIDAYS.has(key.slice(5)) || RAKSHA_BANDHAN_DATES.has(key);
+}
+
 /**
  * Creates a complete month view from persisted attendance. Missing completed
  * working days are absences; future dates are intentionally left unmarked.
@@ -72,7 +91,9 @@ export function deriveMonthAttendance(options: {
       continue;
     }
     if (key < firstEligibleDate || key >= todayKey) continue;
-    if (!workingDays.includes(weekdayForKey(key))) {
+    if (isCompanyHoliday(key)) {
+      map[key] = 'Holiday';
+    } else if (!workingDays.includes(weekdayForKey(key))) {
       map[key] = 'Weekly Off';
     } else if (isApprovedLeave(key, leaveRanges)) {
       map[key] = 'On Leave';
