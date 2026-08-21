@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { createClient } from '@supabase/supabase-js';
-import { ShieldCheck, ShieldAlert, CalendarDays, Package, IndianRupee, Hash, FileCheck2, Wallet, Info } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, CalendarDays, Package, IndianRupee, Hash, FileCheck2, Wallet, Info, BadgeCheck, Building2 } from 'lucide-react';
 import { publicSupabaseKey, publicSupabaseUrl } from '../../../lib/deployment-config';
 
 export const metadata: Metadata = {
@@ -34,6 +34,8 @@ interface VerifyResult {
   issue_date?: string;
   month?: number;
   year?: number;
+  designation?: string | null;
+  department?: string | null;
 }
 
 async function verifyDocument(code: string): Promise<VerifyResult> {
@@ -137,6 +139,8 @@ export default async function VerifyPage({ params }: { params: { code: string } 
               {!isVendor && !isEmployee && result.package_name && <Row icon={Package} label="Package" value={result.package_name} />}
               {isVendor && <Row icon={Package} label="Service category" value={result.service_category} />}
               {isVendor && <Row icon={CalendarDays} label="Valid until" value={formatDate(result.agreement_end_date)} />}
+              {result.doc_type === 'ID Card' && <Row icon={BadgeCheck} label="Designation" value={result.designation} />}
+              {result.doc_type === 'ID Card' && <Row icon={Building2} label="Department" value={result.department} />}
               {isEmployee && result.month && result.year && <Row icon={CalendarDays} label="Pay period" value={`${['January','February','March','April','May','June','July','August','September','October','November','December'][result.month - 1]} ${result.year}`} />}
               {isEmployee && result.doc_type === 'Payslip' && result.amount !== undefined && <Row icon={IndianRupee} label="Net salary" value={formatCurrency(result.amount)} />}
               {!isVendor && !isEmployee && result.amount !== undefined && result.amount > 0 && <Row icon={IndianRupee} label="Document value" value={formatCurrency(result.amount)} />}

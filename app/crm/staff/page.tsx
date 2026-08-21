@@ -12,7 +12,7 @@ import { useCrmProfile } from '../lib/useCrmProfile';
 import { WORKSPACE_MODULES } from '../../../lib/modulePermissions';
 import { CRM_SECTIONS, isCrmAdminRole } from '../../../lib/crmSectionPermissions';
 
-const DEPARTMENTS = ['Operations', 'Sales', 'Client Servicing', 'Production', 'Accounts', 'Marketing', 'Management'];
+const DEPARTMENTS = ['Operations', 'Sales', 'Client Servicing', 'Production', 'Accounts', 'Marketing', 'IT', 'Management'];
 const EMPLOYMENT: EmploymentType[] = ['Full Time', 'Part Time', 'Contract', 'Intern'];
 const STATUSES: StaffStatus[] = ['Active', 'On Leave', 'Inactive'];
 const STATUS_STYLE: Record<StaffStatus, string> = { Active: 'bg-emerald-50 text-emerald-700', 'On Leave': 'bg-amber-50 text-amber-700', Inactive: 'bg-gray-100 text-gray-600' };

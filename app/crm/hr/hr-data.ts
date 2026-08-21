@@ -770,3 +770,13 @@ export async function getHrAuditLogs(employeeId: string): Promise<HrAuditLogEntr
     actor_name: row.actor_name ? String(row.actor_name) : null, created_at: String(row.created_at || ''),
   }));
 }
+
+// No insert helper existed for crm_hr_audit_logs before this — every reader
+// above assumed rows just showed up. Any feature that wants to leave a trail
+// (ID Cards included) should log through this one function so the shape
+// stays consistent; `actor` defaults to auth.uid() server-side via the
+// column default, so it never needs to be passed from the client.
+export async function logHrAudit(employeeId: string, action: string, detail: string, actorName: string): Promise<void> {
+  const { error } = await crmSupabase.from('crm_hr_audit_logs').insert({ employee_id: employeeId, action, detail, actor_name: actorName });
+  if (error) throw new Error(error.message);
+}

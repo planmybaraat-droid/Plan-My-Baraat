@@ -929,3 +929,66 @@ export interface HrAuditLogEntry {
   actor_name: string | null;
   created_at: string;
 }
+
+// ─── HR Module: ID Cards ────────────────────────────────────────────────────
+
+export type IdCardStatus = 'Draft' | 'Generated' | 'Active' | 'Expired' | 'Revoked';
+
+// What was actually printed on a given version — captured at generation time
+// so a later edit to the staff record never silently rewrites an
+// already-issued card. Deliberately excludes anything not shown in #7 of the
+// spec that isn't already stored on crm_staff (e.g. no blood group — it
+// isn't a real column on crm_staff today).
+export interface IdCardFrontSnapshot {
+  full_name: string;
+  employee_code: string;
+  designation: string;
+  department: string;
+  photo_url: string | null;
+  joining_date: string;
+}
+
+export interface IdCardBackSnapshot {
+  mobile: string;
+  email: string;
+  address: string;
+  emergency_contact_name: string;
+  emergency_contact_mobile: string;
+}
+
+export interface IdCardRecord {
+  id: string;
+  employee_id: string;
+  card_number: string;
+  version: number;
+  status: IdCardStatus;
+  front_snapshot: IdCardFrontSnapshot;
+  back_snapshot: IdCardBackSnapshot;
+  verification_code: string;
+  pdf_path: string | null;
+  file_url?: string | null; // signed URL, resolved on read — never stored
+  issued_date: string | null;
+  expires_on: string | null;
+  generated_at: string | null;
+  generated_by: string | null;
+  created_at: string;
+  updated_at: string;
+  employee?: StaffRecord;
+}
+
+export type IdCardDuplexMode = 'long_edge' | 'short_edge';
+
+export interface IdCardSettings {
+  card_width_mm: number;
+  card_height_mm: number;
+  bleed_mm: number;
+  safe_margin_mm: number;
+  sheet_width_mm: number;
+  sheet_height_mm: number;
+  sheet_margin_mm: number;
+  horizontal_gap_mm: number;
+  vertical_gap_mm: number;
+  duplex_mode: IdCardDuplexMode;
+  validity_years: number;
+  updated_at?: string;
+}
