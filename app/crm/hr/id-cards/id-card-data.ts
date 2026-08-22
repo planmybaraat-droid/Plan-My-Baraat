@@ -1,10 +1,20 @@
 import { crmSupabase } from '../../lib/supabase-crm';
 import type { IdCardBackSnapshot, IdCardFrontSnapshot, IdCardRecord, IdCardSettings, IdCardStatus, StaffRecord } from '../../lib/types';
 import { getPrivateCrmFileUrl, logHrAudit } from '../hr-data';
-import { addYears, buildBackSnapshot, buildFrontSnapshot, DEFAULT_ID_CARD_SETTINGS, nextCardNumber } from './id-card-config';
+import { addYears, buildBackSnapshot, DEFAULT_ID_CARD_SETTINGS, nextCardNumber } from './id-card-config';
 
 export { getStaff } from '../../staff/staff-data';
 
+function buildLiveFrontSnapshot(staff: StaffRecord): IdCardFrontSnapshot {
+  return {
+    employee_code: staff.employee_code,
+    full_name: staff.full_name,
+    designation: staff.job_title || staff.designation || '',
+    department: staff.department,
+    photo_url: staff.photo_url || null,
+    joining_date: staff.joining_date,
+  };
+}
 function normalizeCard(row: Record<string, unknown>): IdCardRecord {
   return {
     id: String(row.id),
@@ -71,9 +81,9 @@ function normalizeStaffLite(row: Record<string, unknown>): StaffRecord {
   return {
     id: String(row.id), employee_code: String(row.employee_code || ''), full_name: String(row.full_name || ''),
     mobile: String(row.mobile || ''), email: String(row.email || ''), job_title: String(row.job_title || ''),
-    department: String(row.department || ''), employment_type: row.employment_type as StaffRecord['employment_type'],
+    department: String(row.department || ''), employment_type: (row.employment_type as StaffRecord['employment_type']) || 'Full Time',
     joining_date: String(row.joining_date || ''), date_of_birth: String(row.date_of_birth || ''),
-    status: row.status as StaffRecord['status'], work_location: String(row.work_location || ''),
+    status: (row.status as StaffRecord['status']) || 'Active', work_location: String(row.work_location || ''),
     shift_start: String(row.shift_start || ''), shift_end: String(row.shift_end || ''), address: String(row.address || ''),
     emergency_contact_name: String(row.emergency_contact_name || ''), emergency_contact_mobile: String(row.emergency_contact_mobile || ''),
     notes: String(row.notes || ''), crm_id: String(row.crm_id || ''), role: (row.role as StaffRecord['role']) || 'staff',
@@ -113,21 +123,44 @@ export async function resolveCardFileUrl(card: IdCardRecord): Promise<string | n
 // the moment an admin opens the editor for an employee who doesn't have one
 // yet, so the live preview always has a real DB-backed row to work with.
 export async function getOrCreateDraft(staff: StaffRecord): Promise<IdCardRecord> {
+  const refreshDraft = async (draft: IdCardRecord) => {
+    const frontSnapshot = buildLiveFrontSnapshot(staff);
+    const backSnapshot = buildBackSnapshot(staff);
+    const { data, error } = await crmSupabase.from('crm_id_cards').update({
+      front_snapshot: frontSnapshot,
+      back_snapshot: { ...backSnapshot, blood_group: draft.back_snapshot?.blood_group || '' },
+      updated_at: new Date().toISOString(),
+    }).eq('id', draft.id).select().single();
+    if (error) throw new Error(error.message);
+    return { ...normalizeCard(data), employee: staff };
+  };
+
   const versions = await getCardVersions(staff.id);
-  if (versions.length && versions[0].status === 'Draft') return { ...versions[0], employee: staff };
+  const existingDraft = versions.find(version => version.status === 'Draft');
+  if (existingDraft) return refreshDraft(existingDraft);
 
   const { count } = await crmSupabase.from('crm_id_cards').select('id', { count: 'exact', head: true });
-  const nextVersion = versions.length ? versions[0].version + 1 : 1;
-  const { data, error } = await crmSupabase.from('crm_id_cards').insert({
+  const latestVersion = versions.reduce((max, version) => Math.max(max, Number(version.version || 0)), 0);
+  const insertDraft = async (version: number) => crmSupabase.from('crm_id_cards').insert({
     employee_id: staff.id,
     card_number: versions.length ? versions[0].card_number : nextCardNumber(count || 0),
-    version: nextVersion,
+    version,
     status: 'Draft',
-    front_snapshot: buildFrontSnapshot(staff),
+    front_snapshot: buildLiveFrontSnapshot(staff),
     back_snapshot: buildBackSnapshot(staff),
   }).select().single();
-  if (error) throw new Error(error.message);
-  return { ...normalizeCard(data), employee: staff };
+
+  let result = await insertDraft(latestVersion + 1);
+  if (result.error && result.error.message.toLowerCase().includes('duplicate key')) {
+    const freshVersions = await getCardVersions(staff.id);
+    const freshDraft = freshVersions.find(version => version.status === 'Draft');
+    if (freshDraft) return refreshDraft(freshDraft);
+    const freshLatestVersion = freshVersions.reduce((max, version) => Math.max(max, Number(version.version || 0)), 0);
+    result = await insertDraft(freshLatestVersion + 1);
+  }
+
+  if (result.error) throw new Error(result.error.message);
+  return { ...normalizeCard(result.data), employee: staff };
 }
 
 // Renders happen client-side (html2canvas + jsPDF, same library the project
@@ -149,8 +182,8 @@ export async function finalizeGeneratedCard(
   const expiresOn = addYears(issuedDate, settings.validity_years);
   const { data, error } = await crmSupabase.from('crm_id_cards').update({
     status: 'Generated',
-    front_snapshot: buildFrontSnapshot(staff),
-    back_snapshot: buildBackSnapshot(staff),
+    front_snapshot: buildLiveFrontSnapshot(staff),
+    back_snapshot: { ...buildBackSnapshot(staff), blood_group: card.back_snapshot?.blood_group || '' },
     pdf_path: path,
     issued_date: issuedDate,
     expires_on: expiresOn,
@@ -175,7 +208,7 @@ export async function regenerateCard(staff: StaffRecord): Promise<IdCardRecord> 
     card_number: latest ? latest.card_number : nextCardNumber(versions.length),
     version: nextVersion,
     status: 'Draft',
-    front_snapshot: buildFrontSnapshot(staff),
+    front_snapshot: buildLiveFrontSnapshot(staff),
     back_snapshot: buildBackSnapshot(staff),
   }).select().single();
   if (error) throw new Error(error.message);

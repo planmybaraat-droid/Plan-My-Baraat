@@ -954,6 +954,7 @@ export interface IdCardBackSnapshot {
   address: string;
   emergency_contact_name: string;
   emergency_contact_mobile: string;
+  blood_group?: string;
 }
 
 export interface IdCardRecord {

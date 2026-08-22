@@ -2,23 +2,20 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Download, Eye, Loader2, Plus, RefreshCw, Search, Settings2, Trash2, UserRound } from 'lucide-react';
+import { ArrowLeft, Eye, Loader2, Plus, RefreshCw, Search, Trash2, UserRound } from 'lucide-react';
 import CrmHeader from '../../components/CrmHeader';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { useSidebar } from '../../sidebar-context';
 import { useCrmProfile } from '../../lib/useCrmProfile';
-import { isCrmAdminRole } from '../../../../lib/crmSectionPermissions';
-import type { IdCardRecord } from '../../lib/types';
-import { deleteIdCard, getStaff, listIdCards, resolveCardFileUrl } from './id-card-data';
+import type { IdCardRecord, StaffRecord } from '../../lib/types';
+import { deleteIdCard, getStaff, listIdCards } from './id-card-data';
 import { formatAgreementDate, STATUS_STYLES } from './id-card-config';
 import IdCardEditorModal from './components/IdCardEditorModal';
-import IdCardSettingsModal from './components/IdCardSettingsModal';
 import BulkGenerateModal from './components/BulkGenerateModal';
 
 export default function IdCardsPage() {
   const { open } = useSidebar();
   const { profile } = useCrmProfile();
-  const isAdmin = isCrmAdminRole(profile?.role);
 
   const [cards, setCards] = useState<IdCardRecord[]>([]);
   const [staffCount, setStaffCount] = useState(0);
@@ -28,17 +25,28 @@ export default function IdCardsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
-  const [downloadBusy, setDownloadBusy] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<IdCardRecord | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [loadError, setLoadError] = useState('');
+
+  const mergeCardsWithLiveStaff = (cardList: IdCardRecord[], staffList: StaffRecord[]) => {
+    const staffById = new Map(staffList.map(staff => [staff.id, staff]));
+    return cardList.map(card => ({ ...card, employee: staffById.get(card.employee_id) || card.employee }));
+  };
 
   const load = async () => {
-    const [cardList, staffList] = await Promise.all([listIdCards(), getStaff()]);
-    setCards(cardList);
-    setStaffCount(staffList.length);
-    setLoading(false);
+    setLoading(true);
+    setLoadError('');
+    try {
+      const [cardList, staffList] = await Promise.all([listIdCards(), getStaff()]);
+      setCards(mergeCardsWithLiveStaff(cardList, staffList));
+      setStaffCount(staffList.length);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unable to load ID cards.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -68,25 +76,6 @@ export default function IdCardsPage() {
   const selectAllFiltered = () => setSelected(new Set(filtered.map(c => c.employee_id)));
   const clearSelection = () => setSelected(new Set());
 
-  const download = async (card: IdCardRecord) => {
-    if (!card.pdf_path) return;
-    setDownloadBusy(card.id);
-    try {
-      const url = await resolveCardFileUrl(card);
-      if (!url) throw new Error('File not available.');
-      const fileName = `ID_Card_${card.employee?.employee_code || 'EMP'}_${(card.employee?.full_name || 'Employee').replace(/[^a-z0-9]+/gi, '_')}_V${card.version}.pdf`;
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.target = '_blank';
-      a.rel = 'noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    } finally {
-      setDownloadBusy('');
-    }
-  };
 
   const selectedCards = cards.filter(c => selected.has(c.employee_id));
 
@@ -138,23 +127,23 @@ export default function IdCardsPage() {
             </select>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {isAdmin && (
-              <button onClick={() => setSettingsOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-600 hover:border-gray-300">
-                <Settings2 size={14} /> <span className="hidden sm:inline">Print settings</span>
-              </button>
-            )}
+
             <button
               onClick={() => setBulkOpen(true)}
               disabled={!selected.size}
               className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-600 hover:border-gray-300 disabled:opacity-40"
             >
-              <RefreshCw size={14} /> Generate selected ({selected.size})
+              <RefreshCw size={14} /> A4 print sheet ({selected.size})
             </button>
             <button onClick={() => setEditingEmployeeId('__new__')} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3.5 py-2 text-xs font-bold text-white">
               <Plus size={15} /> <span className="hidden sm:inline">Create ID Card</span>
             </button>
           </div>
         </div>
+
+        {loadError && (
+          <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{loadError}</div>
+        )}
 
         {loading ? (
           <div className="flex h-56 items-center justify-center"><Loader2 size={26} className="animate-spin text-red-600" /></div>
@@ -199,17 +188,12 @@ export default function IdCardsPage() {
                       </td>
                       <td className="px-4 py-3 font-mono text-xs font-bold text-gray-700">{card.employee?.employee_code}</td>
                       <td className="px-4 py-3 text-gray-600">{card.employee?.department}</td>
-                      <td className="px-4 py-3 text-gray-600">{card.employee?.designation || card.employee?.job_title}</td>
+                      <td className="px-4 py-3 text-gray-600">{card.employee?.job_title || card.employee?.designation}</td>
                       <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase ${STATUS_STYLES[card.status]}`}>{card.status}</span></td>
                       <td className="px-4 py-3 text-gray-500">{card.generated_at ? formatAgreementDate(card.generated_at.slice(0, 10)) : '—'}</td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1.5">
                           <button onClick={() => setEditingEmployeeId(card.employee_id)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-900" title="Preview / Edit"><Eye size={14} /></button>
-                          {card.pdf_path && (
-                            <button onClick={() => download(card)} disabled={downloadBusy === card.id} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-900" title="Download PDF">
-                              {downloadBusy === card.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                            </button>
-                          )}
                           <button onClick={() => setDeleteTarget(card)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={14} /></button>
                         </div>
                       </td>
@@ -229,7 +213,6 @@ export default function IdCardsPage() {
           onSaved={() => { setEditingEmployeeId(null); load(); }}
         />
       )}
-      {settingsOpen && <IdCardSettingsModal onClose={() => setSettingsOpen(false)} />}
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete ID card"

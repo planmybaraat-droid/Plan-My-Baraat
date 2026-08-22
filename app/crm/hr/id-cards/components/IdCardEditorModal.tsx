@@ -48,9 +48,9 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
       const staff = selectedStaff || (await getStaff()).find(s => s.id === selectedId) || null;
       if (!staff) { setError('That employee could not be loaded.'); setLoading(false); return; }
       if (!selectedStaff) setStaffList(current => (current.some(s => s.id === staff.id) ? current : [...current, staff]));
-      const [draft, cardSettings] = await Promise.all([getOrCreateDraft(staff), getIdCardSettings()]);
+      const [draft, loadedSettings] = await Promise.all([getOrCreateDraft(staff), getIdCardSettings()]);
       setCard({ ...draft, employee: staff });
-      setSettings(cardSettings);
+      setSettings(loadedSettings);
       setPhotoOverride(staff.photo_url || null);
       setLoading(false);
     })();
@@ -70,6 +70,13 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
     if (!staff.employee_code.trim()) return 'This employee has no employee code on file.';
     return '';
   }, [staff]);
+
+  const updateBloodGroup = (value: string) => {
+    setCard(current => current ? ({
+      ...current,
+      back_snapshot: { ...current.back_snapshot, blood_group: value },
+    }) : current);
+  };
 
   const handlePhotoChange = async (file: File) => {
     if (!staff) return;
@@ -105,8 +112,6 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
     setError('');
     try {
       const pdf = await buildSingleCardPdf({ root: documentRef.current, settings, cardNumber: card.card_number });
-      const fileName = `ID_Card_${staff.employee_code}_${staff.full_name.replace(/[^a-z0-9]+/gi, '_')}_V${card.version}.pdf`;
-      pdf.save(fileName);
       const blob = pdf.output('blob');
       const actorName = staff.full_name; // best-effort label; real actor id comes from auth.uid() server-side
       const updated = await finalizeGeneratedCard(card, staff, blob, settings, actorName);
@@ -161,7 +166,7 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-bold text-gray-900">{s.full_name}</span>
-                        <span className="block truncate text-xs text-gray-400">{s.employee_code} &middot; {s.department} &middot; {s.designation || s.job_title}</span>
+                        <span className="block truncate text-xs text-gray-400">{s.employee_code} &middot; {s.department} &middot; {s.job_title || s.designation}</span>
                       </span>
                     </button>
                   ))}
@@ -179,11 +184,25 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
                   <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                     <div><span className="text-gray-400">Employee ID</span><p className="font-bold text-gray-900">{staff.employee_code}</p></div>
                     <div><span className="text-gray-400">Department</span><p className="font-bold text-gray-900">{staff.department}</p></div>
-                    <div><span className="text-gray-400">Designation</span><p className="font-bold text-gray-900">{staff.designation || staff.job_title}</p></div>
+                    <div><span className="text-gray-400">Designation</span><p className="font-bold text-gray-900">{staff.job_title || staff.designation}</p></div>
                     <div><span className="text-gray-400">Joining date</span><p className="font-bold text-gray-900">{staff.joining_date}</p></div>
                     <div><span className="text-gray-400">Mobile</span><p className="font-bold text-gray-900">{staff.mobile}</p></div>
                     <div><span className="text-gray-400">Email</span><p className="font-bold text-gray-900">{staff.email}</p></div>
                   </div>
+                </div>
+
+                <div className="rounded-2xl border border-gray-200 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">ID card only details</p>
+                  <label className="mt-3 block text-xs font-bold text-gray-600">
+                    Blood group
+                    <input
+                      value={card.back_snapshot?.blood_group || ''}
+                      onChange={e => updateBloodGroup(e.target.value)}
+                      placeholder="Example: B+"
+                      className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:border-red-400"
+                    />
+                  </label>
+                  <p className="mt-2 text-[11px] font-semibold text-gray-400">This is saved only with the ID card. Staff master data is not changed.</p>
                 </div>
 
                 <div className="rounded-2xl border border-gray-200 p-4">
@@ -219,7 +238,7 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
                     <RefreshCw size={14} /> New version
                   </button>
                   <button onClick={generate} disabled={generating || !!validation} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white disabled:opacity-50">
-                    {generating ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} {generating ? 'Generating…' : 'Generate & download PDF'}
+                    {generating ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} {generating ? 'Saving…' : 'Save ID card'}
                   </button>
                   {card.status !== 'Draft' && (
                     <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700"><Check size={13} /> v{card.version} generated</span>

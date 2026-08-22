@@ -62,13 +62,13 @@ export default function HomeSeoContentSection() {
 
           <div className="space-y-3">
             <h3 className="font-serif text-xl font-black text-black">
-              2. Custom Procession Packages for Every Budget
+              2. One Signature Offering, Personalized for Every Celebration
             </h3>
             <p>
-              Every family has a unique vision for their celebration. We have structured four distinct packages—Raj Tilak, Rajwada, Maharaja, and Signature—designed to scale from elegant, intimate entries to grand street-filling spectacles.
+              Every family has a unique vision for their celebration. We have structured a single Signature Offering—built from essential must-haves and a wide range of selectable experiences—designed to scale from elegant, intimate entries to grand street-filling spectacles.
             </p>
             <p>
-              The Raj Tilak package is perfect for smaller groups, offering a high-quality sound truck, live DJ, 2 dhol players, chhatri lights, a classic vintage car, and turban styling. The Maharaja package adds dynamic moving LED panels showing the groom&apos;s name in lights and a 6-dhol setup. For the ultimate entry, the Signature package includes a premium American vintage car, cold pyro effects, confetti cannons, and a dedicated security bouncers team.
+              The essentials cover a high-quality Baraat on Wheels, your choice of groom entry, premium sound, live dhol, royal Chhatris, moving LED panels, Liquid CO2, confetti, pyro hand guns and a professional Safas &amp; tying team. From there, selectable experiences—an 11-member brass band, ATV bike, carnival and gorilla artists, name boards, custom hashtags, a hype anchor, Darbuka artist, colour or paper/flower blast, professional bouncers, regional or international dancers and a dedicated reel creator—let you personalize the entry exactly to your celebration.
             </p>
           </div>
 

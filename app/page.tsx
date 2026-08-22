@@ -247,7 +247,7 @@ const FAQS = [
   {
     question: "Can I customize a Baraat package?",
     answer:
-      "Yes. Raj Tilak, Rajwada, Maharaja and Signature are starting points. You can adjust the dhol count, lighting, effects, entertainment, entry vehicle, truck branding and other elements around your celebration.",
+      "Yes. Our Signature Offering is a starting point built from essential must-haves. You can then choose from a wide range of selectable experiences—dhol count, lighting, effects, entertainment, entry vehicle, truck branding and more—around your celebration.",
   },
   {
     question: "How early should we book our Baraat planner?",

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Download, Loader2, ShieldAlert, X } from 'lucide-react';
 import type { IdCardRecord } from '../../../lib/types';
 import { finalizeGeneratedCard, getIdCardSettings } from '../id-card-data';
-import { buildBulkCardsPdf, type CardFaceMode, type CardPdfMode } from '../id-card-pdf-export';
+import { buildBulkCardsPdf, type CardFaceMode } from '../id-card-pdf-export';
 
 interface BulkGenerateModalProps {
   cards: IdCardRecord[]; // selected rows, each with .employee attached
@@ -13,8 +13,7 @@ interface BulkGenerateModalProps {
 }
 
 export default function BulkGenerateModal({ cards, onClose, onDone }: BulkGenerateModalProps) {
-  const [mode, setMode] = useState<CardPdfMode>('individual');
-  const [faces, setFaces] = useState<CardFaceMode>('both');
+  const faces: CardFaceMode = 'both';
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: cards.length });
   const [error, setError] = useState('');
@@ -29,7 +28,7 @@ export default function BulkGenerateModal({ cards, onClose, onDone }: BulkGenera
       const settings = await getIdCardSettings();
       const items = eligible.map(c => ({ card: c, staff: c.employee!, photoUrl: c.employee!.photo_url || null }));
       const { combinedPdf, perEmployeePdfBlob } = await buildBulkCardsPdf(items, settings, {
-        mode, faces, onProgress: (done, total) => setProgress({ done, total }),
+        mode: 'sheet', faces, onProgress: (done, total) => setProgress({ done, total }),
       });
 
       const stamp = new Date().toISOString().slice(0, 10);
@@ -69,27 +68,14 @@ export default function BulkGenerateModal({ cards, onClose, onDone }: BulkGenera
             </div>
           )}
 
-          <div>
-            <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400">Output</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setMode('individual')} className={`rounded-xl border px-3 py-2.5 text-left text-xs font-bold ${mode === 'individual' ? 'border-red-600 bg-red-50 text-red-700' : 'border-gray-200 text-gray-600'}`}>
-                Individual cards<span className="mt-0.5 block font-normal text-gray-400">One PDF, one card-sized page per card</span>
-              </button>
-              <button onClick={() => setMode('sheet')} className={`rounded-xl border px-3 py-2.5 text-left text-xs font-bold ${mode === 'sheet' ? 'border-red-600 bg-red-50 text-red-700' : 'border-gray-200 text-gray-600'}`}>
-                Print sheet<span className="mt-0.5 block font-normal text-gray-400">Grid-arranged on your configured sheet size</span>
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400">Sides</p>
-            <div className="grid grid-cols-3 gap-2">
-              {(['both', 'front', 'back'] as CardFaceMode[]).map(f => (
-                <button key={f} onClick={() => setFaces(f)} className={`rounded-xl border px-3 py-2 text-xs font-bold capitalize ${faces === f ? 'border-red-600 bg-red-50 text-red-700' : 'border-gray-200 text-gray-600'}`}>
-                  {f === 'both' ? 'Front + back' : f} only
-                </button>
-              ))}
-            </div>
+          <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">A4 print sheet</p>
+            <p className="mt-1 text-sm font-semibold text-gray-700">
+              Selected ID cards will be arranged together on standard A4 pages using one fixed universal card size.
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              Front and back pages are generated in the same PDF for print alignment. No separate card-size PDF option is shown here.
+            </p>
           </div>
 
           {busy && (
@@ -107,7 +93,7 @@ export default function BulkGenerateModal({ cards, onClose, onDone }: BulkGenera
         <div className="flex items-center justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-4 sm:px-7">
           <button onClick={onClose} disabled={busy} className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold disabled:opacity-50">Cancel</button>
           <button onClick={run} disabled={busy || eligible.length === 0} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white disabled:opacity-50">
-            {busy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} {busy ? 'Generating…' : 'Generate PDF'}
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} {busy ? 'Generating…' : 'Generate A4 PDF'}
           </button>
         </div>
       </div>

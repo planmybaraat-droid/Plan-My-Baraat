@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { Inter, Manrope, Montserrat, Roboto } from "next/font/google";
 
 import MetaPixel from "@/components/MetaPixel";
 import ConversionTracking from "@/components/ConversionTracking";
@@ -17,6 +17,24 @@ const manropeBody = Manrope({
   subsets: ["latin"],
   variable: "--font-outfit",
   weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const montserratIdCard = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-idcard-montserrat",
+  weight: ["600", "700", "800"],
+});
+
+const interIdCard = Inter({
+  subsets: ["latin"],
+  variable: "--font-idcard-inter",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const robotoIdCard = Roboto({
+  subsets: ["latin"],
+  variable: "--font-idcard-roboto",
+  weight: ["400", "500", "700", "900"],
 });
 
 export const metadata: Metadata = {
@@ -75,7 +93,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${manropeHeading.variable} ${manropeBody.variable} font-sans antialiased bg-[#fcfbf9] text-[#1c1917]`}
+        className={`${manropeHeading.variable} ${manropeBody.variable} ${montserratIdCard.variable} ${interIdCard.variable} ${robotoIdCard.variable} font-sans antialiased bg-[#fcfbf9] text-[#1c1917]`}
       >
         <GoogleTagManagerScript />
         <GoogleTagManagerNoScript />

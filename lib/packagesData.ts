@@ -9,23 +9,6 @@ export interface PackageFaq {
   a: string;
 }
 
-export type PackageComparisonKey =
-  | "djTruck"
-  | "groomEntry"
-  | "sound"
-  | "ledPanel"
-  | "dhol"
-  | "chhatri"
-  | "liquidCo2"
-  | "confetti"
-  | "pyro"
-  | "host"
-  | "performer"
-  | "nameBoards"
-  | "bouncers"
-  | "addOns"
-  | "safas";
-
 export interface BaraatPackage {
   id: string;
   name: string;
@@ -37,304 +20,119 @@ export interface BaraatPackage {
   imageAlt: string;
   featured?: boolean;
   custom?: boolean;
+  // Combined flat list — used anywhere a single scrollable checklist is
+  // shown (package cards, city/keyword landing pages, etc).
   features: string[];
-  comparison: Record<PackageComparisonKey, string>;
+  // The two source lists from the official package flyer, kept separate so
+  // the full package page can present them exactly as designed: fixed
+  // must-haves vs. experiences the couple chooses per event.
+  essentials: string[];
+  selectableExperiences: string[];
+  support: string[];
   longDescription: string;
   bestFor: string[];
   highlights: PackageHighlight[];
   faqs: PackageFaq[];
+  pdfUrl: string;
 }
 
-export interface PackageComparisonGroup {
-  title: string;
-  rows: { key: PackageComparisonKey; label: string }[];
-}
+// PlanMyBaraat now offers one all-inclusive package instead of four separate
+// tiers — everything below is transcribed directly from the official
+// "Our Signature Offering" flyer (PLANMYBARAAT_FINAL_PACKAGE.pdf).
+export const SIGNATURE_PACKAGE: BaraatPackage = {
+  id: "signature-offering",
+  name: "Signature Offering",
+  shortName: "Signature Offering",
+  number: "01",
+  tagline: "Perfect for a Custom & Extraordinary Baraat",
+  description:
+    "One all-inclusive Baraat production: a full choice of DJ trucks, royal groom entry, premium sound, live dhol, Chhatris, effects and a dedicated 30-50 member execution team — with selectable experiences to make it entirely yours.",
+  image: "/Assests/packages/signature-v2.png",
+  imageAlt: "PlanMyBaraat Signature Offering royal Baraat production",
+  featured: true,
+  features: [
+    "Baraat on Wheels - Mini American DJ Truck, Max American DJ Truck, Flex Baraat or Thar",
+    "Groom Entry - Vintage car, Baggi or Horse",
+    "Premium Sound - RCF or JBL",
+    "Dhol - Punjabi, Nashik, Puneri or Rajasthani",
+    "Royal Chatris",
+    "Moving LED Panels",
+    "Liquid CO2 Guns",
+    "Confetti",
+    "Pyro Hand Guns",
+    "Safas & Tying Team",
+    "Brass Band - 11 Members",
+    "ATV Bike",
+    "Carnival Artist",
+    "Gorilla Artist",
+    "Name Boards",
+    "Custom Hashtags",
+    "Hyper / Anchor",
+    "Darbuka Artist",
+    "Colour Blast",
+    "Paper Blast / Flower Blast",
+    "Bouncers",
+    "Regional / International Dancers",
+    "Reel Creator",
+  ],
+  essentials: [
+    "Baraat on Wheels - Mini American DJ Truck, Max American DJ Truck, Flex Baraat or Thar",
+    "Groom Entry - Vintage car, Baggi or Horse",
+    "Premium Sound - RCF or JBL",
+    "Dhol - Punjabi, Nashik, Puneri or Rajasthani",
+    "Royal Chatris",
+    "Moving LED Panels",
+    "Liquid CO2 Guns",
+    "Confetti",
+    "Pyro Hand Guns",
+    "Safas & Tying Team",
+  ],
+  selectableExperiences: [
+    "Brass Band - 11 Members",
+    "ATV Bike",
+    "Carnival Artist",
+    "Gorilla Artist",
+    "Name Boards",
+    "Custom Hashtags",
+    "Hyper / Anchor",
+    "Darbuka Artist",
+    "Colour Blast",
+    "Paper Blast / Flower Blast",
+    "Bouncers",
+    "Regional / International Dancers",
+    "Reel Creator",
+  ],
+  support: [
+    "Dedicated on-ground PMB team of 30-50 execution members",
+    "1 Dedicated Manager",
+    "1 Assistant Manager",
+  ],
+  longDescription: `Our Signature Offering brings everything a Baraat needs into one coordinated production. Every event starts from the same set of essentials — your choice of Baraat on Wheels (Mini American DJ Truck, Max American DJ Truck, Flex Baraat or Thar), a groom entry in a vintage car, Baggi or on horseback, premium RCF or JBL sound, moving LED panels, live dhol, royal Chatris, Liquid CO2, confetti, pyro hand guns and a professional Safas & tying team.
 
-export const PACKAGE_COMPARISON_GROUPS: PackageComparisonGroup[] = [
-  {
-    title: "Package foundation",
-    rows: [
-      { key: "djTruck", label: "DJ truck" },
-      { key: "groomEntry", label: "Groom entry choice" },
-      { key: "sound", label: "Sound experience" },
-      { key: "ledPanel", label: "Moving LED panel" },
-    ],
-  },
-  {
-    title: "Music & royal formation",
-    rows: [
-      { key: "dhol", label: "Punjabi dhol" },
-      { key: "chhatri", label: "Royal Chhatri lights" },
-      { key: "safas", label: "Safa package" },
-    ],
-  },
-  {
-    title: "Effects & entertainment",
-    rows: [
-      { key: "liquidCo2", label: "Liquid CO2 gun" },
-      { key: "confetti", label: "Confetti effect" },
-      { key: "pyro", label: "Pyro guns" },
-      { key: "host", label: "Hype host / anchor" },
-      { key: "performer", label: "Gorilla entertainer" },
-    ],
-  },
-  {
-    title: "Personalization & support",
-    rows: [
-      { key: "nameBoards", label: "Personalized name boards" },
-      { key: "bouncers", label: "Professional bouncers" },
-      { key: "addOns", label: "Optional add-ons" },
-    ],
-  },
-];
+From there, the celebration is shaped entirely around you. Selectable experiences — a full 11-member brass band, ATV bike entry, carnival and gorilla artists, personalized name boards and hashtags, a hype anchor, Darbuka artist, colour or paper/flower blast, professional bouncers, regional or international dancers and a dedicated reel creator — are added exactly where your event calls for them.
 
-const included = "Included";
-const customChoice = "Customized to your event";
+Every Baraat is run on the ground by a dedicated PMB team of 30 to 50 execution members, led by one dedicated manager and one assistant manager, so your family can enjoy the procession instead of coordinating it.`,
+  bestFor: [
+    "Families who want one premium foundation instead of comparing tiers",
+    "Celebrations that want to hand-pick their own selectable experiences",
+    "Baraats of any scale — the truck, dhol count and effects flex to your event",
+    "Anyone who wants a dedicated on-ground team managing the entire procession",
+  ],
+  highlights: [
+    { icon: "🚚", heading: "Choose Your Baraat on Wheels", body: "Mini American DJ Truck, Max American DJ Truck, Flex Baraat or Thar — sized to your route and guest count." },
+    { icon: "🎭", heading: "Selectable Experiences", body: "Brass band, artists, dancers, blasts and a reel creator — pick exactly what fits your celebration." },
+    { icon: "🤝", heading: "30-50 Member Execution Team", body: "A dedicated manager and assistant manager run the ground team so your family can just celebrate." },
+  ],
+  faqs: [
+    { q: "How can we get a quote for the Signature Offering?", a: "Message us on WhatsApp with your event date, city, venue and guest count. We will confirm availability and share a clear, event-specific quote." },
+    { q: "Which Baraat on Wheels and groom entry can we select?", a: "You can choose one Baraat on Wheels option (Mini American DJ Truck, Max American DJ Truck, Flex Baraat or Thar) and one groom entry (vintage car, Baggi or horse), subject to availability for your date and city." },
+    { q: "How do the selectable experiences work?", a: "The essentials are included in every Baraat. From the selectable experiences list — brass band, ATV bike, artists, name boards, blasts, bouncers, dancers, reel creator and more — you choose the ones that match your celebration, and we build them into your quote." },
+    { q: "How large is the on-ground team?", a: "Every Signature Offering Baraat is supported by 30 to 50 dedicated execution members, plus one dedicated manager and one assistant manager who run the procession end to end." },
+  ],
+  pdfUrl: "/downloads/planmybaraat-signature-package.pdf",
+};
 
-export const BARAAT_PACKAGES: BaraatPackage[] = [
-  {
-    id: "raj-tilak",
-    name: "Raj Tilak Package",
-    shortName: "Raj Tilak",
-    number: "01",
-    tagline: "The Essential Royal Entry",
-    description:
-      "A complete premium Baraat foundation with a mini DJ truck, JBL sound, live dhol, royal lighting, effects and Safas for up to 31 guests.",
-    image: "/Assests/packages/raj-tilak-premium.jpeg",
-    imageAlt: "Raj Tilak royal groom entry experience",
-    features: [
-      "Mini DJ Truck - Compact mobile celebration setup",
-      "Groom Entry Choice - Vintage car, Baggi or horse",
-      "JBL Premium Sound - Clear, high-energy outdoor audio",
-      "Moving LED Panel - Dynamic visuals throughout the procession",
-      "2 Punjabi Dhol - Live traditional rhythm",
-      "6 Royal Chhatri Lights - Illuminated ceremonial formation",
-      "Liquid CO2 Gun - High-impact entry effect",
-      "12 Pyro Guns - Coordinated celebration highlights",
-      "Professional Safa Team - Styling for up to 31 Safas",
-    ],
-    comparison: {
-      djTruck: "Mini DJ Truck",
-      groomEntry: "Vintage car / Baggi / Horse",
-      sound: "JBL premium sound",
-      ledPanel: included,
-      dhol: "2 Punjabi Dhol",
-      chhatri: "6 Royal Chhatris",
-      liquidCo2: included,
-      confetti: "—",
-      pyro: "12 Pyro Guns",
-      host: "—",
-      performer: "—",
-      nameBoards: "—",
-      bouncers: "—",
-      addOns: "Available on request",
-      safas: "Up to 31 Safas",
-    },
-    longDescription: `Raj Tilak is designed for families who want the complete Baraat experience in a focused, premium format. A mini DJ truck with JBL sound and a moving LED panel drives the celebration, while two Punjabi dhol players and six illuminated Chhatris create the traditional royal formation.
-
-The groom can enter in a vintage car, Baggi or on horseback. A Liquid CO2 effect and 12 coordinated pyro guns add visual impact at planned moments, while the professional Safa team prepares up to 31 guests before the procession begins.`,
-    bestFor: [
-      "Intimate to mid-sized Baraats",
-      "Families wanting all essential services in one package",
-      "Venues with compact approach roads",
-      "Celebrations requiring Safas for up to 31 guests",
-    ],
-    highlights: [
-      { icon: "🚚", heading: "Complete Mini DJ Truck", body: "JBL sound and a moving LED panel in a compact, procession-ready setup." },
-      { icon: "🥁", heading: "Royal Live Formation", body: "Two Punjabi dhol players and six Chhatri lights keep the entry energetic and traditional." },
-      { icon: "👑", heading: "31-Safa Package", body: "Professional Safa styling for the groom and up to 31 members of the Baraat party." },
-    ],
-    faqs: [
-      { q: "How can we get a quote for Raj Tilak?", a: "Message us on WhatsApp with your event date, city, venue and guest count. We will confirm availability and share a clear event-specific quote." },
-      { q: "Which groom entry can we select?", a: "You can choose one entry from a vintage car, Baggi or horse, subject to availability for your date and city." },
-      { q: "Can we increase the dhol, Chhatri or Safa count?", a: "Yes. Raj Tilak is a starting package and can be upgraded based on your guest count and procession plan." },
-    ],
-  },
-  {
-    id: "rajwada",
-    name: "Rajwada Package",
-    shortName: "Rajwada",
-    number: "02",
-    tagline: "More Energy. More Celebration.",
-    description:
-      "An upgraded mini-truck Baraat with RCF sound, more dhol and Chhatris, confetti, a hype host and Safas for up to 51 guests.",
-    image: "/Assests/packages/rajwada-v2.png",
-    imageAlt: "Rajwada grand Baraat celebration",
-    featured: true,
-    features: [
-      "Mini DJ Truck - Upgraded mobile production setup",
-      "Groom Entry Choice - Vintage car, Baggi, horse or ATV bike",
-      "RCF Premium Sound - Powerful concert-style clarity",
-      "Moving LED Panel - Dynamic celebration visuals",
-      "4 Punjabi Dhol - Bigger live traditional energy",
-      "10 Royal Chhatri Lights - Fuller illuminated formation",
-      "Liquid CO2 Gun - High-impact entry effect",
-      "Confetti Effect - A camera-ready celebration moment",
-      "20 Pyro Guns - Coordinated visual highlights",
-      "Hype Host / Anchor - Keeps guests engaged and the flow moving",
-      "Professional Safa Team - Styling for up to 51 Safas",
-    ],
-    comparison: {
-      djTruck: "Mini DJ Truck",
-      groomEntry: "Vintage car / Baggi / Horse / ATV",
-      sound: "RCF premium sound",
-      ledPanel: included,
-      dhol: "4 Punjabi Dhol",
-      chhatri: "10 Royal Chhatris",
-      liquidCo2: included,
-      confetti: included,
-      pyro: "20 Pyro Guns",
-      host: included,
-      performer: "—",
-      nameBoards: "—",
-      bouncers: "—",
-      addOns: "Available on request",
-      safas: "Up to 51 Safas",
-    },
-    longDescription: `Rajwada steps up the scale with upgraded RCF sound, four Punjabi dhol players and ten royal Chhatri lights. The groom can choose a vintage car, Baggi, horse or ATV bike, giving the entry more flexibility and personality.
-
-Liquid CO2, confetti and 20 planned pyro guns create a stronger visual sequence. A dedicated hype host or anchor keeps guests involved and coordinates energy through the route, while the Safa team prepares up to 51 guests.`,
-    bestFor: [
-      "Mid-sized and energetic Baraats",
-      "Families wanting a host to engage the procession",
-      "Evening entries with stronger visual effects",
-      "Celebrations requiring Safas for up to 51 guests",
-    ],
-    highlights: [
-      { icon: "🔊", heading: "RCF Premium Sound", body: "An upgraded audio experience built for a larger, more energetic procession." },
-      { icon: "🎉", heading: "Confetti + 20 Pyro Guns", body: "Layered effects planned around the strongest entry and celebration moments." },
-      { icon: "🎤", heading: "Hype Host / Anchor", body: "A dedicated host keeps guests involved and supports smooth procession flow." },
-    ],
-    faqs: [
-      { q: "What is the main upgrade from Raj Tilak?", a: "Rajwada adds RCF sound, more dhol and Chhatris, confetti, 20 pyro guns, an ATV entry option, a hype host and a larger 51-Safa package." },
-      { q: "Is the ATV bike included as a groom-entry choice?", a: "Yes. You can choose one available option from a vintage car, Baggi, horse or ATV bike." },
-      { q: "What does the hype host do?", a: "The host engages guests, supports announcements and helps maintain energy and timing across the procession." },
-    ],
-  },
-  {
-    id: "maharaja",
-    name: "Maharaja Package",
-    shortName: "Maharaja",
-    number: "03",
-    tagline: "The Grand Production",
-    description:
-      "A full-scale American DJ truck experience with RCF sound or a brass band, six dhol, 35 pyro guns, entertainment and Safas for up to 81 guests.",
-    image: "/Assests/packages/maharaja-v2.png",
-    imageAlt: "Maharaja American DJ truck Baraat production",
-    features: [
-      "DJ American Truck - Full-scale mobile celebration production",
-      "Groom Entry Choice - Vintage car, Baggi, horse or ATV bike",
-      "RCF Sound or Brass Band - Choose your preferred music experience",
-      "Moving LED Panel - High-impact dynamic visuals",
-      "6 Punjabi Dhol - Powerful live rhythm",
-      "20 Royal Chhatri Lights - Grand illuminated procession formation",
-      "Liquid CO2 Gun - High-impact entry effect",
-      "Confetti Effect - Premium celebration reveal",
-      "35 Pyro Guns - Large coordinated visual sequence",
-      "Hype Host / Anchor - Crowd engagement and procession energy",
-      "Gorilla Entertainer - Interactive guest entertainment",
-      "2 Personalized Name Boards - Custom visual identity for the entry",
-      "Flexible Add-ons - Extra personalization options",
-      "Professional Safa Team - Styling for up to 81 Safas",
-    ],
-    comparison: {
-      djTruck: "DJ American Truck",
-      groomEntry: "Vintage car / Baggi / Horse / ATV",
-      sound: "RCF sound or Brass Band",
-      ledPanel: included,
-      dhol: "6 Punjabi Dhol",
-      chhatri: "20 Royal Chhatris",
-      liquidCo2: included,
-      confetti: included,
-      pyro: "35 Pyro Guns",
-      host: included,
-      performer: "1 Gorilla Entertainer",
-      nameBoards: "2 Personalized Boards",
-      bouncers: "Available as add-on",
-      addOns: "Flexible add-ons included",
-      safas: "Up to 81 Safas",
-    },
-    longDescription: `Maharaja turns the Baraat into a complete moving production. The DJ American Truck carries a moving LED panel and your choice of premium RCF sound or a brass-band experience. Six Punjabi dhol players and twenty royal Chhatris create a procession with real scale.
-
-The effect sequence includes Liquid CO2, confetti and 35 pyro guns. A hype host and Gorilla entertainer keep the crowd engaged, while two personalized name boards give the entry a custom identity. The Safa team prepares up to 81 guests, with flexible add-ons available for further personalization.`,
-    bestFor: [
-      "Large premium Baraats",
-      "Families wanting an American DJ truck production",
-      "Processions needing strong entertainment and personalization",
-      "Celebrations requiring Safas for up to 81 guests",
-    ],
-    highlights: [
-      { icon: "🚛", heading: "DJ American Truck", body: "A full-scale mobile production platform with moving LED visuals." },
-      { icon: "🎆", heading: "35-Gun Pyro Sequence", body: "A large coordinated visual sequence with Liquid CO2 and confetti." },
-      { icon: "✨", heading: "Personalized Entertainment", body: "Hype host, Gorilla entertainer and two custom name boards make the entry distinctly yours." },
-    ],
-    faqs: [
-      { q: "Can we choose between RCF sound and a brass band?", a: "Yes. Maharaja allows you to choose the preferred sound experience, subject to date and city availability." },
-      { q: "Are the two name boards personalized?", a: "Yes. The two boards can be personalized for the groom, couple or family theme once the artwork is confirmed." },
-      { q: "Are bouncers available with Maharaja?", a: "Professional bouncers can be added based on guest count, venue approach and crowd-management requirements." },
-    ],
-  },
-  {
-    id: "signature",
-    name: "Signature Custom Package",
-    shortName: "Signature Custom",
-    number: "04",
-    tagline: "Built Completely Around You",
-    description:
-      "A fully customized American DJ truck production where the music, royal formation, effects, entertainment, support team and add-ons are built around your event.",
-    image: "/Assests/packages/signature-v2.png",
-    imageAlt: "Signature fully customized Baraat production",
-    custom: true,
-    features: [
-      "DJ American Truck - Full-scale custom production",
-      "Groom Entry Choice - Vintage car, Baggi, horse or ATV bike",
-      "RCF Sound or Brass Band - Selected around your celebration style",
-      "Moving LED Panel - Personalized visual content",
-      "Punjabi Dhol Team - Count planned for your procession scale",
-      "Royal Chhatri Formation - Count and design planned for your venue",
-      "Liquid CO2, Confetti & Pyro - Custom effect sequence",
-      "Hype Host / Anchor - Professional crowd engagement",
-      "Gorilla Entertainer - Optional interactive performance",
-      "Personalized Name Boards - Designed for your event",
-      "Professional Bouncers - Team sized for guest flow and safety",
-      "Flexible Add-ons - Choose the experiences that matter to you",
-      "Professional Safa Team - Up to 81 Safas, expandable on request",
-    ],
-    comparison: {
-      djTruck: "DJ American Truck",
-      groomEntry: customChoice,
-      sound: "RCF sound / Brass Band / Custom",
-      ledPanel: customChoice,
-      dhol: customChoice,
-      chhatri: customChoice,
-      liquidCo2: customChoice,
-      confetti: customChoice,
-      pyro: customChoice,
-      host: customChoice,
-      performer: "Optional",
-      nameBoards: customChoice,
-      bouncers: customChoice,
-      addOns: "Fully flexible",
-      safas: "Up to 81, expandable",
-    },
-    longDescription: `Signature Custom is created from the ground up for celebrations that need a distinctive production. The DJ American Truck, groom-entry vehicle, music format, LED content, dhol team and Chhatri formation are selected around your venue, route, guest count and visual direction.
-
-CO2, confetti and pyro effects are choreographed as a custom sequence. The host, entertainers, name boards, professional bouncers, Safa team and additional experiences are then sized around the final plan. Your proposal is prepared after the event location, route and final production requirements are confirmed on WhatsApp.`,
-    bestFor: [
-      "High-profile and destination celebrations",
-      "Families wanting a one-of-one Baraat production",
-      "Large guest counts and complex venue approaches",
-      "Events requiring custom entertainment, effects and support",
-    ],
-    highlights: [
-      { icon: "🪄", heading: "Designed From Scratch", body: "Every major service is selected and sized around your event instead of a fixed checklist." },
-      { icon: "🎬", heading: "Custom Production Sequence", body: "Music, visuals, effects and the groom entry are choreographed as one experience." },
-      { icon: "🤝", heading: "One Specialist Team", body: "Artists, operators, bouncers and Safa teams are coordinated through one event plan." },
-    ],
-    faqs: [
-      { q: "How is the Signature Custom quote prepared?", a: "The final quote depends on the dhol and Chhatri count, entertainment, effect sequence, bouncer team, entry vehicle, add-ons, city and venue logistics. Share your brief on WhatsApp for an event-specific proposal." },
-      { q: "Can we start from Maharaja and add only a few upgrades?", a: "Yes. Signature Custom can begin with any package foundation and add or change only the services that matter to your event." },
-      { q: "How early should we plan a custom package?", a: "Four to six weeks is recommended during peak wedding season so vehicles, artists, production and personalized assets can be secured together." },
-    ],
-  },
-];
+// Kept as an array (with a single entry) so every existing consumer that
+// expects a list — package cards, dropdown selects, location/keyword
+// landing pages — keeps working unchanged now that there is one package.
+export const BARAAT_PACKAGES: BaraatPackage[] = [SIGNATURE_PACKAGE];

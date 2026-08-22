@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-const normalizeRecipient = (value: unknown) => String(value || '').replace(/\D/g, '').replace(/^0+/, '');
+const normalizeRecipient = (value: unknown) => String(value || '').trim().toLowerCase();
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function GET(req: NextRequest) {
   const gate = await requireCrmAdmin(req);
@@ -31,17 +32,12 @@ export async function PATCH(req: NextRequest) {
   if (!gate.ok) return NextResponse.json({ error: gate.message }, { status: gate.status });
   const body = await req.json().catch(() => null) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: 'A valid settings object is required.' }, { status: 400 });
-  const recipient = normalizeRecipient(body.recipient_e164);
-  if (!/^[1-9][0-9]{7,14}$/.test(recipient)) return NextResponse.json({ error: 'Enter the WhatsApp number with country code.' }, { status: 400 });
-  const template = String(body.whatsapp_template_name || '').trim();
-  const language = String(body.whatsapp_template_language || '').trim();
-  if (!template || !/^[a-z0-9_]+$/.test(template)) return NextResponse.json({ error: 'Enter a valid approved WhatsApp template name.' }, { status: 400 });
-  if (!language || language.length > 10) return NextResponse.json({ error: 'Enter a valid template language code.' }, { status: 400 });
+  const recipient = normalizeRecipient(body.recipient_email);
+  if (!EMAIL_PATTERN.test(recipient)) return NextResponse.json({ error: 'Enter a valid recipient email address.' }, { status: 400 });
   const maxAttempts = Math.min(5, Math.max(1, Number(body.max_attempts) || 3));
   const serverClient=supabaseAdmin||gate.supabase;
   const { data, error } = await serverClient.from('crm_daily_staff_report_settings').update({
-    is_enabled: body.is_enabled === true, recipient_e164: recipient,
-    whatsapp_template_name: template, whatsapp_template_language: language,
+    is_enabled: body.is_enabled === true, recipient_email: recipient,
     max_attempts: maxAttempts, updated_by: gate.user.id,
   }).eq('id', 1).select('*').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

@@ -1,6 +1,5 @@
 import { BARAAT_CITY_CONTENT } from "@/lib/data/baraatCityContent";
 import { BARAAT_KEYWORD_CONTENT } from "@/lib/data/baraatKeywordContent";
-import { BARAAT_PACKAGES } from "@/lib/packagesData";
 import { isCityContentIndexable, isKeywordContentIndexable } from "@/lib/seoQuality";
 
 const BASE_URL = "https://planmybaraat.com";
@@ -30,11 +29,9 @@ function getUrlsForSection(section: string) {
       `${BASE_URL}/contact`,
       `${BASE_URL}/gallery`,
       `${BASE_URL}/packages`,
-      `${BASE_URL}/compare-packages`,
       `${BASE_URL}/baraat-planning-guide`,
       `${BASE_URL}/service-areas`,
       `${BASE_URL}/testimonials`,
-      ...BARAAT_PACKAGES.map((pkg) => `${BASE_URL}/packages/${pkg.id}`),
     ].map((url) => ({ url, lastModified: LAST_MATERIAL_UPDATE }));
   }
 

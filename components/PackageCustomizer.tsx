@@ -120,10 +120,7 @@ export default function PackageCustomizer() {
           className="mt-2.5 w-full border-0 border-b border-[#010101]/20 bg-white py-3 text-sm text-[#010101] outline-none transition-colors focus:border-[#E30B1D]"
         >
           <option>Help me choose</option>
-          <option>Raj Tilak Package</option>
-          <option>Rajwada Package</option>
-          <option>Maharaja Package</option>
-          <option>Signature Custom Package</option>
+          <option>Signature Offering</option>
           <option>Build from scratch</option>
         </select>
       </label>

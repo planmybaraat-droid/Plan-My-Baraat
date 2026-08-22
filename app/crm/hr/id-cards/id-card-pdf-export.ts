@@ -2,6 +2,7 @@
 
 import type { jsPDF as JsPdf } from 'jspdf';
 import type { IdCardRecord, IdCardSettings, StaffRecord } from '../../lib/types';
+import { mmToPx } from './id-card-config';
 
 const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
@@ -20,8 +21,21 @@ async function waitForCardAssets(root: HTMLElement) {
 // its real physical size — not a scaled screenshot of an unrelated layout.
 async function captureFace(faceEl: HTMLElement, scale: number) {
   const { default: html2canvas } = await import('html2canvas');
+  const width = Math.ceil(faceEl.offsetWidth || mmToPx(53.98));
+  const height = Math.ceil(faceEl.offsetHeight || mmToPx(85.6));
   const canvas = await html2canvas(faceEl, {
-    scale, useCORS: true, allowTaint: false, backgroundColor: '#ffffff', logging: false, imageTimeout: 15000,
+    scale,
+    width,
+    height,
+    windowWidth: width,
+    windowHeight: height,
+    scrollX: 0,
+    scrollY: 0,
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: '#ffffff',
+    logging: false,
+    imageTimeout: 15000,
   });
   // Lossless PNG, not JPEG — a card this small carries fine QR modules and
   // crisp text edges where JPEG's chroma/DCT compression visibly softens
@@ -121,6 +135,7 @@ async function captureOneCard(item: BulkCardItem, settings: IdCardSettings): Pro
       window.setTimeout(settle, 4000);
     });
     await waitForCardAssets(container);
+    await document.fonts.ready;
     await nextPaint();
     await nextPaint();
     const front = container.querySelector<HTMLElement>('[data-card-face="front"]');
@@ -167,6 +182,22 @@ async function buildIndividualBundleFromCaptures(captured: CapturedCard[], setti
   return pdf;
 }
 
+function drawCropMarks(pdf: JsPdf, x: number, y: number, w: number, h: number) {
+  const mark = 3;
+  const gap = 0.8;
+  pdf.setDrawColor(170, 170, 170);
+  pdf.setLineWidth(0.1);
+
+  pdf.line(x - gap - mark, y, x - gap, y);
+  pdf.line(x, y - gap - mark, x, y - gap);
+  pdf.line(x + w + gap, y, x + w + gap + mark, y);
+  pdf.line(x + w, y - gap - mark, x + w, y - gap);
+
+  pdf.line(x - gap - mark, y + h, x - gap, y + h);
+  pdf.line(x, y + h + gap, x, y + h + gap + mark);
+  pdf.line(x + w + gap, y + h, x + w + gap + mark, y + h);
+  pdf.line(x + w, y + h + gap, x + w, y + h + gap + mark);
+}
 // Arranges fronts (and, for both/back, backs) in a grid on a configured
 // sheet size (default A4), using the admin-configured margins and gaps —
 // never distorting the card's own aspect ratio. Duplex alignment: long-edge
@@ -187,6 +218,10 @@ async function buildSheetBundleFromCaptures(captured: CapturedCard[], settings: 
   const usableH = sheetH - margin * 2;
   const cols = Math.max(1, Math.floor((usableW + gapX) / (w + gapX)));
   const rows = Math.max(1, Math.floor((usableH + gapY) / (h + gapY)));
+  const gridW = cols * w + (cols - 1) * gapX;
+  const gridH = rows * h + (rows - 1) * gapY;
+  const startX = margin + Math.max(0, (usableW - gridW) / 2);
+  const startY = margin + Math.max(0, (usableH - gridH) / 2);
   const perSheet = cols * rows;
   if (perSheet < 1) throw new Error('The configured card size does not fit the configured sheet size.');
 
@@ -207,9 +242,10 @@ async function buildSheetBundleFromCaptures(captured: CapturedCard[], settings: 
       pageImages.forEach((img, index) => {
         const row = Math.floor(index / cols);
         const col = mirrorRows ? cols - 1 - (index % cols) : index % cols;
-        const x = margin + col * (w + gapX);
-        const y = margin + row * (h + gapY);
+        const x = startX + col * (w + gapX);
+        const y = startY + row * (h + gapY);
         pdf.addImage(img, 'PNG', x, y, w, h, undefined, 'FAST');
+        drawCropMarks(pdf, x, y, w, h);
       });
     }
   };

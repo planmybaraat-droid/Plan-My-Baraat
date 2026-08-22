@@ -11,7 +11,6 @@ import {
 const QUICK_LINKS = [
   { href: "/", label: "Home" },
   { href: "/packages", label: "Packages" },
-  { href: "/compare-packages", label: "Compare Packages" },
   { href: "/baraat-planning-guide", label: "Planning Guide" },
   { href: "/service-areas", label: "Service Areas" },
   { href: "/about", label: "About Us" },
@@ -21,11 +20,8 @@ const QUICK_LINKS = [
 ];
 
 const PACKAGE_LINKS = [
-  { href: "/packages#raj-tilak", label: "Raj Tilak Package" },
-  { href: "/packages#rajwada", label: "Rajwada Package" },
-  { href: "/packages#maharaja", label: "Maharaja Package" },
-  { href: "/packages#signature", label: "Signature Custom Package" },
-  { href: "/compare-packages", label: "Compare All Packages" },
+  { href: "/packages", label: "Signature Offering Package" },
+  { href: "/downloads/planmybaraat-signature-package.pdf", label: "Download Package PDF" },
   { href: "/packages#customize", label: "Customize a Package" },
 ];
 

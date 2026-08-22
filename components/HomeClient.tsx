@@ -56,8 +56,8 @@ const STATS = [
 const STEPS = [
   {
     icon: Search,
-    title: "Pick a Package",
-    text: "Browse Raj Tilak, Rajwada, Maharaja or Signature and shortlist what fits your celebration.",
+    title: "Pick Your Experiences",
+    text: "Browse the Signature Offering and shortlist the selectable experiences that fit your celebration.",
   },
   {
     icon: PhoneCall,
@@ -95,7 +95,7 @@ const ENQUIRY_CITIES = [
 ];
 
 const ENQUIRY_INTERESTS = [
-  "Raj Tilak Package", "Rajwada Package", "Maharaja Package", "Signature Package",
+  "Signature Offering",
   "DJ Truck + Dhol", "Vintage Car Entry", "Safa Styling", "Pyro & Confetti Entry",
 ];
 

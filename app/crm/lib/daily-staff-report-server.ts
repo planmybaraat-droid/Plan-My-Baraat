@@ -3,17 +3,15 @@ import 'server-only';
 import { readFile } from 'fs/promises';
 import path from 'path';
 import { jsPDF } from 'jspdf';
+import nodemailer from 'nodemailer';
 import { supabaseAdmin } from './supabase-admin';
 
 const REPORT_BUCKET = 'daily-staff-reports';
-const DEFAULT_GRAPH_VERSION = 'v23.0';
 
 type ReportSettings = {
   id: number;
   is_enabled: boolean;
-  recipient_e164: string;
-  whatsapp_template_name: string;
-  whatsapp_template_language: string;
+  recipient_email: string | null;
   max_attempts: number;
 };
 
@@ -115,7 +113,7 @@ function isoWeekday(date: string) {
 }
 
 function normalizeRecipient(value: string) {
-  return value.replace(/\D/g, '').replace(/^0+/, '');
+  return value.trim().toLowerCase();
 }
 
 function displayDate(date: string) {
@@ -332,39 +330,56 @@ async function uploadReportPdf(reportDate: string, pdf: Uint8Array) {
   return { storagePath, signedUrl: data.signedUrl };
 }
 
-async function sendWhatsAppTemplate(settings: ReportSettings, report: DailyStaffReport, documentUrl: string) {
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  if (!accessToken || !phoneNumberId) {
-    throw new Error('WhatsApp Business API is not configured. WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID are required.');
+// Gmail SMTP transporter — created lazily per-send rather than module-scope,
+// so a missing/changed App Password surfaces as a normal thrown error on the
+// next send attempt instead of only at server startup.
+function requireEmailTransport() {
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASSWORD;
+  if (!user || !pass) {
+    throw new Error('Email delivery is not configured. SMTP_USER and SMTP_PASSWORD are required.');
   }
-  const version = process.env.WHATSAPP_GRAPH_API_VERSION || DEFAULT_GRAPH_VERSION;
-  const templateName = process.env.WHATSAPP_DAILY_REPORT_TEMPLATE_NAME || settings.whatsapp_template_name;
-  const bodyValues = [
-    displayDate(report.date), report.summary.totalStaff, report.summary.present, report.summary.absent,
-    report.summary.leave, report.summary.incomplete, report.summary.submitted, report.summary.notSubmitted,
-    report.summary.notRequired, report.summary.completedActivities, report.summary.pendingActivities,
+  const host = process.env.SMTP_HOST || 'smtp.hostinger.com';
+  const port = Number(process.env.SMTP_PORT) || 465;
+  // Port 465 is always implicit TLS; port 587 (or anything else) uses
+  // STARTTLS instead — nodemailer's `secure` flag picks which handshake to
+  // use, so this must match whichever port is actually configured.
+  const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : port === 465;
+  return {
+    transporter: nodemailer.createTransport({ host, port, secure, auth: { user, pass } }),
+    from: process.env.SMTP_FROM_NAME ? `${process.env.SMTP_FROM_NAME} <${user}>` : user,
+  };
+}
+
+async function sendReportEmail(settings: ReportSettings, report: DailyStaffReport, pdf: Uint8Array) {
+  const recipient = normalizeRecipient(settings.recipient_email || '');
+  if (!recipient) throw new Error('A recipient email address has not been configured.');
+  const { transporter, from } = requireEmailTransport();
+  const summary = report.summary;
+  const rows: [string, number][] = [
+    ['Total Staff', summary.totalStaff], ['Present', summary.present], ['Absent', summary.absent],
+    ['Leave', summary.leave], ['Incomplete', summary.incomplete], ['Reports Submitted', summary.submitted],
+    ['Reports Missing', summary.notSubmitted], ['Not Required', summary.notRequired],
+    ['Completed Activities', summary.completedActivities], ['Pending Activities', summary.pendingActivities],
   ];
-  const response = await fetch(`https://graph.facebook.com/${version}/${phoneNumberId}/messages`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp', recipient_type: 'individual', to: normalizeRecipient(settings.recipient_e164), type: 'template',
-      template: {
-        name: templateName,
-        language: { code: settings.whatsapp_template_language || 'en' },
-        components: [
-          { type: 'header', parameters: [{ type: 'document', document: { link: documentUrl, filename: `Daily-Staff-Report-${report.date}.pdf` } }] },
-          { type: 'body', parameters: bodyValues.map((value) => ({ type: 'text', text: String(value) })) },
-        ],
-      },
-    }),
+  const html = `
+    <div style="font-family:Arial,sans-serif;color:#1c1917;max-width:520px;margin:0 auto;">
+      <h2 style="color:#DC2626;margin:0 0 4px;">Daily Staff Report</h2>
+      <p style="margin:0 0 18px;color:#6b7280;font-weight:600;">${displayDate(report.date)}</p>
+      <table style="border-collapse:collapse;width:100%;font-size:13px;">
+        ${rows.map(([label, value]) => `
+          <tr>
+            <td style="padding:6px 10px;border-bottom:1px solid #f0eeec;color:#6b7280;">${label}</td>
+            <td style="padding:6px 10px;border-bottom:1px solid #f0eeec;font-weight:700;text-align:right;">${value}</td>
+          </tr>`).join('')}
+      </table>
+      <p style="margin-top:18px;color:#9ca3af;font-size:11px;">The full staff-by-staff breakdown is attached as a PDF. Generated automatically by PlanMyBaraat CRM.</p>
+    </div>`;
+  const info = await transporter.sendMail({
+    from, to: recipient, subject: `Daily Staff Report - ${displayDate(report.date)}`, html,
+    attachments: [{ filename: `Daily-Staff-Report-${report.date}.pdf`, content: Buffer.from(pdf), contentType: 'application/pdf' }],
   });
-  const result = await response.json().catch(() => ({})) as { messages?: { id?: string }[]; error?: { message?: string; error_user_msg?: string } };
-  if (!response.ok || !result.messages?.[0]?.id) {
-    throw new Error(result.error?.error_user_msg || result.error?.message || `WhatsApp API returned HTTP ${response.status}.`);
-  }
-  return result.messages[0].id!;
+  return info.messageId || '';
 }
 
 async function notifyAdminsOfFailure(reportDate: string, message: string, attempt: number) {
@@ -374,7 +389,7 @@ async function notifyAdminsOfFailure(reportDate: string, message: string, attemp
   await admin.from('crm_notifications').upsert(admins.map((person) => ({
     recipient_id: person.id, type: 'daily_staff_report_failed', title: 'Daily Staff WhatsApp report failed',
     body: `The report for ${displayDate(reportDate)} could not be sent. ${message.slice(0, 500)}`,
-    link: '/crm/daily-work-reports', dedupe_key: `daily-staff-whatsapp-failed-${reportDate}-${attempt}`,
+    link: '/crm/daily-work-reports', dedupe_key: `daily-staff-email-failed-${reportDate}-${attempt}`,
   })), { onConflict: 'recipient_id,dedupe_key', ignoreDuplicates: true });
 }
 
@@ -384,16 +399,16 @@ export async function runDailyStaffReport(options: RunOptions = {}) {
   const nowParts = localParts(new Date(), attendance.business_timezone);
   const reportDate = options.reportDate || shiftIsoDate(nowParts.date, -1);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(reportDate)) throw new Error('A valid report date is required.');
-  if (!settings.is_enabled && !options.requestedBy) return { ok: true, skipped: true, reason: 'Daily WhatsApp reports are disabled.' };
+  if (!settings.is_enabled && !options.requestedBy) return { ok: true, skipped: true, reason: 'Daily email reports are disabled.' };
   if (!options.reportDate && !(attendance.working_days || []).includes(isoWeekday(reportDate))) {
     return { ok: true, skipped: true, reason: `${reportDate} is not a configured working day.`, reportDate };
   }
   if (reportDate >= nowParts.date) throw new Error('Attendance for this date is not locked yet. Select an earlier date.');
 
-  const recipient = normalizeRecipient(settings.recipient_e164);
-  if (!recipient) throw new Error('A Daily Report WhatsApp Recipient has not been configured.');
+  const recipient = normalizeRecipient(settings.recipient_email || '');
+  if (!recipient) throw new Error('A Daily Report recipient email has not been configured.');
   const { data: existing } = await admin.from('crm_daily_staff_report_deliveries').select('*')
-    .eq('report_date', reportDate).eq('recipient_e164', recipient).maybeSingle();
+    .eq('report_date', reportDate).eq('recipient_email', recipient).maybeSingle();
   if (existing?.status === 'SENT') return { ok: true, skipped: true, reason: 'This report was already sent.', reportDate, delivery: existing };
   if (existing?.status === 'SENDING') return { ok: true, skipped: true, reason: 'This report is already being sent.', reportDate, delivery: existing };
   const attempt = Number(existing?.attempt_count || 0) + 1;
@@ -410,7 +425,7 @@ export async function runDailyStaffReport(options: RunOptions = {}) {
     if (!claimed) return { ok: true, skipped: true, reason: 'Another process already claimed this retry.', reportDate };
   } else {
     const { data, error } = await admin.from('crm_daily_staff_report_deliveries').insert({
-      report_date: reportDate, recipient_e164: recipient, status: 'SENDING', attempt_count: 1,
+      report_date: reportDate, recipient_email: recipient, status: 'SENDING', attempt_count: 1,
       started_at: new Date().toISOString(), requested_by: options.requestedBy || null,
     }).select('id').single();
     if (error) {
@@ -423,11 +438,13 @@ export async function runDailyStaffReport(options: RunOptions = {}) {
   try {
     const report = await buildDailyStaffReport(reportDate, attendance.business_timezone);
     const pdf = await createDailyStaffReportPdf(report);
+    // Still archived in storage for record-keeping, even though the email
+    // attaches the PDF directly rather than linking to it.
     const uploaded = await uploadReportPdf(reportDate, pdf);
-    const messageId = await sendWhatsAppTemplate(settings, report, uploaded.signedUrl);
+    const messageId = await sendReportEmail(settings, report, pdf);
     const { data: delivery, error } = await admin.from('crm_daily_staff_report_deliveries').update({
       status: 'SENT', summary: report.summary, pdf_storage_path: uploaded.storagePath,
-      whatsapp_message_id: messageId, error_message: null, sent_at: new Date().toISOString(),
+      email_message_id: messageId, error_message: null, sent_at: new Date().toISOString(),
     }).eq('id', deliveryId).select('*').single();
     if (error) throw new Error(`Sent delivery could not be finalized: ${error.message}`);
     return { ok: true, skipped: false, reportDate, delivery };
@@ -447,7 +464,7 @@ export async function getDailyStaffReportAdminState() {
   if (error) throw new Error(error.message);
   return {
     settings, attendance, deliveries: deliveries || [],
-    providerConfigured: !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID),
+    providerConfigured: !!(process.env.SMTP_USER && process.env.SMTP_PASSWORD),
     cronConfigured: !!process.env.CRON_SECRET,
   };
 }

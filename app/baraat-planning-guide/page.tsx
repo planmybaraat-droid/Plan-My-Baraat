@@ -116,15 +116,15 @@ export default function BaraatPlanningGuidePage() {
 
           <section className="mt-14 grid gap-8 rounded-2xl bg-[#010101] p-7 text-white sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#ff6673]">Choosing a package</p>
-              <h2 className="mt-3 text-2xl font-extrabold tracking-[-0.035em] sm:text-3xl">Compare the services that change the experience.</h2>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#ff6673]">Choosing your package</p>
+              <h2 className="mt-3 text-2xl font-extrabold tracking-[-0.035em] sm:text-3xl">See every inclusion in our Signature Offering.</h2>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-white/70">
                 Truck format, groom entry, sound, dhol, Chhatris, effects, entertainment and Safa capacity should match the route and guest experience—not a generic price list.
               </p>
             </div>
-            <Link href="/compare-packages" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 text-sm font-extrabold text-[#010101] transition-colors hover:bg-[#E30B1D] hover:text-white">
+            <Link href="/packages" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 text-sm font-extrabold text-[#010101] transition-colors hover:bg-[#E30B1D] hover:text-white">
               <GitCompareArrows className="h-4 w-4" aria-hidden="true" />
-              Compare packages
+              View the Signature Offering
               <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </section>

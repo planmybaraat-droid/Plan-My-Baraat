@@ -222,10 +222,10 @@ export default function LocationPage({
                 </h2>
               </div>
             </Reveal>
-            <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-10 grid grid-cols-1 gap-5">
               {BARAAT_PACKAGES.map((pkg, i) => (
                 <Reveal key={pkg.id} delay={i}>
-                  <div className="home-package-card flex h-full flex-col rounded-2xl border border-[#010101]/10 bg-white p-6">
+                  <div className="home-package-card mx-auto flex h-full max-w-xl flex-col rounded-2xl border border-[#010101]/10 bg-white p-6">
                     <h3 className="text-lg font-extrabold tracking-[-0.015em]">{pkg.name}</h3>
                     <span className="mt-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#E30B1D]">
                       {pkg.tagline}
@@ -247,9 +247,7 @@ export default function LocationPage({
                         Enquire Now
                       </EnquireNowButton>
                       <a
-                        href={`/packages/${pkg.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="/packages"
                         className="flex h-11 items-center justify-center rounded-xl border border-[#010101]/15 px-4 text-[10px] font-extrabold uppercase tracking-widest text-[#010101]/60 transition-all duration-200 hover:border-[#E30B1D] hover:text-[#E30B1D]"
                       >
                         View

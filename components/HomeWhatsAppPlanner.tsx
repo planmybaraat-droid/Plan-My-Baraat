@@ -82,11 +82,7 @@ export default function HomeWhatsAppPlanner() {
         <span>What are you looking for?</span>
         <select name="interest" defaultValue="Help me choose a package">
           <option>Help me choose a package</option>
-          <option>Raj Tilak Package</option>
-          <option>Rajwada Package</option>
-          <option>Maharaja Package</option>
-          <option>Signature Package</option>
-          <option>Custom Baraat Package</option>
+          <option>Signature Offering</option>
           <option>DJ Truck / Baraat on Wheels</option>
           <option>Vintage Car Groom Entry</option>
         </select>
