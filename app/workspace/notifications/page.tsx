@@ -2,5 +2,5 @@
 import NotificationsView from '../../crm/components/NotificationsView';
 
 export default function WorkspaceNotificationsPage() {
-  return <NotificationsView notificationsHref="/workspace/notifications" />;
+  return <NotificationsView notificationsHref="/workspace/notifications" paginated />;
 }

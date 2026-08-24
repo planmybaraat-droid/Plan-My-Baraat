@@ -178,9 +178,9 @@ export default function IdCardsPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
                           <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-50">
-                            {card.employee?.photo_url ? (
+                            {card.front_snapshot?.photo_url || card.employee?.photo_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={card.employee.photo_url} alt={card.employee.full_name} className="h-full w-full object-cover" loading="lazy" />
+                              <img src={card.front_snapshot?.photo_url || card.employee?.photo_url || ''} alt={card.employee?.full_name || 'Staff member'} className="h-full w-full object-cover" loading="lazy" />
                             ) : <UserRound size={14} className="text-gray-300" />}
                           </span>
                           <span className="font-bold text-gray-900">{card.employee?.full_name || '—'}</span>

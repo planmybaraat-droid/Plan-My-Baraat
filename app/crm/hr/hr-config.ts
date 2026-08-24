@@ -108,7 +108,10 @@ export function renderLetterText(template: string, employee: {
   ]));
   const values: Record<string, string> = {
     employee_name: employee.full_name,
-    designation: employee.designation || employee.job_title,
+    // The Staff module's Job title is the live source of truth. `designation`
+    // is retained only for older records created before Staff Management was
+    // introduced, so it must never override a newly edited job title.
+    designation: employee.job_title || employee.designation || '',
     department: employee.department,
     joining_date: employee.joining_date ? formatAgreementDate(employee.joining_date) : '',
     employee_address: employee.address || '',

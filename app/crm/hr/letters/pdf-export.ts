@@ -1,72 +1,62 @@
 'use client';
 
 import type { jsPDF as JsPdf } from 'jspdf';
+import { buildCrmPdf } from '../../lib/pdf-export';
 
 interface LetterPdfProperties {
   title: string;
   subject?: string;
 }
 
-const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
-async function waitForLetterAssets(root: HTMLElement, pageCount: number) {
-  const deadline = Date.now() + 6000;
-  while (Date.now() < deadline) {
-    const qrCodes = root.querySelectorAll<HTMLImageElement>('.letter-doc-footer-verify img');
-    const images = Array.from(root.querySelectorAll<HTMLImageElement>('img'));
-    const imagesReady = images.every((image) => image.complete && image.naturalWidth > 0);
-    if (qrCodes.length === pageCount && imagesReady) return;
-    await new Promise((resolve) => window.setTimeout(resolve, 80));
-  }
-  throw new Error('The letter images or verification QR code are still loading. Please try the download again.');
+export async function buildLetterPdf(root: HTMLElement, properties: LetterPdfProperties): Promise<JsPdf> {
+  // Mobile browsers have a much smaller canvas-memory budget. A 1.5x A4
+  // capture is still print-sharp while avoiding failed/blank multi-page PDFs.
+  const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+  return buildCrmPdf(root, { properties, scale: mobile ? 1.5 : 2, quality: mobile ? 0.94 : 0.97 });
 }
 
-export async function buildLetterPdf(root: HTMLElement, properties: LetterPdfProperties): Promise<JsPdf> {
-  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
-  const pages = Array.from(root.querySelectorAll<HTMLElement>('[data-pdf-page]'));
-  if (!pages.length) throw new Error('The letter preview is unavailable.');
+export function saveLetterPdf(pdf: JsPdf, filename: string) {
+  const blobUrl = URL.createObjectURL(pdf.output('blob'));
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = filename;
+  link.rel = 'noopener';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+}
 
-  await waitForLetterAssets(root, pages.length);
-  await document.fonts.ready;
-
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-  root.classList.add('letter-pdf-capture');
-  try {
-    // html2canvas can snapshot before the fallback export font has completed its
-    // reflow. Two paints make the captured geometry match the final glyph metrics.
-    await nextPaint();
-    await nextPaint();
-
-    for (let index = 0; index < pages.length; index += 1) {
-      const canvas = await html2canvas(pages[index], {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#ffffff',
-        logging: false,
-        imageTimeout: 15000,
-        width: 794,
-        height: 1123,
-        windowWidth: 794,
-        scrollX: 0,
-        scrollY: 0,
-      });
-      if (canvas.width < 1500 || canvas.height < 2200) {
-        throw new Error(`Letter page ${index + 1} was not captured at print quality.`);
-      }
-      const pageImage = canvas.toDataURL('image/jpeg', 0.96);
-      if (index > 0) pdf.addPage('a4', 'portrait');
-      pdf.addImage(pageImage, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
-    }
-  } finally {
-    root.classList.remove('letter-pdf-capture');
+export async function printLetterPdf(root: HTMLElement, properties: LetterPdfProperties) {
+  // Reserve the print tab during the user's click so mobile popup blockers do
+  // not reject it after the asynchronous A4 rendering has finished.
+  const mobile = window.matchMedia('(max-width: 767px)').matches;
+  const printTab = mobile ? window.open('', '_blank') : null;
+  if (printTab) {
+    printTab.document.write('<title>Preparing letter…</title><p style="font-family:Arial,sans-serif;padding:24px">Preparing the print-ready letter…</p>');
   }
-
-  pdf.setProperties({
-    title: properties.title,
-    subject: properties.subject,
-    author: 'PlanMyBaraat',
-    creator: 'PlanMyBaraat CRM',
-  });
-  return pdf;
+  try {
+    const pdf = await buildLetterPdf(root, properties);
+    const blobUrl = URL.createObjectURL(pdf.output('blob'));
+    if (printTab) {
+      printTab.location.replace(blobUrl);
+      window.setTimeout(() => {
+        try { printTab.focus(); printTab.print(); } catch { /* Mobile PDF viewers expose Print through Share. */ }
+      }, 1200);
+    } else {
+      const frame = document.createElement('iframe');
+      frame.style.position = 'fixed';
+      frame.style.width = '1px';
+      frame.style.height = '1px';
+      frame.style.opacity = '0';
+      frame.src = blobUrl;
+      frame.onload = () => frame.contentWindow?.print();
+      document.body.appendChild(frame);
+      window.setTimeout(() => { frame.remove(); URL.revokeObjectURL(blobUrl); }, 60_000);
+    }
+  } catch (error) {
+    printTab?.close();
+    throw error;
+  }
 }

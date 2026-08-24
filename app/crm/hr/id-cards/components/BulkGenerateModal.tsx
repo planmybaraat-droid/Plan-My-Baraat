@@ -26,7 +26,11 @@ export default function BulkGenerateModal({ cards, onClose, onDone }: BulkGenera
     setError('');
     try {
       const settings = await getIdCardSettings();
-      const items = eligible.map(c => ({ card: c, staff: c.employee!, photoUrl: c.employee!.photo_url || null }));
+      const items = eligible.map(c => ({
+        card: c,
+        staff: c.employee!,
+        photoUrl: c.front_snapshot?.photo_url || c.employee!.photo_url || null,
+      }));
       const { combinedPdf, perEmployeePdfBlob } = await buildBulkCardsPdf(items, settings, {
         mode: 'sheet', faces, onProgress: (done, total) => setProgress({ done, total }),
       });
@@ -40,7 +44,7 @@ export default function BulkGenerateModal({ cards, onClose, onDone }: BulkGenera
       for (const item of items) {
         const blob = perEmployeePdfBlob.get(item.staff.id);
         if (!blob) continue;
-        await finalizeGeneratedCard(item.card, item.staff, blob, settings, item.staff.full_name);
+        await finalizeGeneratedCard(item.card, item.staff, blob, settings, item.staff.full_name, item.photoUrl);
       }
       onDone();
     } catch (err) {

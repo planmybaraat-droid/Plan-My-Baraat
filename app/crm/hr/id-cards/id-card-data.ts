@@ -5,13 +5,13 @@ import { addYears, buildBackSnapshot, DEFAULT_ID_CARD_SETTINGS, nextCardNumber }
 
 export { getStaff } from '../../staff/staff-data';
 
-function buildLiveFrontSnapshot(staff: StaffRecord): IdCardFrontSnapshot {
+function buildLiveFrontSnapshot(staff: StaffRecord, photoUrl: string | null = staff.photo_url || null): IdCardFrontSnapshot {
   return {
     employee_code: staff.employee_code,
     full_name: staff.full_name,
     designation: staff.job_title || staff.designation || '',
     department: staff.department,
-    photo_url: staff.photo_url || null,
+    photo_url: photoUrl,
     joining_date: staff.joining_date,
   };
 }
@@ -123,8 +123,15 @@ export async function resolveCardFileUrl(card: IdCardRecord): Promise<string | n
 // the moment an admin opens the editor for an employee who doesn't have one
 // yet, so the live preview always has a real DB-backed row to work with.
 export async function getOrCreateDraft(staff: StaffRecord): Promise<IdCardRecord> {
+  const versions = await getCardVersions(staff.id);
+  const savedCardPhoto = versions.find(version => Boolean(version.front_snapshot?.photo_url))?.front_snapshot?.photo_url || null;
+  const preferredPhoto = staff.photo_url || savedCardPhoto;
+
   const refreshDraft = async (draft: IdCardRecord) => {
-    const frontSnapshot = buildLiveFrontSnapshot(staff);
+    // A photo uploaded specifically for the ID card belongs to this card
+    // snapshot even when the admin did not also replace the staff profile
+    // photo. Preserve it whenever an existing draft is refreshed.
+    const frontSnapshot = buildLiveFrontSnapshot(staff, draft.front_snapshot?.photo_url || preferredPhoto);
     const backSnapshot = buildBackSnapshot(staff);
     const { data, error } = await crmSupabase.from('crm_id_cards').update({
       front_snapshot: frontSnapshot,
@@ -135,7 +142,6 @@ export async function getOrCreateDraft(staff: StaffRecord): Promise<IdCardRecord
     return { ...normalizeCard(data), employee: staff };
   };
 
-  const versions = await getCardVersions(staff.id);
   const existingDraft = versions.find(version => version.status === 'Draft');
   if (existingDraft) return refreshDraft(existingDraft);
 
@@ -146,7 +152,7 @@ export async function getOrCreateDraft(staff: StaffRecord): Promise<IdCardRecord
     card_number: versions.length ? versions[0].card_number : nextCardNumber(count || 0),
     version,
     status: 'Draft',
-    front_snapshot: buildLiveFrontSnapshot(staff),
+    front_snapshot: buildLiveFrontSnapshot(staff, preferredPhoto),
     back_snapshot: buildBackSnapshot(staff),
   }).select().single();
 
@@ -173,6 +179,7 @@ export async function finalizeGeneratedCard(
   pdfBlob: Blob,
   settings: IdCardSettings,
   actorName: string,
+  photoUrl: string | null = card.front_snapshot?.photo_url ?? staff.photo_url ?? null,
 ): Promise<IdCardRecord> {
   const path = `id-cards/${staff.id}/${card.card_number}-v${card.version}.pdf`;
   const { error: uploadError } = await crmSupabase.storage.from('crm-files').upload(path, pdfBlob, { upsert: true, contentType: 'application/pdf' });
@@ -182,7 +189,7 @@ export async function finalizeGeneratedCard(
   const expiresOn = addYears(issuedDate, settings.validity_years);
   const { data, error } = await crmSupabase.from('crm_id_cards').update({
     status: 'Generated',
-    front_snapshot: buildLiveFrontSnapshot(staff),
+    front_snapshot: buildLiveFrontSnapshot(staff, photoUrl),
     back_snapshot: { ...buildBackSnapshot(staff), blood_group: card.back_snapshot?.blood_group || '' },
     pdf_path: path,
     issued_date: issuedDate,
@@ -202,13 +209,15 @@ export async function finalizeGeneratedCard(
 export async function regenerateCard(staff: StaffRecord): Promise<IdCardRecord> {
   const versions = await getCardVersions(staff.id);
   const latest = versions[0];
+  const savedCardPhoto = versions.find(version => Boolean(version.front_snapshot?.photo_url))?.front_snapshot?.photo_url || null;
+  const preferredPhoto = staff.photo_url || savedCardPhoto;
   const nextVersion = latest ? latest.version + 1 : 1;
   const { data, error } = await crmSupabase.from('crm_id_cards').insert({
     employee_id: staff.id,
     card_number: latest ? latest.card_number : nextCardNumber(versions.length),
     version: nextVersion,
     status: 'Draft',
-    front_snapshot: buildLiveFrontSnapshot(staff),
+    front_snapshot: buildLiveFrontSnapshot(staff, preferredPhoto),
     back_snapshot: buildBackSnapshot(staff),
   }).select().single();
   if (error) throw new Error(error.message);
@@ -253,6 +262,15 @@ export async function uploadIdCardPhoto(employeeId: string, file: File): Promise
   if (uploadError) throw new Error(uploadError.message);
   const { data } = crmSupabase.storage.from('profile-photos').getPublicUrl(path);
   return data.publicUrl;
+}
+
+export async function updateIdCardPhoto(cardId: string, staff: StaffRecord, photoUrl: string): Promise<IdCardRecord> {
+  const { data, error } = await crmSupabase.from('crm_id_cards').update({
+    front_snapshot: buildLiveFrontSnapshot(staff, photoUrl),
+    updated_at: new Date().toISOString(),
+  }).eq('id', cardId).select().single();
+  if (error) throw new Error(error.message);
+  return { ...normalizeCard(data), employee: staff };
 }
 
 export async function updateStaffPhotoToo(employeeId: string, photoUrl: string): Promise<void> {

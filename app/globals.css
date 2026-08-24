@@ -2020,6 +2020,37 @@ display: grid;
   font-stretch: normal !important;
 }
 
+/* Shared CRM PDF capture mode. Every A4 preview is captured at the exact
+   794 x 1123 geometry used by the document components. Responsive preview
+   zoom, animation and shadows are removed only while rendering; document
+   fonts, spacing, content and colors remain unchanged. */
+.crm-pdf-capture {
+  width: 794px !important;
+  max-width: none !important;
+  zoom: 1 !important;
+  transform: none !important;
+}
+
+.crm-pdf-capture [data-pdf-page] {
+  width: 794px !important;
+  height: 1123px !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  zoom: 1 !important;
+  transform: none !important;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.crm-pdf-capture,
+.crm-pdf-capture * {
+  animation: none !important;
+  transition: none !important;
+  font-kerning: normal !important;
+  font-variant-ligatures: normal !important;
+  font-stretch: normal !important;
+}
+
 /* The preview uses container-query zoom to fit A4 inside the CRM card. That
    zoom must never participate in html2canvas, otherwise Chromium reports
    scaled glyph advances while the canvas paints at full A4 size. */
@@ -3761,8 +3792,14 @@ display: grid;
 .invoice-action-primary:hover { background: #dc0a1d; border-color: #dc0a1d; }
 
 .invoice-preview-scroll { container-name: document-preview; container-type: inline-size; min-width: 0; max-width: 100%; overflow: auto; overscroll-behavior-inline: contain; border-radius: 0 0 1rem 1rem; background: #d9d9d7; padding: 1.5rem; }
-.invoice-document { width: 794px; margin: 0 auto; color: #161616; font-family: var(--font-outfit), "Manrope", Arial, sans-serif; }
+.invoice-document { width: 794px; margin: 0 auto; color: #161616; font-family: Arial, Helvetica, sans-serif; }
 .invoice-pdf-page { position: relative; width: 794px; height: 1123px; overflow: hidden; background: #fff; padding: 44px 48px 86px; box-shadow: 0 12px 40px -24px rgba(0,0,0,.5); }
+.invoice-pdf-page { font-kerning: normal; font-variant-ligatures: none; }
+.invoice-pdf-words { display: inline-flex; max-width: 100%; flex-wrap: wrap; align-items: baseline; }
+.invoice-pdf-token { display: inline-flex; align-items: baseline; }
+.invoice-pdf-token:not(:last-child) { margin-right: .32em; }
+.invoice-pdf-word { display: inline-block; }
+.invoice-pdf-space { display: none; }
 
 /* Dashboard download-centre documents reuse the same A4 capture dimensions,
    logo treatment, red accent and footer hierarchy as the CRM document family. */
@@ -3788,23 +3825,26 @@ display: grid;
 .invoice-doc-logo { width: auto; height: 44px; object-fit: contain; }
 .invoice-doc-header > div:first-child > p { margin-top: 5px; color: #9b9b9b; font-size: 8px; font-weight: 600; letter-spacing: .03em; }
 .invoice-doc-title { text-align: right; }
-.invoice-doc-title span { color: #e30b1d; font-size: 8px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+.invoice-doc-title > span { color: #e30b1d; font-size: 8px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
 .invoice-doc-title h1 { margin-top: 4px; font-size: 29px; font-weight: 900; letter-spacing: -.04em; line-height: 1; text-transform: capitalize; }
 .invoice-doc-title strong { display: block; margin-top: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; }
 .invoice-doc-accent { width: 100%; height: 3px; margin-top: 24px; background: linear-gradient(90deg,#e30b1d 0 20%,#111 20% 100%); }
 .invoice-doc-meta-grid { display: grid; grid-template-columns: 1fr 1fr 180px; gap: 24px; margin-top: 26px; }
-.invoice-doc-party > span,.invoice-doc-payment-info > span,.invoice-doc-notes span,.invoice-doc-signoff span { color: #e30b1d; font-size: 7px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
-.invoice-doc-party h2 { margin-top: 7px; font-size: 13px; font-weight: 850; }
-.invoice-doc-party p { margin-top: 4px; color: #666; font-size: 8px; line-height: 1.45; }
+.invoice-doc-party > span,.invoice-doc-payment-info > span,.invoice-doc-notes > div > span,.invoice-doc-signoff > div > span { color: #e30b1d; font-size: 7px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+.invoice-doc-party h2 { margin-top: 7px; font-size: 14px; font-weight: 850; }
+.invoice-doc-party p { margin-top: 4px; color: #666; font-size: 9px; line-height: 1.45; }
 .invoice-doc-party p strong { color: #333; font-weight: 800; }
 .invoice-doc-facts { border-left: 1px solid #e5e5e5; padding-left: 20px; }
 .invoice-doc-facts div + div { margin-top: 10px; }
 .invoice-doc-facts dt { color: #999; font-size: 6.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-.invoice-doc-facts dd { margin-top: 3px; color: #222; font-size: 8px; font-weight: 750; }
+.invoice-doc-facts dd { margin-top: 3px; color: #222; font-size: 11px; font-weight: 750; }
 .invoice-doc-event { display: grid; grid-template-columns: 1fr 145px 1.2fr; gap: 1px; margin-top: 25px; overflow: hidden; border: 1px solid #e5e5e5; border-radius: 10px; background: #e5e5e5; }
 .invoice-doc-event div { background: #fafafa; padding: 12px 14px; }
-.invoice-doc-event span { display: block; color: #999; font-size: 6.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-.invoice-doc-event strong { display: block; margin-top: 5px; font-size: 8.5px; font-weight: 800; }
+.invoice-doc-event div > span { display: block; color: #999; font-size: 6.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.invoice-doc-event strong { display: block; margin-top: 5px; font-size: 11.5px; font-weight: 800; }
+.invoice-doc-continuation { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 28px; border-bottom: 1px solid #e5e5e5; padding-bottom: 14px; }
+.invoice-doc-continuation span { color: #e30b1d; font-size: 8px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.invoice-doc-continuation strong { max-width: 430px; font-size: 14px; font-weight: 850; text-align: right; }
 .invoice-doc-items { margin-top: 27px; }
 .invoice-doc-item-head,.invoice-doc-item { display: grid; grid-template-columns: 30px minmax(0,1fr) 58px 42px 90px 95px; align-items: center; column-gap: 10px; }
 .invoice-doc-item-head { border-radius: 8px 8px 0 0; background: #111; padding: 10px 12px; color: #fff; font-size: 6.5px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
@@ -3813,10 +3853,10 @@ display: grid;
 .invoice-doc-item strong { color: #171717; font-size: 8.5px; font-weight: 780; }
 .invoice-doc-settlement { display: grid; grid-template-columns: minmax(0,1fr) 285px; gap: 36px; margin-top: 27px; }
 .invoice-doc-payment-info h3 { margin-top: 8px; font-size: 11px; font-weight: 850; }
-.invoice-doc-payment-info p { margin-top: 5px; color: #666; font-size: 8px; line-height: 1.4; }
+.invoice-doc-payment-info p { margin-top: 5px; color: #666; font-size: 10.5px; line-height: 1.45; }
 .invoice-doc-payment-info p strong { display: inline-block; min-width: 70px; color: #333; }
 .invoice-doc-totals { border: 1px solid #e5e5e5; border-radius: 10px; overflow: hidden; }
-.invoice-doc-totals > div { display: flex; justify-content: space-between; gap: 20px; padding: 7px 12px; color: #666; font-size: 8px; }
+.invoice-doc-totals > div { display: flex; justify-content: space-between; gap: 20px; padding: 7px 12px; color: #555; font-size: 10.5px; }
 .invoice-doc-totals > div + div { border-top: 1px solid #ededed; }
 .invoice-doc-totals strong { color: #171717; font-weight: 800; }
 .invoice-doc-totals .invoice-doc-grand-total { background: #111; color: #fff; padding-block: 10px; font-size: 10px; }
@@ -3825,12 +3865,12 @@ display: grid;
 .invoice-doc-totals .invoice-doc-balance { background: #e30b1d; color: #fff; font-size: 9px; }
 .invoice-doc-totals .invoice-doc-balance strong { color: #fff; }
 .invoice-doc-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 23px; border-top: 1px solid #e5e5e5; padding-top: 17px; }
-.invoice-doc-notes p { margin-top: 6px; color: #666; font-size: 7.5px; line-height: 1.5; }
+.invoice-doc-notes p { margin-top: 6px; color: #666; font-size: 9px; line-height: 1.5; }
 .invoice-doc-signoff { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; margin-top: 25px; }
 .invoice-doc-signoff > div:last-child { text-align: right; }
 .invoice-doc-signoff i { position: relative; display: block; height: 25px; overflow: visible; border-bottom: 1px solid #bbb; }
-.invoice-doc-signoff strong { display: block; margin-top: 6px; font-size: 8px; font-weight: 800; }
-.invoice-doc-signoff p { margin-top: 2px; color: #999; font-size: 7px; }
+.invoice-doc-signoff strong { display: block; margin-top: 6px; font-size: 11px; font-weight: 800; }
+.invoice-doc-signoff p { margin-top: 2px; color: #777; font-size: 9.5px; }
 .invoice-doc-signature-stamp { position: absolute; bottom: -2px; left: 50%; width: 48px; height: auto; transform: translateX(-50%); mix-blend-mode: multiply; pointer-events: none; }
 .quotation-doc-signatures { display: grid; grid-template-columns: repeat(2, 1fr); gap: 42px; margin-top: 25px; break-inside: avoid; page-break-inside: avoid; }
 .quotation-doc-signatures > div { position: relative; }
@@ -3842,13 +3882,13 @@ display: grid;
 .invoice-doc-footer { position: absolute; right: 48px; bottom: 0; left: 48px; display: grid; grid-template-columns: 180px 1fr 64px; align-items: center; gap: 20px; height: 72px; border-top: 1px solid #dedede; }
 .invoice-doc-footer > div:first-child strong { display: block; font-size: 9px; font-weight: 900; }
 .invoice-doc-footer > div:first-child span { display: block; margin-top: 3px; font-family: ui-monospace, monospace; color: #777; font-size: 6.5px; }
-.invoice-doc-footer > p { color: #999; font-size: 6.5px; line-height: 1.45; text-align: center; }
+.invoice-doc-footer > p { color: #666; font-size: 8.5px; line-height: 1.45; text-align: center; }
 .invoice-doc-verify { display: flex; align-items: center; flex-direction: column; }
 .invoice-doc-verify img { width: 37px; height: 37px; }
-.invoice-doc-verify span { margin-top: 2px; font-size: 5.5px; font-weight: 750; }
+.invoice-doc-verify > span { margin-top: 2px; font-size: 6.5px; font-weight: 750; }
 
 .invoice-receipt-render-zone { position: fixed; top: 0; left: -10000px; z-index: -1; }
-.payment-receipt-pdf { width: 794px; height: 1123px; overflow: hidden; background: #fff; padding: 58px 62px; color: #171717; font-family: var(--font-outfit), "Manrope", Arial, sans-serif; }
+.payment-receipt-pdf { width: 794px; height: 1123px; overflow: hidden; background: #fff; padding: 58px 62px; color: #171717; font-family: Arial, Helvetica, sans-serif; font-kerning: normal; font-variant-ligatures: none; }
 .payment-receipt-pdf header { display: flex; justify-content: space-between; align-items: flex-start; }
 .payment-receipt-pdf header img { width: auto; height: 44px; object-fit: contain; }
 .payment-receipt-pdf header div { text-align: right; }

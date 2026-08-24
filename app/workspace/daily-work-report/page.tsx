@@ -9,10 +9,11 @@ import CrmHeader from '../../crm/components/CrmHeader';
 import ConfirmDialog from '../../crm/components/ConfirmDialog';
 import { useSidebar } from '../../crm/sidebar-context';
 import {
-  getMyDailyReport, getMyDailyReportHistory, getMyRelatedTasks, indiaDate, isStaffEditableDate,
+  getMyDailyReport, getMyDailyReportHistoryPage, getMyRelatedTasks, indiaDate, isStaffEditableDate,
   removeDailyActivity, saveDailyActivity, shiftDate, submitMyDailyReport,
   type DailyActivityStatus, type DailyWorkReport, type DailyWorkReportItem,
 } from '../../crm/lib/daily-work-report-data';
+import TopPagination from '../components/TopPagination';
 
 const formatDate = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -23,6 +24,9 @@ export default function DailyWorkReportPage() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [report, setReport] = useState<DailyWorkReport | null>(null);
   const [history, setHistory] = useState<DailyWorkReport[]>([]);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(10);
   const [tasks, setTasks] = useState<{ id: string; title: string; status: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,11 +50,11 @@ export default function DailyWorkReportPage() {
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const [current, reports] = await Promise.all([getMyDailyReport(selectedDate), getMyDailyReportHistory()]);
-      setReport(current); setHistory(reports);
+      const [current, historyResult] = await Promise.all([getMyDailyReport(selectedDate), getMyDailyReportHistoryPage(historyPage, historyPageSize)]);
+      setReport(current); setHistory(historyResult.rows); setHistoryTotal(historyResult.total);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load the report.'); }
     finally { setLoading(false); }
-  }, [selectedDate]);
+  }, [selectedDate, historyPage, historyPageSize]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { getMyRelatedTasks().then(setTasks).catch(() => setTasks([])); }, []);
@@ -118,7 +122,7 @@ export default function DailyWorkReportPage() {
         {editable && !!report?.items.length && <div className="flex justify-end border-t border-gray-100 p-4"><button onClick={submit} disabled={saving} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-gray-950 px-4 py-2.5 text-xs font-bold text-white hover:bg-black disabled:opacity-50">{saving ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {report.report_status === 'SUBMITTED' ? 'Resubmit Report' : 'Submit Report'}</button></div>}
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"><div className="border-b border-gray-100 px-4 py-3 sm:px-5"><h2 className="text-sm font-black text-gray-950">Report History</h2><p className="mt-0.5 text-[10px] text-gray-400">Older reports remain available as read-only history.</p></div><div className="divide-y divide-gray-100">{history.length ? history.map((entry) => { const done = entry.items.filter((item) => item.activity_status === 'DONE').length; return <button key={entry.id} onClick={() => setSelectedDate(entry.report_date)} className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50 sm:px-5"><div className="min-w-0"><p className="truncate text-xs font-bold text-gray-900">{formatDate(entry.report_date)}</p><p className="mt-1 text-[10px] text-gray-400">{entry.items.length} Activities · {done} Done · {entry.items.length - done} Pending</p></div><span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-[9px] font-black text-gray-600">{entry.report_status}</span></button>; }) : <p className="px-5 py-8 text-center text-xs text-gray-400">No previous reports yet.</p>}</div></section>
+      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"><div className="border-b border-gray-100 px-4 py-3 sm:px-5"><h2 className="text-sm font-black text-gray-950">Report History</h2><p className="mt-0.5 text-[10px] text-gray-400">Older reports remain available as read-only history.</p></div>{historyTotal > 0 && <TopPagination page={historyPage} pageSize={historyPageSize} total={historyTotal} label="reports" onPageChange={setHistoryPage} onPageSizeChange={(size) => { setHistoryPageSize(size); setHistoryPage(1); }} />}<div className="divide-y divide-gray-100">{history.length ? history.map((entry) => { const done = entry.items.filter((item) => item.activity_status === 'DONE').length; return <button key={entry.id} onClick={() => setSelectedDate(entry.report_date)} className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50 sm:px-5"><div className="min-w-0"><p className="truncate text-xs font-bold text-gray-900">{formatDate(entry.report_date)}</p><p className="mt-1 text-[10px] text-gray-400">{entry.items.length} Activities · {done} Done · {entry.items.length - done} Pending</p></div><span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-[9px] font-black text-gray-600">{entry.report_status}</span></button>; }) : <p className="px-5 py-8 text-center text-xs text-gray-400">No previous reports yet.</p>}</div></section>
     </div>
 
     {formOpen && <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"><button className="absolute inset-0 bg-black/50" onClick={() => !saving && setFormOpen(false)} aria-label="Close" /><div className="relative max-h-[calc(100vh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-5"><div className="flex items-start justify-between"><div><h3 className="text-base font-black text-gray-950">{editing ? 'Edit Activity' : 'Add Task / Activity'}</h3><p className="mt-1 text-xs text-gray-400">{formatDate(selectedDate)}</p></div><button onClick={() => setFormOpen(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100"><XCircle size={19} /></button></div><div className="mt-5 space-y-4"><label className="block"><span className="text-[10px] font-black uppercase tracking-wide text-gray-600">Task / Activity *</span><input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} placeholder="e.g. CRM Dashboard Fix" className="mt-1.5 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-red-500" /></label><label className="block"><span className="text-[10px] font-black uppercase tracking-wide text-gray-600">Description *</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={5} maxLength={5000} placeholder="Explain what was actually done..." className="mt-1.5 w-full resize-y rounded-xl border border-gray-200 px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-red-500" /></label><div><span className="text-[10px] font-black uppercase tracking-wide text-gray-600">Status *</span><div className="mt-1.5 grid grid-cols-2 gap-2">{(['DONE', 'PENDING'] as const).map((value) => <button key={value} onClick={() => setStatus(value)} className={`rounded-xl border px-3 py-2.5 text-xs font-black ${status === value ? value === 'DONE' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 text-gray-500'}`}>{value}</button>)}</div></div>{tasks.length > 0 && <label className="block"><span className="text-[10px] font-black uppercase tracking-wide text-gray-600">Related CRM Task (Optional)</span><select value={relatedTaskId} onChange={(event) => setRelatedTaskId(event.target.value)} className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-red-500"><option value="">Manual activity — no related task</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title} · {task.status}</option>)}</select></label>}</div><div className="mt-5 flex gap-2"><button onClick={() => setFormOpen(false)} disabled={saving} className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600">Cancel</button><button onClick={save} disabled={saving} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-50">{saving && <Loader2 size={13} className="animate-spin" />} Save Activity</button></div></div></div>}

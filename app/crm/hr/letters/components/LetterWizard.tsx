@@ -13,7 +13,7 @@ import {
 } from '../../hr-data';
 import { fieldDefault, formatAgreementDate, letterIcon, renderLetterText } from '../../hr-config';
 import LetterDocument from './LetterDocument';
-import { buildLetterPdf } from '../pdf-export';
+import { buildLetterPdf, printLetterPdf, saveLetterPdf } from '../pdf-export';
 
 const STEPS = [
   { label: 'Employee', icon: Users },
@@ -69,7 +69,7 @@ export default function LetterWizard({ template, existingLetter }: { template: L
 
   useEffect(() => {
     if (!selectedEmployee) return;
-    setDesignation(selectedEmployee.designation || selectedEmployee.job_title);
+    setDesignation(selectedEmployee.job_title || selectedEmployee.designation || '');
     setReportingManagerId(selectedEmployee.reporting_manager_id || '');
   }, [selectedEmployee?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -156,8 +156,10 @@ export default function LetterWizard({ template, existingLetter }: { template: L
     if (!validateStep()) return;
     if (step === 1 && selectedEmployee) {
       try {
-        await updateEmployeeHrFields(selectedEmployee.id, { designation, reporting_manager_id: reportingManagerId || null });
-        setEmployees(current => current.map(item => item.id === selectedEmployee.id ? { ...item, designation, reporting_manager_id: reportingManagerId || null } : item));
+        // Keep the legacy designation column synchronized, but always source
+        // the displayed position from Staff Management's current job title.
+        await updateEmployeeHrFields(selectedEmployee.id, { designation: selectedEmployee.job_title, reporting_manager_id: reportingManagerId || null });
+        setEmployees(current => current.map(item => item.id === selectedEmployee.id ? { ...item, designation: item.job_title, reporting_manager_id: reportingManagerId || null } : item));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unable to save employee details.');
         return;
@@ -205,7 +207,7 @@ export default function LetterWizard({ template, existingLetter }: { template: L
     try {
       const pdf = await buildPdf();
       if (!pdf) return;
-      pdf.save(`${generatedLetter.letter_number}-${selectedEmployee.full_name.replace(/[^a-z0-9]+/gi, '-')}.pdf`);
+      saveLetterPdf(pdf, `${generatedLetter.letter_number}-${selectedEmployee.full_name.replace(/[^a-z0-9]+/gi, '-')}.pdf`);
       const blob = pdf.output('blob');
       const { crmSupabase } = await import('../../../lib/supabase-crm');
       const path = `employee-letters/${selectedEmployee.id}/${generatedLetter.letter_number}.pdf`;
@@ -222,7 +224,20 @@ export default function LetterWizard({ template, existingLetter }: { template: L
     }
   };
 
-  const printPdf = () => window.print();
+  const printPdf = async () => {
+    if (!documentRef.current) return;
+    setPdfBusy('print');
+    try {
+      await printLetterPdf(documentRef.current, {
+        title: `${generatedLetter?.letter_number} - ${selectedEmployee?.full_name}`,
+        subject: template.label,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to prepare the letter for printing.');
+    } finally {
+      setPdfBusy('');
+    }
+  };
 
   const emailLetter = () => {
     if (!generatedLetter || !selectedEmployee) return;
@@ -340,8 +355,8 @@ export default function LetterWizard({ template, existingLetter }: { template: L
                   <Field label="Employee ID"><input value={selectedEmployee.employee_code} readOnly className="bg-gray-50 font-mono font-bold" /></Field>
                   <Field label="Employee name"><input value={selectedEmployee.full_name} readOnly className="bg-gray-50" /></Field>
                   <Field label="Department"><input value={selectedEmployee.department} readOnly className="bg-gray-50" /></Field>
-                  <Field label="Designation" hint="Used in every generated letter">
-                    <input value={designation} onChange={e => setDesignation(e.target.value)} />
+                  <Field label="Job position" hint="Fetched from the Staff module and used in every generated letter">
+                    <input value={designation} readOnly className="bg-gray-50" />
                   </Field>
                   <Field label="Joining date"><input value={formatAgreementDate(selectedEmployee.joining_date)} readOnly className="bg-gray-50" /></Field>
                   <Field label="Email"><input value={selectedEmployee.email} readOnly className="bg-gray-50" /></Field>
@@ -418,7 +433,7 @@ export default function LetterWizard({ template, existingLetter }: { template: L
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button type="button" onClick={downloadPdf} disabled={pdfBusy === 'download'} className="agreement-action-button bg-gray-950 text-white"><Download size={15} /> {pdfBusy === 'download' ? 'Preparing...' : 'Download PDF'}</button>
-                    <button type="button" onClick={printPdf} className="agreement-action-button"><Printer size={15} /> Print</button>
+                    <button type="button" onClick={printPdf} disabled={pdfBusy === 'print'} className="agreement-action-button"><Printer size={15} /> {pdfBusy === 'print' ? 'Preparing...' : 'Print'}</button>
                     <button type="button" onClick={emailLetter} className="agreement-action-button"><Mail size={15} /> Email</button>
                     <button type="button" onClick={() => router.push('/crm/hr/letters')} className="agreement-action-button">Back to Letters</button>
                   </div>

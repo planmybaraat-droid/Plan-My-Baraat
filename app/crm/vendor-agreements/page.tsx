@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Ban, BadgeCheck, ChevronLeft, ChevronRight, Copy, Eye, FileCheck2,
+  Ban, BadgeCheck, Copy, Eye, FileCheck2,
   Filter, MoreHorizontal, Pencil, Plus, Search, ShieldAlert, Star, Trash2, TrendingUp, X,
 } from 'lucide-react';
 import CrmHeader from '../components/CrmHeader';
@@ -17,8 +17,8 @@ import {
   VENDOR_AGREEMENT_STATUSES, VENDOR_BLACKLIST_STATUSES, VENDOR_VERIFICATION_STATUSES,
   calculateVendorAgreementAmounts, currency, formatAgreementDate, isVendorAgreementExpiringSoon,
 } from './vendor-agreement-config';
+import TopPagination from '../../workspace/components/TopPagination';
 
-const PAGE_SIZE = 10;
 const STATUS_STYLES: Record<VendorAgreementStatus, string> = {
   Draft: 'bg-gray-100 text-gray-700',
   Sent: 'bg-blue-50 text-blue-700',
@@ -36,6 +36,7 @@ export default function VendorAgreementsPage() {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [deleteTarget, setDeleteTarget] = useState<VendorAgreementRecord | null>(null);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
@@ -95,8 +96,7 @@ export default function VendorAgreementsPage() {
     preferred: agreements.filter(item => item.preferred_vendor).length,
     flagged: agreements.filter(item => item.blacklist_status !== 'Active').length,
   }), [agreements]);
-  const pages = Math.max(1, Math.ceil(agreements.length / PAGE_SIZE));
-  const visible = agreements.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const visible = agreements.slice((page - 1) * pageSize, page * pageSize);
   const activeFilters = [filters.status, filters.verification_status, filters.blacklist_status, filters.service_category].filter(Boolean).length;
 
   const clearFilters = () => setFilters({ search: '', status: '', verification_status: '', blacklist_status: '', service_category: '' });
@@ -171,6 +171,7 @@ export default function VendorAgreementsPage() {
             </div>
           ) : (
             <>
+              <TopPagination page={page} pageSize={pageSize} total={agreements.length} label="vendor agreements" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />
               <div className="hidden overflow-x-auto md:block">
                 <table className="w-full text-sm">
                   <thead><tr className="border-b border-gray-100 bg-gray-50/80">
@@ -214,14 +215,6 @@ export default function VendorAgreementsPage() {
                     <div className="mt-3 flex items-center justify-between text-xs"><span className="text-gray-500">{item.service_category || 'General'} · {formatAgreementDate(item.agreement_end_date)}</span><span className="font-black text-gray-950">{currency(calculateVendorAgreementAmounts(item).estimatedValue)}</span></div>
                   </button>
                 ))}
-              </div>
-              <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
-                <p className="text-xs font-medium text-gray-400">Showing {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, agreements.length)} of {agreements.length}</p>
-                <div className="flex gap-1">
-                  <button onClick={() => setPage(current => Math.max(1, current - 1))} disabled={page === 1} className="rounded-lg border border-gray-200 p-2 text-gray-500 disabled:opacity-30"><ChevronLeft size={14} /></button>
-                  <span className="flex min-w-9 items-center justify-center text-xs font-bold text-gray-600">{page}/{pages}</span>
-                  <button onClick={() => setPage(current => Math.min(pages, current + 1))} disabled={page === pages} className="rounded-lg border border-gray-200 p-2 text-gray-500 disabled:opacity-30"><ChevronRight size={14} /></button>
-                </div>
               </div>
             </>
           )}

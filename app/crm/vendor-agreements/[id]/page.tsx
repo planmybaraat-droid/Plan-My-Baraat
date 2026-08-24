@@ -14,6 +14,7 @@ import {
   appendVendorAgreementActivity, deleteUploadedFile, duplicateVendorAgreement,
   getUploadedFiles, getVendorAgreementById, updateVendorAgreement,
 } from '../../lib/supabase-crm';
+import { downloadCrmPdf } from '../../lib/pdf-export';
 import type { UploadedFile, VendorAgreementRecord, VendorAgreementStatus, VendorDocumentFile } from '../../lib/types';
 import VendorAgreementDocument from '../components/VendorAgreementDocument';
 import {
@@ -65,27 +66,7 @@ export default function VendorAgreementDetailPage() {
     if (!agreement || !documentRef.current) return;
     setBusy('download');
     try {
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
-      const pages = Array.from(documentRef.current.querySelectorAll<HTMLElement>('[data-pdf-page]'));
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-      for (let index = 0; index < pages.length; index += 1) {
-        const canvas = await html2canvas(pages[index], {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          logging: false,
-          windowWidth: 794,
-        });
-        if (index > 0) pdf.addPage('a4', 'portrait');
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
-      }
-      pdf.setProperties({
-        title: `${agreement.vendor_agreement_number} - ${agreement.vendor_name}`,
-        subject: 'PlanMyBaraat Vendor Service Agreement',
-        author: 'PlanMyBaraat',
-        creator: 'PlanMyBaraat CRM',
-      });
-      pdf.save(`${agreement.vendor_agreement_number}-${agreement.vendor_name.replace(/[^a-z0-9]+/gi, '-')}.pdf`);
+      await downloadCrmPdf(documentRef.current, `${agreement.vendor_agreement_number}-${agreement.vendor_name.replace(/[^a-z0-9]+/gi, '-')}.pdf`, { properties: { title: `${agreement.vendor_agreement_number} - ${agreement.vendor_name}`, subject: 'PlanMyBaraat Vendor Service Agreement' } });
       if (track) await appendVendorAgreementActivity(agreement.id, {
         type: 'downloaded', title: 'PDF downloaded', detail: `Version ${agreement.version} exported as PDF.`, actor: 'CRM Admin',
       });

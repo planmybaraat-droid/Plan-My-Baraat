@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  CalendarDays, ChevronLeft, ChevronRight, CircleDollarSign, Copy, Eye, FileCheck2,
+  CalendarDays, CircleDollarSign, Copy, Eye, FileCheck2,
   Filter, MoreHorizontal, Pencil, Plus, Search, Send, Trash2, X,
 } from 'lucide-react';
 import CrmHeader from '../components/CrmHeader';
@@ -14,8 +14,8 @@ import { useSidebar } from '../sidebar-context';
 import { deleteAgreement, duplicateAgreement, getAgreements } from '../lib/supabase-crm';
 import type { AgreementFilters, AgreementRecord, AgreementStatus } from '../lib/types';
 import { AGREEMENT_PACKAGES, AGREEMENT_STATUSES, currency, formatAgreementDate } from './agreement-config';
+import TopPagination from '../../workspace/components/TopPagination';
 
-const PAGE_SIZE = 10;
 const STATUS_STYLES: Record<AgreementStatus, string> = {
   Draft: 'bg-gray-100 text-gray-700',
   Sent: 'bg-blue-50 text-blue-700',
@@ -31,6 +31,7 @@ export default function AgreementsPage() {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [deleteTarget, setDeleteTarget] = useState<AgreementRecord | null>(null);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
@@ -97,8 +98,7 @@ export default function AgreementsPage() {
     signed: agreements.filter(item => item.status === 'Signed' || item.status === 'Completed').length,
     value: agreements.filter(item => item.status !== 'Cancelled').reduce((sum, item) => sum + item.final_amount, 0),
   }), [agreements]);
-  const pages = Math.max(1, Math.ceil(agreements.length / PAGE_SIZE));
-  const visible = agreements.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const visible = agreements.slice((page - 1) * pageSize, page * pageSize);
   const activeFilters = [filters.status, filters.package_name, filters.event_date_from, filters.event_date_to].filter(Boolean).length;
 
   const clearFilters = () => setFilters({ search: '', status: '', package_name: '', event_date_from: '', event_date_to: '' });
@@ -173,6 +173,7 @@ export default function AgreementsPage() {
             </div>
           ) : (
             <>
+              <TopPagination page={page} pageSize={pageSize} total={agreements.length} label="agreements" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />
               <div className="hidden overflow-x-auto md:block">
                 <table className="w-full text-sm">
                   <thead><tr className="border-b border-gray-100 bg-gray-50/80">
@@ -202,14 +203,6 @@ export default function AgreementsPage() {
                     <div className="mt-3 flex items-center justify-between text-xs"><span className="text-gray-500">{formatAgreementDate(item.event_date)} · {item.package_name}</span><span className="font-black text-gray-950">{currency(item.final_amount)}</span></div>
                   </button>
                 ))}
-              </div>
-              <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
-                <p className="text-xs font-medium text-gray-400">Showing {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, agreements.length)} of {agreements.length}</p>
-                <div className="flex gap-1">
-                  <button onClick={() => setPage(current => Math.max(1, current - 1))} disabled={page === 1} className="rounded-lg border border-gray-200 p-2 text-gray-500 disabled:opacity-30"><ChevronLeft size={14} /></button>
-                  <span className="flex min-w-9 items-center justify-center text-xs font-bold text-gray-600">{page}/{pages}</span>
-                  <button onClick={() => setPage(current => Math.min(pages, current + 1))} disabled={page === pages} className="rounded-lg border border-gray-200 p-2 text-gray-500 disabled:opacity-30"><ChevronRight size={14} /></button>
-                </div>
               </div>
             </>
           )}

@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Bell, CheckCheck } from 'lucide-react';
 import CrmHeader from './CrmHeader';
 import { useSidebar } from '../sidebar-context';
 import { useCrmNotifications } from '../lib/useCrmNotifications';
+import TopPagination from '../../workspace/components/TopPagination';
 
 const TYPE_DOT: Record<string, string> = {
   task_assigned: 'bg-blue-500', task_completed: 'bg-emerald-500', task_rejected: 'bg-red-500', task_needs_revision: 'bg-amber-500',
@@ -14,9 +16,11 @@ const TYPE_DOT: Record<string, string> = {
 };
 
 /** Shared full-page notification list — used by both /crm and /workspace. */
-export default function NotificationsView({ notificationsHref }: { notificationsHref: string }) {
+export default function NotificationsView({ notificationsHref, paginated = false }: { notificationsHref: string; paginated?: boolean }) {
   const { open } = useSidebar();
-  const { items, loading, unreadCount, markRead, markAllRead } = useCrmNotifications();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { items, loading, unreadCount, total, markRead, markAllRead } = useCrmNotifications({ paginated, page, pageSize });
 
   return (
     <>
@@ -24,6 +28,7 @@ export default function NotificationsView({ notificationsHref }: { notifications
         actions={unreadCount > 0 ? <button onClick={markAllRead} className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-600"><CheckCheck size={14} /> Mark all read</button> : undefined} />
       <div className="p-4 sm:p-6">
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          {paginated && !loading && total > 0 && <TopPagination page={page} pageSize={pageSize} total={total} label="notifications" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
           {loading ? (
             <div className="flex h-40 items-center justify-center"><span className="h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-red-600" /></div>
           ) : !items.length ? (

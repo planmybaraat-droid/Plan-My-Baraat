@@ -210,7 +210,7 @@ const LetterDocument = forwardRef<HTMLDivElement, LetterDocumentProps>(function 
                 <div className="letter-doc-address">
                   <span>To,</span>
                   <strong>{employee?.full_name}</strong>
-                  <span>{employee?.designation || employee?.job_title}, {employee?.department} Department</span>
+                  <span>{employee?.job_title || employee?.designation}, {employee?.department} Department</span>
                   <span>{employee?.address || 'PlanMyBaraat'}</span>
                 </div>
               )}

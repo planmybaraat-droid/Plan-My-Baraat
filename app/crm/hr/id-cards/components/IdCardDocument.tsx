@@ -15,11 +15,16 @@ interface IdCardDocumentProps {
 const RED = '#B32632';
 const RED_DARK = '#9A2029';
 const RED_SOFT = '#FFF3F4';
-const INK = '#111111';
+const INK = '#172033';
+const TEXT = '#273244';
+const MUTED = '#667085';
 const BORDER = '#F0BFC3';
-const FONT_HEADER = 'var(--font-idcard-montserrat), Montserrat, Manrope, Arial, sans-serif';
-const FONT_BODY = 'var(--font-idcard-inter), Inter, Segoe UI, Arial, sans-serif';
-const FONT_VALUE = 'var(--font-idcard-roboto), Roboto, var(--font-idcard-inter), Inter, Arial, sans-serif';
+// Keep the printable card aligned with the CRM UI. The same Manrope variable
+// is available in previews and in the off-screen DOM used for PDF export.
+const CRM_FONT = 'var(--font-outfit), Manrope, system-ui, -apple-system, Arial, sans-serif';
+const FONT_HEADER = CRM_FONT;
+const FONT_BODY = CRM_FONT;
+const FONT_VALUE = CRM_FONT;
 
 function clean(value: string | null | undefined, fallback = '—') {
   const text = String(value || '').trim();
@@ -37,7 +42,7 @@ function DataRow({
   labelColor = RED_DARK,
   labelWidth = 14,
   valueSize = 3,
-  valueWeight = 800,
+  valueWeight = 600,
 }: {
   label: string;
   value: string;
@@ -49,8 +54,20 @@ function DataRow({
 }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: `${u * labelWidth}px minmax(0, 1fr)`, columnGap: u * 1.25, alignItems: 'baseline', minWidth: 0 }}>
-      <span style={{ fontFamily: FONT_BODY, color: labelColor, fontSize: u * 2.35, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{label}</span>
-      <span style={{ fontFamily: FONT_VALUE, color: INK, fontSize: u * valueSize, fontWeight: valueWeight, lineHeight: 1.16, overflowWrap: 'anywhere' }}>{value}</span>
+      <span style={{ fontFamily: FONT_BODY, color: labelColor, fontSize: u * 2.3, fontWeight: 700, lineHeight: 1.15, letterSpacing: '0.055em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{label}</span>
+      <span style={{ display: 'block', minWidth: 0, whiteSpace: 'normal', wordBreak: 'break-word', fontFamily: FONT_VALUE, color: TEXT, fontSize: u * valueSize, fontWeight: valueWeight, lineHeight: 1.22, letterSpacing: '-0.008em', overflowWrap: 'anywhere' }}>{value}</span>
+    </div>
+  );
+}
+
+// The front face uses fixed flex rows instead of CSS grid. html2canvas can
+// calculate grid baselines differently from the live browser, while these
+// explicit row/column dimensions remain identical in preview and PDF.
+function FrontDataRow({ label, value, u, valueSize = 3.05 }: { label: string; value: string; u: number; valueSize?: number }) {
+  return (
+    <div style={{ display: 'flex', width: '100%', minWidth: 0, minHeight: u * 3.65, alignItems: 'center' }}>
+      <span style={{ width: u * 16.5, flex: '0 0 auto', fontFamily: FONT_BODY, color: RED_DARK, fontSize: u * 2.3, fontWeight: 700, lineHeight: 1, letterSpacing: '0.055em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{label}</span>
+      <span style={{ display: 'block', minWidth: 0, flex: '1 1 auto', fontFamily: FONT_VALUE, color: TEXT, fontSize: u * valueSize, fontWeight: 600, lineHeight: 1.16, letterSpacing: '-0.008em', whiteSpace: 'normal', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{value}</span>
     </div>
   );
 }
@@ -101,8 +118,8 @@ const IdCardDocument = forwardRef<HTMLDivElement, IdCardDocumentProps>(function 
 
   const logoImageStyle = {
     width: u * 41,
-    height: u * 9.6,
-    objectFit: 'contain' as const,
+    height: 'auto',
+    maxHeight: u * 11.2,
     display: 'block',
   };
 
@@ -110,29 +127,29 @@ const IdCardDocument = forwardRef<HTMLDivElement, IdCardDocumentProps>(function 
     <div ref={ref} className="idcard-document" style={{ display: 'inline-flex', flexDirection: 'column', gap: 24, fontFamily: FONT_BODY }}>
       <div style={faceWrapperStyle}>
         <div data-card-face="front" style={faceStyle}>
-          <div style={{ position: 'absolute', top: -u * 8.5, right: -u * 7.5, width: u * 22, height: u * 22, borderRadius: '999px', background: '#B84B53' }} />
+          <div style={{ position: 'absolute', top: -u * 8.5, right: -u * 7.5, width: u * 22, height: u * 22, borderRadius: '999px', background: 'rgba(179,38,50,0.12)', border: '1px solid rgba(179,38,50,0.10)' }} />
           <div style={{ position: 'absolute', bottom: -u * 12, left: -u * 12, width: u * 27, height: u * 27, borderRadius: '999px', background: 'rgba(179,38,50,0.08)' }} />
 
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: `${u * 6.5}px ${safePx}px 0`, gap: u * 1.1 }}>
             <img src="/logo.png" alt="PlanMyBaraat" style={logoImageStyle} />
-            <p style={{ margin: 0, fontFamily: FONT_BODY, color: '#3F3F46', fontSize: u * 3.05, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.18em' }}>Staff ID Card</p>
+            <p style={{ margin: 0, fontFamily: FONT_BODY, color: MUTED, fontSize: u * 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.17em' }}>Staff ID Card</p>
           </div>
 
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: `${u * 4.1}px ${safePx}px 0`, textAlign: 'center' }}>
-            <div style={{ width: u * 31.8, height: u * 31.8, borderRadius: u * 6, overflow: 'hidden', border: `${u * 0.75}px solid #ffffff`, boxShadow: '0 0 0 1px #d0d0d0, 0 4px 12px rgba(0,0,0,0.15)', background: `linear-gradient(150deg, ${RED}, ${RED_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: u * 30, height: u * 30, aspectRatio: '1 / 1', borderRadius: u * 1.8, overflow: 'hidden', border: 'none', boxShadow: 'none', background: `linear-gradient(150deg, ${RED}, ${RED_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={photoUrl} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
+                <img data-card-photo="true" src={photoUrl} alt={displayName} style={{ display: 'block', width: '100%', height: '100%', aspectRatio: '1 / 1', objectFit: 'cover', objectPosition: 'center center' }} crossOrigin="anonymous" />
               ) : (
                 <span style={{ fontFamily: FONT_HEADER, fontSize: u * 9.4, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>{initials}</span>
               )}
             </div>
 
-            <p style={{ margin: `${u * 1.75}px 0 0`, fontFamily: FONT_VALUE, color: INK, fontSize: u * 5.45, fontWeight: 850, lineHeight: 1.08, letterSpacing: '-0.025em', maxWidth: widthPx - safePx * 2, overflowWrap: 'anywhere' }}>{displayName}</p>
-            <div style={{ marginTop: u * 3.05, width: '100%', boxSizing: 'border-box', background: RED_SOFT, border: `1px solid ${BORDER}`, borderRadius: u * 3, padding: `${u * 1.45}px ${u * 2.35}px`, display: 'flex', flexDirection: 'column', gap: u * 0.62, textAlign: 'left' }}>
-              <DataRow label="Emp ID" value={employeeCode} u={u} labelWidth={16.5} valueSize={3.05} valueWeight={500} />
-              <DataRow label="Dept" value={department} u={u} labelWidth={16.5} valueSize={3.05} valueWeight={500} />
-              <DataRow label="Position" value={position} u={u} labelWidth={16.5} valueSize={2.82} valueWeight={500} />
+            <p style={{ width: '100%', margin: `${u * 0.55}px 0 0`, fontFamily: FONT_VALUE, color: INK, fontSize: u * 5.12, fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.012em', textAlign: 'center', maxWidth: widthPx - safePx * 2, overflowWrap: 'anywhere' }}>{displayName}</p>
+            <div style={{ marginTop: u * 4.5, width: '100%', boxSizing: 'border-box', background: RED_SOFT, border: `1px solid ${BORDER}`, borderRadius: u * 3, padding: `${u * 1.65}px ${u * 2.35}px ${u * 2.3}px`, display: 'flex', flexDirection: 'column', gap: u * 0.76, textAlign: 'left' }}>
+              <FrontDataRow label="Emp ID" value={employeeCode} u={u} />
+              <FrontDataRow label="Dept" value={department} u={u} />
+              <FrontDataRow label="Position" value={position} u={u} valueSize={2.58} />
             </div>
           </div>
         </div>
@@ -143,27 +160,27 @@ const IdCardDocument = forwardRef<HTMLDivElement, IdCardDocumentProps>(function 
           <div style={{ position: 'absolute', bottom: -u * 14, right: -u * 10, width: u * 28, height: u * 28, borderRadius: '999px', background: 'rgba(179,38,50,0.08)' }} />
 
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', paddingTop: u * 1.1 }}>
-            <img src="/logo.png" alt="PlanMyBaraat" style={{ ...logoImageStyle, width: u * 43, height: u * 9.8 }} />
+            <img src="/logo.png" alt="PlanMyBaraat" style={{ ...logoImageStyle, width: u * 43 }} />
           </div>
-          <div style={{ position: 'relative', height: 1.35, background: RED_DARK, margin: `${u * 2.55}px 0 ${u * 2.55}px` }} />
+          <div style={{ position: 'relative', height: 0, margin: `${u * 2.55}px 0 ${u * 2.55}px` }} />
 
           <div style={{ position: 'relative', boxSizing: 'border-box', background: RED_SOFT, border: `1px solid ${BORDER}`, borderRadius: u * 3, padding: `${u * 2.05}px ${u * 2.55}px`, display: 'flex', flexDirection: 'column', gap: u * 0.9 }}>
-            <p style={{ margin: 0, fontFamily: FONT_HEADER, color: RED_DARK, fontSize: u * 3.85, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.025em' }}>Staff Details</p>
+            <p style={{ margin: 0, fontFamily: FONT_HEADER, color: RED_DARK, fontSize: u * 3.75, fontWeight: 800, lineHeight: 1.15, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Staff Details</p>
             <DataRow label="Mobile" value={mobile} u={u} labelWidth={15} valueSize={3.18} />
             <DataRow label="Joined" value={joined} u={u} labelWidth={15} valueSize={3.18} />
             <DataRow label="Emerg." value={emergency} u={u} labelWidth={15} valueSize={3.18} />
             <DataRow label="Blood" value={bloodGroup} u={u} labelWidth={15} valueSize={3.18} />
           </div>
 
-          <div style={{ position: 'relative', marginTop: u * 2.15 }}>
-            <p style={{ margin: `0 0 ${u * 1.25}px`, fontFamily: FONT_HEADER, color: INK, fontSize: u * 3.9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.01em' }}>Company Details</p>
+          <div style={{ position: 'relative', marginTop: u * 2.15, boxSizing: 'border-box', width: '100%', padding: `0 ${u * 2.55}px` }}>
+            <p style={{ margin: `0 0 ${u * 1.25}px`, fontFamily: FONT_HEADER, color: INK, fontSize: u * 3.75, fontWeight: 800, lineHeight: 1.15, textTransform: 'uppercase', letterSpacing: '0.025em' }}>Company Details</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: u * 0.78 }}>
-              <DataRow label="Addr" value="Studio 501–502, Broadway Signature, Vadodara, Gujarat – 391110" u={u} labelWidth={13.2} valueSize={3.02} valueWeight={500} />
-              <DataRow label="Tel" value="+91 90890 81111" u={u} labelWidth={13.2} valueSize={3.22} valueWeight={600} />
-              <DataRow label="Mail" value="hr@planmybaraat.com" u={u} labelWidth={13.2} valueSize={3.08} valueWeight={600} />
+              <DataRow label="Addr" value="Studio 501–502, Broadway Signature, Vadodara, Gujarat" u={u} labelWidth={11.8} valueSize={2.86} valueWeight={500} />
+              <DataRow label="Tel" value="+91 90890 81111" u={u} labelWidth={11.8} valueSize={3.02} valueWeight={600} />
+              <DataRow label="Mail" value="hr@planmybaraat.com" u={u} labelWidth={11.8} valueSize={2.82} valueWeight={600} />
             </div>
-            <p style={{ margin: `${u * 1.55}px 0 0`, fontFamily: FONT_BODY, color: '#3F3F46', fontSize: u * 2.25, fontWeight: 400, lineHeight: 1.2, textAlign: 'left' }}>
-              Return Policy: This card is the property of PlanMyBaraat. If found, please return to the company address listed above.
+            <p style={{ margin: `${u * 1.55}px 0 0`, fontFamily: FONT_BODY, color: MUTED, fontSize: u * 2.42, fontWeight: 500, lineHeight: 1.34, letterSpacing: '0.008em', wordSpacing: `${u * 0.12}px`, textAlign: 'left' }}>
+              <span style={{ color: TEXT, fontWeight: 700 }}>Return Policy:</span> This card is the property of PlanMyBaraat. If found, please return to the company address listed above.
             </p>
           </div>
 

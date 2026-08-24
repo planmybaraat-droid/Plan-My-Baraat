@@ -10,7 +10,7 @@ import { useSidebar } from '../../../sidebar-context';
 import { deleteEmployeeLetter, getEmployeeLetterById, getLetterTemplate, getPrivateCrmFileUrl, setEmployeeLetterStatus, updateEmployeeLetterFile } from '../../hr-data';
 import type { EmployeeLetterRecord, LetterTemplate } from '../../../lib/types';
 import LetterDocument from '../components/LetterDocument';
-import { buildLetterPdf } from '../pdf-export';
+import { buildLetterPdf, printLetterPdf, saveLetterPdf } from '../pdf-export';
 
 const STATUS_STYLES: Record<string, string> = {
   Generated: 'bg-emerald-50 text-emerald-700',
@@ -48,7 +48,7 @@ export default function LetterPreviewPage() {
         title: `${letter.letter_number} - ${letter.employee?.full_name}`,
         subject: template?.label,
       });
-      pdf.save(`${letter.letter_number}-${(letter.employee?.full_name || 'employee').replace(/[^a-z0-9]+/gi, '-')}.pdf`);
+      saveLetterPdf(pdf, `${letter.letter_number}-${(letter.employee?.full_name || 'employee').replace(/[^a-z0-9]+/gi, '-')}.pdf`);
       const blob = pdf.output('blob');
       const { crmSupabase } = await import('../../../lib/supabase-crm');
       const path = `employee-letters/${letter.employee_id}/${letter.letter_number}.pdf`;
@@ -58,6 +58,19 @@ export default function LetterPreviewPage() {
         const signedUrl = await getPrivateCrmFileUrl(path);
         setLetter(current => current ? { ...current, file_url: signedUrl } : current);
       }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const printPdf = async () => {
+    if (!letter || !template || !documentRef.current) return;
+    setBusy(true);
+    try {
+      await printLetterPdf(documentRef.current, {
+        title: `${letter.letter_number} - ${letter.employee?.full_name}`,
+        subject: template.label,
+      });
     } finally {
       setBusy(false);
     }
@@ -100,7 +113,7 @@ export default function LetterPreviewPage() {
               <div className="flex flex-wrap gap-2">
                 <Link href={`/crm/hr/letters/${letter.id}/edit`} className="agreement-action-button"><Pencil size={15} /> Edit</Link>
                 <button type="button" onClick={downloadPdf} disabled={busy} className="agreement-action-button bg-gray-950 text-white"><Download size={15} /> {busy ? 'Working...' : 'Download PDF'}</button>
-                <button type="button" onClick={() => window.print()} className="agreement-action-button"><Printer size={15} /> Print</button>
+                <button type="button" onClick={printPdf} disabled={busy} className="agreement-action-button"><Printer size={15} /> Print</button>
                 {letter.file_url && <a href={letter.file_url} target="_blank" rel="noopener noreferrer" className="agreement-action-button"><ExternalLink size={15} /> Saved PDF</a>}
                 <button type="button" onClick={toggleArchive} disabled={busy} className="agreement-action-button">{letter.status === 'Archived' ? <><Archive size={15} /> Unarchive</> : <><Archive size={15} /> Archive</>}</button>
                 <button type="button" onClick={() => setConfirmDelete(true)} className="agreement-action-button text-red-600 hover:bg-red-50"><Trash2 size={15} /> Delete</button>

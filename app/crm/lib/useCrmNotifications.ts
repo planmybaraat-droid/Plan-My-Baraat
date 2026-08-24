@@ -17,9 +17,14 @@ export interface CrmNotification {
  * Shared by both the Admin CRM and Staff Workspace headers — one Realtime
  * subscription implementation instead of duplicating it per portal.
  */
-export function useCrmNotifications() {
+export function useCrmNotifications(options: { paginated?: boolean; page?: number; pageSize?: number } = {}) {
+  const paginated = options.paginated === true;
+  const page = Math.max(1, options.page || 1);
+  const pageSize = Math.min(50, Math.max(10, options.pageSize || (paginated ? 10 : 30)));
   const [items, setItems] = useState<CrmNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
   // Multiple components (header bell, dashboard widget, notifications page)
   // can all use this hook at once — each needs its own Realtime channel
   // name, or the second .channel(sameName) call collides with the first
@@ -30,16 +35,23 @@ export function useCrmNotifications() {
     if (!isCrmSupabaseConfigured) { setLoading(false); return; }
     const { data: { user } } = await crmSupabase.auth.getUser();
     if (!user) { setLoading(false); return; }
-    const { data } = await crmSupabase
+    let query = crmSupabase
       .from('crm_notifications')
-      .select('*')
+      .select('*', { count: 'exact' })
       .neq('type', 'team_chat')
       .neq('type', 'team_chat_group')
-      .order('created_at', { ascending: false })
-      .limit(30);
+      .order('created_at', { ascending: false });
+    query = paginated ? query.range((page - 1) * pageSize, page * pageSize - 1) : query.limit(30);
+    const [{ data, count }, { count: unread }] = await Promise.all([
+      query,
+      crmSupabase.from('crm_notifications').select('id', { count: 'exact', head: true })
+        .eq('is_read', false).neq('type', 'team_chat').neq('type', 'team_chat_group'),
+    ]);
     setItems(data || []);
+    setTotal(count || 0);
+    setUnreadCount(unread || 0);
     setLoading(false);
-  }, []);
+  }, [page, pageSize, paginated]);
 
   useEffect(() => {
     let channel: ReturnType<typeof crmSupabase.channel> | null = null;
@@ -58,7 +70,11 @@ export function useCrmNotifications() {
           { event: 'INSERT', schema: 'public', table: 'crm_notifications', filter: `recipient_id=eq.${user.id}` },
           (payload) => {
             const inserted = payload.new as CrmNotification;
-            if (!inserted.type.startsWith('team_chat')) setItems((current) => [inserted, ...current].slice(0, 30));
+            if (!inserted.type.startsWith('team_chat')) {
+              setTotal((current) => current + 1);
+              if (!inserted.is_read) setUnreadCount((current) => current + 1);
+              if (!paginated || page === 1) setItems((current) => [inserted, ...current].slice(0, paginated ? pageSize : 30));
+            }
           }
         )
         .on(
@@ -74,7 +90,13 @@ export function useCrmNotifications() {
           (payload) => {
             const updated = payload.new as CrmNotification;
             if (updated.type.startsWith('team_chat')) return;
-            setItems((current) => current.map((n) => (n.id === updated.id ? { ...n, ...updated } : n)));
+            setItems((current) => {
+              const previous = current.find((notification) => notification.id === updated.id);
+              if (previous && previous.is_read !== updated.is_read) {
+                setUnreadCount((count) => Math.max(0, count + (updated.is_read ? -1 : 1)));
+              }
+              return current.map((notification) => (notification.id === updated.id ? { ...notification, ...updated } : notification));
+            });
           }
         )
         .on(
@@ -83,6 +105,7 @@ export function useCrmNotifications() {
           (payload) => {
             const removed = payload.old as CrmNotification;
             if (removed.type.startsWith('team_chat')) return;
+            setTotal((current) => Math.max(0, current - 1));
             setItems((current) => current.filter((n) => n.id !== removed.id));
           }
         )
@@ -94,19 +117,22 @@ export function useCrmNotifications() {
       active = false;
       if (channel) crmSupabase.removeChannel(channel);
     };
-  }, [load, instanceId]);
+  }, [load, instanceId, page, pageSize, paginated]);
 
   const markRead = async (id: string) => {
+    const wasUnread = items.some((n) => n.id === id && !n.is_read);
     setItems((current) => current.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+    if (wasUnread) setUnreadCount((current) => Math.max(0, current - 1));
     await crmSupabase.from('crm_notifications').update({ is_read: true }).eq('id', id);
   };
 
   const markAllRead = async () => {
-    const unreadIds = items.filter((n) => !n.is_read).map((n) => n.id);
-    if (!unreadIds.length) return;
+    if (!unreadCount) return;
     setItems((current) => current.map((n) => ({ ...n, is_read: true })));
-    await crmSupabase.from('crm_notifications').update({ is_read: true }).in('id', unreadIds);
+    setUnreadCount(0);
+    await crmSupabase.from('crm_notifications').update({ is_read: true })
+      .eq('is_read', false).neq('type', 'team_chat').neq('type', 'team_chat_group');
   };
 
-  return { items, loading, unreadCount: items.filter((n) => !n.is_read).length, markRead, markAllRead, reload: load };
+  return { items, loading, unreadCount, total, markRead, markAllRead, reload: load };
 }

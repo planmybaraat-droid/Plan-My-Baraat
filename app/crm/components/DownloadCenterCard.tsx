@@ -6,6 +6,7 @@ import type { Vendor } from '../lib/types';
 import BusinessCatalogDocument, { type CatalogDocumentRequest } from './BusinessCatalogDocument';
 import { DOWNLOAD_CENTER_PACKAGES } from './download-center-catalog';
 import { getVendors } from '../lib/supabase-crm';
+import { downloadCrmPdf } from '../lib/pdf-export';
 
 function requestFilename(request: CatalogDocumentRequest) {
   if (request.type === 'services') return 'All-Services.pdf';
@@ -42,28 +43,8 @@ export default function DownloadCenterCard({ vendors, canDownloadVendors = true,
       window.scrollTo(0, 0);
       await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       if (!documentRef.current) throw new Error('Document preview is unavailable.');
-      const pages = Array.from(documentRef.current.querySelectorAll<HTMLElement>('[data-pdf-page]'));
-      if (!pages.length) throw new Error('No document pages were generated.');
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-      const captureWindowHeight = Math.max(1123, documentRef.current.scrollHeight + 100);
-      for (let index = 0; index < pages.length; index += 1) {
-        const canvas = await html2canvas(pages[index], {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          logging: false,
-          windowWidth: 794,
-          windowHeight: captureWindowHeight,
-          scrollX: 0,
-          scrollY: 0,
-        });
-        if (index) pdf.addPage('a4', 'portrait');
-        pdf.addImage(canvas.toDataURL('image/jpeg', .94), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
-      }
       const filename = requestFilename(next);
-      pdf.setProperties({ title: filename.replace(/\.pdf$/i, '').replace(/-/g, ' '), subject: 'PlanMyBaraat business information', author: 'PlanMyBaraat', creator: 'PlanMyBaraat CRM' });
-      pdf.save(filename);
+      await downloadCrmPdf(documentRef.current, filename, { properties: { title: filename.replace(/\.pdf$/i, '').replace(/-/g, ' '), subject: 'PlanMyBaraat business information' } });
       setMessage(`${filename} downloaded.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'PDF download failed.');

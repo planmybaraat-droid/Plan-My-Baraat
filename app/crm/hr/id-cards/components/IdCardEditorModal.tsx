@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, Check, Download, Loader2, RefreshCw, Search, ShieldAlert, X } from 'lucide-react';
 import type { IdCardRecord, IdCardSettings, StaffRecord } from '../../../lib/types';
 import {
-  getIdCardSettings, getOrCreateDraft, getStaff, regenerateCard, updateStaffPhotoToo, uploadIdCardPhoto,
+  getIdCardSettings, getOrCreateDraft, getStaff, regenerateCard, updateIdCardPhoto, updateStaffPhotoToo, uploadIdCardPhoto,
 } from '../id-card-data';
 import { finalizeGeneratedCard } from '../id-card-data';
 import { buildSingleCardPdf } from '../id-card-pdf-export';
@@ -51,7 +51,7 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
       const [draft, loadedSettings] = await Promise.all([getOrCreateDraft(staff), getIdCardSettings()]);
       setCard({ ...draft, employee: staff });
       setSettings(loadedSettings);
-      setPhotoOverride(staff.photo_url || null);
+      setPhotoOverride(draft.front_snapshot?.photo_url || staff.photo_url || null);
       setLoading(false);
     })();
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -84,6 +84,10 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
     setError('');
     try {
       const url = await uploadIdCardPhoto(staff.id, file);
+      if (card) {
+        const updatedCard = await updateIdCardPhoto(card.id, staff, url);
+        setCard(updatedCard);
+      }
       setPhotoOverride(url);
       if (alsoUpdateProfile) await updateStaffPhotoToo(staff.id, url);
     } catch (err) {
@@ -114,7 +118,7 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
       const pdf = await buildSingleCardPdf({ root: documentRef.current, settings, cardNumber: card.card_number });
       const blob = pdf.output('blob');
       const actorName = staff.full_name; // best-effort label; real actor id comes from auth.uid() server-side
-      const updated = await finalizeGeneratedCard(card, staff, blob, settings, actorName);
+      const updated = await finalizeGeneratedCard(card, staff, blob, settings, actorName, photoOverride);
       setCard({ ...updated, employee: staff });
       onSaved();
     } catch (err) {

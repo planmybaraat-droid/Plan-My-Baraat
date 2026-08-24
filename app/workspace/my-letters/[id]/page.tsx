@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Download, ExternalLink, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, FileText, Loader2, Printer } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import CrmHeader from '../../../crm/components/CrmHeader';
 import { useSidebar } from '../../../crm/sidebar-context';
 import LetterDocument from '../../../crm/hr/letters/components/LetterDocument';
-import { buildLetterPdf } from '../../../crm/hr/letters/pdf-export';
+import { buildLetterPdf, printLetterPdf, saveLetterPdf } from '../../../crm/hr/letters/pdf-export';
 import type { EmployeeLetterRecord, LetterTemplate } from '../../../crm/lib/types';
 import { getMyLetter } from '../../lib/my-letters-data';
 
@@ -33,9 +33,19 @@ export default function MyLetterPreviewPage() {
     setBusy(true); setError('');
     try {
       const pdf = await buildLetterPdf(documentRef.current, { title: `${letter.letter_number} - ${letter.employee?.full_name}`, subject: template.label });
-      pdf.save(`${letter.letter_number}-${(letter.employee?.full_name || 'employee').replace(/[^a-z0-9]+/gi, '-')}.pdf`);
+      saveLetterPdf(pdf, `${letter.letter_number}-${(letter.employee?.full_name || 'employee').replace(/[^a-z0-9]+/gi, '-')}.pdf`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not download this letter.');
+    } finally { setBusy(false); }
+  };
+
+  const print = async () => {
+    if (!letter || !template || !documentRef.current) return;
+    setBusy(true); setError('');
+    try {
+      await printLetterPdf(documentRef.current, { title: `${letter.letter_number} - ${letter.employee?.full_name}`, subject: template.label });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not prepare this letter for printing.');
     } finally { setBusy(false); }
   };
 
@@ -53,6 +63,7 @@ export default function MyLetterPreviewPage() {
               <div className="min-w-0"><p className="truncate text-sm font-black text-gray-950">{template.label}</p><p className="mt-1 text-xs text-gray-400">{letter.letter_number} · Issued {new Date(letter.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p></div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={download} disabled={busy} className="agreement-action-button bg-gray-950 text-white disabled:opacity-50"><Download size={15} />{busy ? 'Preparing...' : 'Download PDF'}</button>
+                <button type="button" onClick={print} disabled={busy} className="agreement-action-button disabled:opacity-50"><Printer size={15} />Print</button>
                 {letter.file_url && <a href={letter.file_url} target="_blank" rel="noopener noreferrer" className="agreement-action-button"><ExternalLink size={15} />Open saved PDF</a>}
               </div>
             </div>

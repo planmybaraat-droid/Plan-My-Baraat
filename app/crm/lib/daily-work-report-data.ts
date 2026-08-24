@@ -83,6 +83,24 @@ export async function getMyDailyReportHistory(limit = 60) {
   return (data || []).map((row) => normalizeReport(row as Record<string, unknown>)!).filter(Boolean);
 }
 
+export async function getMyDailyReportHistoryPage(page = 1, pageSize = 10) {
+  const { data: { user } } = await crmSupabase.auth.getUser();
+  if (!user) throw new Error('Please sign in again.');
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.min(50, Math.max(10, pageSize));
+  const from = (safePage - 1) * safePageSize;
+  const { data, error, count } = await crmSupabase.from('crm_daily_work_reports')
+    .select(REPORT_SELECT, { count: 'exact' })
+    .eq('user_id', user.id)
+    .order('report_date', { ascending: false })
+    .range(from, from + safePageSize - 1);
+  if (error) throw new Error(error.message);
+  return {
+    rows: (data || []).map((row) => normalizeReport(row as Record<string, unknown>)!).filter(Boolean),
+    total: count || 0,
+  };
+}
+
 async function ensureMyDailyReport(reportDate: string) {
   const existing = await getMyDailyReport(reportDate);
   if (existing) return existing;

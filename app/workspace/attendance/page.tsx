@@ -8,6 +8,7 @@ import { crmSupabase } from '../../crm/lib/supabase-crm';
 import { getSelfieUrl } from '../lib/attendance-data';
 import type { AttendanceBreakRecord, AttendanceRecord } from '../../crm/lib/types';
 import { attendanceIsLocked, DEFAULT_ATTENDANCE_SETTINGS, getAttendanceSettings, type AttendanceSettings } from '../../crm/lib/attendance-policy';
+import TopPagination from '../components/TopPagination';
 
 const STATUS_STYLE: Record<string, string> = {
   Present: 'bg-emerald-50 text-emerald-700', Absent: 'bg-red-50 text-red-700', 'Half Day': 'bg-amber-50 text-amber-700',
@@ -48,29 +49,39 @@ export default function MyAttendancePage() {
   const [rows, setRows] = useState<AttendanceRecord[]>([]);
   const [settings, setSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [presentTotal, setPresentTotal] = useState(0);
 
   useEffect(() => {
     (async () => {
       // RLS already scopes this to rows this staff member punched themselves
       // (created_by = auth.uid()), so no extra filtering is needed here.
-      const [{ data }, loadedSettings] = await Promise.all([crmSupabase
+      setLoading(true);
+      const from = (page - 1) * pageSize;
+      const [{ data, count }, { count: presentCount }, loadedSettings] = await Promise.all([crmSupabase
         .from('crm_attendance')
-        .select('*,breaks:crm_attendance_breaks(*)')
+        .select('*,breaks:crm_attendance_breaks(*)', { count: 'exact' })
         .order('attendance_date', { ascending: false })
-        .limit(60), getAttendanceSettings().catch(() => DEFAULT_ATTENDANCE_SETTINGS)]);
+        .range(from, from + pageSize - 1), crmSupabase
+        .from('crm_attendance')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'Present'), getAttendanceSettings().catch(() => DEFAULT_ATTENDANCE_SETTINGS)]);
       setRows((data || []) as AttendanceRecord[]);
+      setTotal(count || 0);
+      setPresentTotal(presentCount || 0);
       setSettings(loadedSettings);
       setLoading(false);
     })();
-  }, []);
-
-  const present = rows.filter((r) => r.status === 'Present').length;
+  }, [page, pageSize]);
 
   return (
     <>
-      <CrmHeader title="My Attendance" subtitle={`${present} present day${present === 1 ? '' : 's'} recorded`} onMenuClick={open} notificationsHref="/workspace/notifications" />
+      <CrmHeader title="My Attendance" subtitle={`${presentTotal} present day${presentTotal === 1 ? '' : 's'} recorded`} onMenuClick={open} notificationsHref="/workspace/notifications" />
       <div className="p-4 sm:p-6">
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          {!loading && total > 0 && <TopPagination page={page} pageSize={pageSize} total={total} label="attendance records" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
           {loading ? (
             <div className="flex h-60 items-center justify-center"><span className="h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-red-600" /></div>
           ) : !rows.length ? (

@@ -15,6 +15,7 @@ import {
 } from '../hr-data';
 import { MONTH_NAMES, PAYROLL_STATUSES, createBlankPayroll, currency, monthLabel } from '../hr-config';
 import PayslipDocument from './components/PayslipDocument';
+import { buildCrmPdf } from '../../lib/pdf-export';
 
 const PAYROLL_STATUS_STYLES: Record<PayrollStatus, string> = {
   Paid: 'bg-emerald-50 text-emerald-700',
@@ -113,12 +114,7 @@ export default function PayrollPage() {
       setActivePayroll({ ...row, payslip });
       await new Promise(resolve => setTimeout(resolve, 80));
       if (!documentRef.current) return;
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
-      const page = documentRef.current.querySelector<HTMLElement>('[data-pdf-page]');
-      if (!page) return;
-      const canvas = await html2canvas(page, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, windowWidth: 794 });
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+      const pdf = await buildCrmPdf(documentRef.current, { properties: { title: payslip.payslip_number, subject: 'PlanMyBaraat Payslip' } });
       pdf.save(`${payslip.payslip_number}-${(row.employee?.full_name ?? 'unknown').replace(/[^a-z0-9]+/gi, '-')}.pdf`);
       const blob = pdf.output('blob');
       const { crmSupabase } = await import('../../lib/supabase-crm');

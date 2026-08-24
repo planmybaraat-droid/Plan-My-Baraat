@@ -23,6 +23,7 @@ import {
   appendAgreementActivity, deleteUploadedFile, duplicateAgreement, getAgreementById,
   getUploadedFiles, updateAgreement,
 } from '../../../crm/lib/supabase-crm';
+import { downloadCrmPdf } from '../../../crm/lib/pdf-export';
 import type { AgreementRecord, AgreementStatus, UploadedFile } from '../../../crm/lib/types';
 import AgreementDocument from '../../../crm/agreements/components/AgreementDocument';
 import { AGREEMENT_STATUSES, currency, formatAgreementDate } from '../../../crm/agreements/agreement-config';
@@ -68,27 +69,7 @@ export default function WorkspaceAgreementDetailPage() {
     if (!agreement || !documentRef.current) return;
     setBusy('download');
     try {
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
-      const pages = Array.from(documentRef.current.querySelectorAll<HTMLElement>('[data-pdf-page]'));
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-      for (let index = 0; index < pages.length; index += 1) {
-        const canvas = await html2canvas(pages[index], {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          logging: false,
-          windowWidth: 794,
-        });
-        if (index > 0) pdf.addPage('a4', 'portrait');
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
-      }
-      pdf.setProperties({
-        title: `${agreement.agreement_number} - ${agreement.client_name}`,
-        subject: 'PlanMyBaraat Baraat Management Contract',
-        author: 'PlanMyBaraat',
-        creator: 'PlanMyBaraat CRM',
-      });
-      pdf.save(`${agreement.agreement_number}-${agreement.client_name.replace(/[^a-z0-9]+/gi, '-')}.pdf`);
+      await downloadCrmPdf(documentRef.current, `${agreement.agreement_number}-${agreement.client_name.replace(/[^a-z0-9]+/gi, '-')}.pdf`, { properties: { title: `${agreement.agreement_number} - ${agreement.client_name}`, subject: 'PlanMyBaraat Baraat Management Contract' } });
       if (track) await appendAgreementActivity(agreement.id, {
         type: 'downloaded', title: 'PDF downloaded', detail: `Version ${agreement.version} exported as PDF.`, actor: agreement.sales_executive || 'CRM Staff',
       });

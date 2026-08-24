@@ -6,6 +6,34 @@ import { mmToPx } from './id-card-config';
 
 const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
+async function imageUrlToDataUrl(url: string): Promise<string> {
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+  const response = await fetch(url, { cache: 'no-store', credentials: 'omit' });
+  if (!response.ok) throw new Error('The uploaded ID-card photo could not be loaded for the PDF. Please upload it again.');
+  const blob = await response.blob();
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('The uploaded ID-card photo could not be prepared for the PDF.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function embedCardPhoto(root: HTMLElement): Promise<() => void> {
+  const image = root.querySelector<HTMLImageElement>('[data-card-photo="true"]');
+  if (!image) return () => undefined;
+  const originalSrc = image.getAttribute('src') || '';
+  if (!originalSrc || originalSrc.startsWith('data:') || originalSrc.startsWith('blob:')) return () => undefined;
+
+  image.src = await imageUrlToDataUrl(originalSrc);
+  await new Promise<void>((resolve, reject) => {
+    if (image.complete && image.naturalWidth > 0) { resolve(); return; }
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error('The uploaded ID-card photo could not be embedded in the PDF.'));
+  });
+  return () => { image.src = originalSrc; };
+}
+
 async function waitForCardAssets(root: HTMLElement) {
   const deadline = Date.now() + 6000;
   while (Date.now() < deadline) {
@@ -21,8 +49,9 @@ async function waitForCardAssets(root: HTMLElement) {
 // its real physical size — not a scaled screenshot of an unrelated layout.
 async function captureFace(faceEl: HTMLElement, scale: number) {
   const { default: html2canvas } = await import('html2canvas');
-  const width = Math.ceil(faceEl.offsetWidth || mmToPx(53.98));
-  const height = Math.ceil(faceEl.offsetHeight || mmToPx(85.6));
+  const bounds = faceEl.getBoundingClientRect();
+  const width = bounds.width || mmToPx(53.98);
+  const height = bounds.height || mmToPx(85.6);
   const canvas = await html2canvas(faceEl, {
     scale,
     width,
@@ -44,12 +73,12 @@ async function captureFace(faceEl: HTMLElement, scale: number) {
 }
 
 // html2canvas `scale` is a straight multiplier on the element's on-screen
-// CSS-px size (rendered at 96dpi). scale:4 => ~384dpi effective output —
-// well above the ~150dpi floor generally considered print-safe, and gives
+// CSS-px size (rendered at 96dpi). scale:5 => ~480dpi effective output —
+// comfortably above ordinary print requirements, and gives
 // the QR code and small caption text a crisp, non-fuzzy edge once printed
 // at true CR80 size. A card is small, so the extra capture cost is trivial
 // even at this scale (unlike full-A4 Letters/Payslips, which use scale:2).
-const CARD_CAPTURE_SCALE = 4;
+const CARD_CAPTURE_SCALE = 5;
 
 export interface SingleCardPdfInput {
   root: HTMLElement; // the IdCardDocument wrapper (contains both faces)
@@ -75,14 +104,19 @@ export async function buildSingleCardPdf({ root, settings, cardNumber }: SingleC
   const back = root.querySelector<HTMLElement>('[data-card-face="back"]');
   if (!front || !back) throw new Error('The card preview is unavailable.');
 
-  await waitForCardAssets(root);
-  await document.fonts.ready;
-  await nextPaint();
-  await nextPaint();
+  const restorePhoto = await embedCardPhoto(root);
+  try {
+    await waitForCardAssets(root);
+    await document.fonts.ready;
+    await nextPaint();
+    await nextPaint();
 
-  const frontImage = await captureFace(front, CARD_CAPTURE_SCALE);
-  const backImage = await captureFace(back, CARD_CAPTURE_SCALE);
-  return pdfFromFaceImages(frontImage, backImage, settings, `ID Card ${cardNumber}`);
+    const frontImage = await captureFace(front, CARD_CAPTURE_SCALE);
+    const backImage = await captureFace(back, CARD_CAPTURE_SCALE);
+    return pdfFromFaceImages(frontImage, backImage, settings, `ID Card ${cardNumber}`);
+  } finally {
+    restorePhoto();
+  }
 }
 
 // ─── Bulk / sheet export ────────────────────────────────────────────────────
@@ -111,6 +145,7 @@ async function captureOneCard(item: BulkCardItem, settings: IdCardSettings): Pro
   const { createElement } = await import('react');
   const { default: IdCardDocument } = await import('./components/IdCardDocument');
 
+  const embeddedPhotoUrl = item.photoUrl ? await imageUrlToDataUrl(item.photoUrl) : null;
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.left = '-10000px';
@@ -125,7 +160,7 @@ async function captureOneCard(item: BulkCardItem, settings: IdCardSettings): Pro
       const settle = () => { if (!settled) { settled = true; resolve(); } };
       root.render(
         createElement(IdCardDocument, {
-          card: item.card, staff: item.staff, settings, photoUrl: item.photoUrl,
+          card: item.card, staff: item.staff, settings, photoUrl: embeddedPhotoUrl,
           onQrReady: settle,
         }),
       );
