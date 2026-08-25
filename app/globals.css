@@ -2352,6 +2352,99 @@ display: grid;
   text-transform: uppercase;
 }
 
+/* Official HR letterhead. It intentionally reuses the same A4 header,
+   watermark, typography and footer language as generated HR letters, but it
+   never renders a QR/scanner or verification block. */
+.letterhead-doc-content {
+  position: relative;
+  min-height: 810px;
+  overflow: hidden;
+  padding-bottom: 150px;
+}
+
+.letterhead-watermark {
+  top: 49%;
+  opacity: 0.038;
+}
+
+.letterhead-custom-content {
+  position: relative;
+  z-index: 1;
+}
+
+.letterhead-recipient {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 24px 0 18px;
+  color: #686660;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.letterhead-recipient-name {
+  color: #171611;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.letterhead-subject {
+  margin-top: 16px;
+}
+
+.letterhead-body {
+  margin-top: 24px;
+}
+
+.letterhead-body p {
+  margin: 0 0 14px;
+  color: #292722;
+  font-size: 11.5px;
+  font-weight: 450;
+  line-height: 1.72;
+  text-align: justify;
+  white-space: pre-wrap;
+}
+
+.letterhead-doc-footer-main {
+  justify-content: flex-start;
+}
+
+/* Keep the footer contact labels and values on one optical baseline in both
+   the live preview and html2canvas PDF capture. */
+.letterhead-doc-footer .letter-doc-footer-contact {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  align-items: center;
+  column-gap: 28px;
+  min-height: 20px;
+}
+
+.letterhead-doc-footer .letter-doc-footer-contact > span {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 7px;
+  min-height: 14px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.letterhead-doc-footer .letterhead-contact-label {
+  display: block;
+  color: #111111;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.letterhead-doc-footer .letterhead-contact-text {
+  display: block;
+  font-size: 8.5px;
+}
+
 @media print {
   html,
   body {

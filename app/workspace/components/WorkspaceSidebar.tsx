@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, ListChecks, CalendarCheck2, UserSearch, FileText, ScrollText, Bell, UserCircle, Settings, X, ChevronRight, LogOut,
   ReceiptText, Package, CalendarDays, Lock, Handshake, ClipboardList,
-  BriefcaseBusiness,
+  BriefcaseBusiness, FilePenLine, Gauge,
 } from 'lucide-react';
 import { crmSupabase } from '../../crm/lib/supabase-crm';
 import { useCrmProfile, initialsFrom } from '../../crm/lib/useCrmProfile';
@@ -17,6 +17,7 @@ import { resolveModuleAccess, type ModuleKey } from '../../../lib/modulePermissi
 const MODULE_ICONS: Record<ModuleKey, typeof LayoutDashboard> = {
   tasks: ListChecks,
   attendance: CalendarCheck2,
+  performance: Gauge,
   leave: CalendarDays,
   leads: UserSearch,
   quotations: FileText,
@@ -27,11 +28,13 @@ const MODULE_ICONS: Record<ModuleKey, typeof LayoutDashboard> = {
   calendar: CalendarDays,
   eventJobs: BriefcaseBusiness,
   myLetters: FileText,
+  letterhead: FilePenLine,
 };
 
 const MODULE_NAV: { key: ModuleKey; href: string; label: string }[] = [
   { key: 'tasks', href: '/workspace/tasks', label: 'My Tasks' },
   { key: 'attendance', href: '/workspace/attendance', label: 'My Attendance' },
+  { key: 'performance', href: '/workspace/performance', label: 'My Performance' },
   { key: 'leave', href: '/workspace/leave', label: 'Leave Management' },
   { key: 'leads', href: '/workspace/leads', label: 'My Leads' },
   { key: 'quotations', href: '/workspace/quotations', label: 'My Quotations' },
@@ -42,6 +45,7 @@ const MODULE_NAV: { key: ModuleKey; href: string; label: string }[] = [
   { key: 'calendar', href: '/workspace/event-calendar', label: 'Event Calendar' },
   { key: 'eventJobs', href: '/workspace/event-jobs', label: 'Event Jobs' },
   { key: 'myLetters', href: '/workspace/my-letters', label: 'My Letters' },
+  { key: 'letterhead', href: '/workspace/letterhead', label: 'Letterhead' },
 ];
 
 const UTILITY_NAV = [

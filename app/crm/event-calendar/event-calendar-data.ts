@@ -1,5 +1,9 @@
 import { crmSupabase } from '../lib/supabase-crm';
 import type { AgreementRecord, InvoiceRecord, StaffRecord } from '../lib/types';
+import { getCompanyHolidaysForYears, type CompanyHoliday } from '../lib/company-holidays';
+
+export type HolidayEvent = CompanyHoliday;
+export { getCompanyHolidaysForYears };
 
 export interface BirthdayEvent {
   staff_id: string;

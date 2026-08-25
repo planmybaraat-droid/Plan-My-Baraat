@@ -9,6 +9,7 @@ export type CrmSectionKey =
   | 'staff'
   | 'tasks'
   | 'attendance'
+  | 'performance'
   | 'dailyWorkReports'
   | 'leaveManagement'
   | 'hrOverview'
@@ -17,7 +18,8 @@ export type CrmSectionKey =
   | 'salaryPayroll'
   | 'eventCalendar'
   | 'eventJobs'
-  | 'idCards';
+  | 'idCards'
+  | 'letterhead';
 
 export interface CrmSectionDef {
   key: CrmSectionKey;
@@ -30,6 +32,7 @@ export const CRM_SECTIONS: CrmSectionDef[] = [
   { key: 'staff', label: 'Staff', description: 'View and edit staff profiles', path: '/crm/staff' },
   { key: 'tasks', label: 'Tasks', description: 'Assign and track tasks company-wide', path: '/crm/tasks' },
   { key: 'attendance', label: 'Attendance', description: 'View and manage attendance records', path: '/crm/attendance' },
+  { key: 'performance', label: 'Staff Performance & Incentives', description: 'Review live staff scores and approve monthly incentives', path: '/crm/performance' },
   { key: 'dailyWorkReports', label: 'Daily Work Reports', description: 'Review date-wise work reported by staff', path: '/crm/daily-work-reports' },
   { key: 'leaveManagement', label: 'Leave Management', description: 'Review and decide staff leave requests', path: '/crm/leave' },
   { key: 'hrOverview', label: 'HR Overview', description: 'View the HR summary dashboard', path: '/crm/hr' },
@@ -39,6 +42,7 @@ export const CRM_SECTIONS: CrmSectionDef[] = [
   { key: 'eventCalendar', label: 'Event Calendar', description: 'View the event calendar', path: '/crm/event-calendar' },
   { key: 'eventJobs', label: 'Event Jobs', description: 'Monitor and manage confirmed event workflows', path: '/crm/event-jobs' },
   { key: 'idCards', label: 'ID Cards', description: 'Create, generate and print employee ID cards', path: '/crm/hr/id-cards' },
+  { key: 'letterhead', label: 'Letterhead', description: 'Create and download official company letterhead PDFs', path: '/crm/hr/letterhead' },
 ];
 
 export const CRM_SECTION_KEYS: CrmSectionKey[] = CRM_SECTIONS.map((m) => m.key);

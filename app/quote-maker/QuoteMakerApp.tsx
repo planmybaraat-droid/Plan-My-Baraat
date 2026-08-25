@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, Check, IndianRupee, LogOut, Phone, Printer, RotateCcw, User } from 'lucide-react';
+import { CalendarDays, Check, Files, IndianRupee, Loader2, LogOut, Phone, Printer, RotateCcw, Save, User } from 'lucide-react';
 import { MASTER_SERVICES } from '@/lib/businessCatalog';
+import QuoteHistory from './QuoteHistory';
+import type { QuoteMakerQuote, QuoteMakerQuotePayload } from './quote-types';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value || 0);
@@ -24,6 +26,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 export default function QuoteMakerApp() {
   const router = useRouter();
+  const [view, setView] = useState<'create' | 'history'>('create');
   const [clientName, setClientName] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [clientNumber, setClientNumber] = useState('');
@@ -33,6 +36,10 @@ export default function QuoteMakerApp() {
   const [transportCost, setTransportCost] = useState('');
   const [discount, setDiscount] = useState('');
   const [loggingOut, setLoggingOut] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [savedQuote, setSavedQuote] = useState<QuoteMakerQuote | null>(null);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   const selectedServices = useMemo(() => Object.keys(checked).filter(name => checked[name]), [checked]);
 
@@ -45,8 +52,7 @@ export default function QuoteMakerApp() {
     [finalPrice, transportCost, discount]
   );
 
-  const reset = () => {
-    if (!window.confirm('Clear this quote and start a fresh one?')) return;
+  const clearQuote = () => {
     setClientName('');
     setEventDate('');
     setClientNumber('');
@@ -55,9 +61,56 @@ export default function QuoteMakerApp() {
     setFinalPrice('');
     setTransportCost('');
     setDiscount('');
+    setSaveError('');
+    setSavedQuote(null);
   };
 
-  const print = () => window.print();
+  const reset = () => {
+    if (!window.confirm('Clear this quote and start a fresh one?')) return;
+    clearQuote();
+  };
+
+  const quotePayload = (): QuoteMakerQuotePayload => ({
+    id: savedQuote?.id,
+    client_name: clientName,
+    event_date: eventDate,
+    client_number: clientNumber,
+    selected_services: selectedServices.map((name) => ({
+      name,
+      category: MASTER_SERVICES.find((service) => service.name === name)?.category || 'Other',
+      quantity_or_note: quantities[name]?.trim() || '',
+    })),
+    final_price: Number(finalPrice) || 0,
+    transport_cost: Number(transportCost) || 0,
+    discount: Number(discount) || 0,
+  });
+
+  const saveQuote = async () => {
+    setSaving(true);
+    setSaveError('');
+    try {
+      const response = await fetch('/quote-maker/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(quotePayload()),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || 'Unable to save this quote.');
+      setSavedQuote(body.quote);
+      setHistoryRefreshKey((current) => current + 1);
+      return body.quote as QuoteMakerQuote;
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : 'Unable to save this quote.');
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const print = async () => {
+    const quote = await saveQuote();
+    if (quote) window.setTimeout(() => window.print(), 50);
+  };
 
   const logout = async () => {
     setLoggingOut(true);
@@ -83,19 +136,26 @@ export default function QuoteMakerApp() {
             <img src="/logo.png" alt="PlanMyBaraat" className="h-8 w-auto object-contain" />
             <div>
               <h1 className="text-sm font-black text-gray-950">Quote Maker</h1>
-              <p className="text-[11px] text-gray-400">Live call scratchpad — nothing here is saved</p>
+              <p className="text-[11px] text-gray-400">Create, save and review customer quotes</p>
             </div>
           </div>
-          <button
-            onClick={logout}
-            disabled={loggingOut}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 hover:border-red-200 hover:text-red-600 disabled:opacity-50"
-          >
-            <LogOut size={14} /> {loggingOut ? 'Signing out…' : 'Sign out'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setView(view === 'create' ? 'history' : 'create')} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${view === 'history' ? 'border-red-200 bg-red-50 text-red-700' : 'border-gray-200 text-gray-600 hover:border-red-200 hover:text-red-600'}`}>
+              <Files size={14} /> <span className="hidden sm:inline">{view === 'create' ? 'All quotes' : 'Create quote'}</span>
+            </button>
+            <button
+              onClick={logout}
+              disabled={loggingOut}
+              aria-label="Sign out"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 hover:border-red-200 hover:text-red-600 disabled:opacity-50"
+            >
+              <LogOut size={14} /> <span className="hidden sm:inline">{loggingOut ? 'Signing out…' : 'Sign out'}</span>
+            </button>
+          </div>
         </div>
       </header>
 
+      {view === 'create' ? (
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <h2 className="text-xs font-black uppercase tracking-widest text-gray-400">Client details</h2>
@@ -183,15 +243,22 @@ export default function QuoteMakerApp() {
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2">
+        {saveError ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">{saveError}</div> : null}
+        {savedQuote ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800">Saved successfully as <b>{savedQuote.quote_number}</b>. Further saves update this same quote.</div> : null}
+
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <button onClick={reset} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:border-red-200 hover:text-red-600">
             <RotateCcw size={14} /> Start new quote
           </button>
-          <button onClick={print} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700">
-            <Printer size={14} /> Print / Save as PDF
+          <button onClick={saveQuote} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-2.5 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {savedQuote ? 'Update quote' : 'Save quote'}
+          </button>
+          <button onClick={print} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50">
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />} Save &amp; Print
           </button>
         </div>
       </main>
+      ) : <QuoteHistory onCreateNew={() => { clearQuote(); setView('create'); }} refreshKey={historyRefreshKey} />}
     </div>
 
       {/* Print-only summary — hidden on screen, shown only by @media print

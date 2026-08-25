@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Building2, Tag, Package, Calculator, Settings, ChevronRight, HelpCircle, LogOut, ReceiptText, FileText, ScrollText, UserCog, CalendarCheck2, ListChecks, ClipboardList
+  Building2, Tag, Package, Calculator, Settings, ChevronRight, HelpCircle, LogOut, ReceiptText, FileText, ScrollText, UserCog, CalendarCheck2, ListChecks, ClipboardList, FilePenLine
 } from 'lucide-react';
 import CrmHeader from '../components/CrmHeader';
 import { useSidebar } from '../sidebar-context';
@@ -39,6 +39,7 @@ export default function MorePage() {
     { href: '/crm/leave', label: 'Leave Management', desc: 'Review and decide staff leave requests', icon: CalendarCheck2, sectionKey: 'leaveManagement' },
     { href: '/crm/hr', label: 'HR Overview', desc: 'Company-wide HR summary', icon: UserCog, sectionKey: 'hrOverview' },
     { href: '/crm/hr/letters', label: 'Letters', desc: 'Generate and manage employee letters', icon: ScrollText, sectionKey: 'letters' },
+    { href: '/crm/hr/letterhead', label: 'Letterhead', desc: 'Create official blank or custom letterhead PDFs', icon: FilePenLine, sectionKey: 'letterhead' },
     { href: '/crm/hr/kyc', label: 'KYC & Documents', desc: 'Manage employee KYC documents', icon: FileText, sectionKey: 'kyc' },
     { href: '/crm/hr/payroll', label: 'Salary & Payroll', desc: 'Manage salary records and payroll', icon: ReceiptText, sectionKey: 'salaryPayroll' },
     { href: '/crm/event-calendar', label: 'Event Calendar', desc: 'View confirmed bookings by date', icon: CalendarCheck2, sectionKey: 'eventCalendar' },

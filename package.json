@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ishubhamx/panchangam-js": "3.0.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.108.2",
     "@types/nodemailer": "^8.0.1",

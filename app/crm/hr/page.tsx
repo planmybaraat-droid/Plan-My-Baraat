@@ -1,11 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, FileSignature, FolderCheck, Wallet } from 'lucide-react';
+import { ArrowRight, FilePenLine, FileSignature, FolderCheck, Wallet } from 'lucide-react';
 import CrmHeader from '../components/CrmHeader';
 import { useSidebar } from '../sidebar-context';
 
 const HR_SECTIONS = [
+  {
+    href: '/crm/hr/letterhead',
+    icon: FilePenLine,
+    color: 'bg-rose-50 text-rose-600',
+    title: 'Letterhead',
+    description: 'Create blank or custom official company letterheads and download print-ready A4 PDFs without a scanner or QR code.',
+  },
   {
     href: '/crm/hr/letters',
     icon: FileSignature,
@@ -34,9 +41,9 @@ export default function HrHomePage() {
 
   return (
     <>
-      <CrmHeader title="HR Management" subtitle="Letters, KYC & documents, salary and payroll — all connected" onMenuClick={open} />
+      <CrmHeader title="HR Management" subtitle="Letters, letterhead, KYC, documents and payroll — all connected" onMenuClick={open} />
       <div className="p-4 sm:p-6">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {HR_SECTIONS.map(({ href, icon: Icon, color, title, description }) => (
             <Link
               key={href}

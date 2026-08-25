@@ -10,6 +10,7 @@
 export type ModuleKey =
   | 'tasks'
   | 'attendance'
+  | 'performance'
   | 'leave'
   | 'leads'
   | 'quotations'
@@ -19,7 +20,8 @@ export type ModuleKey =
   | 'packages'
   | 'calendar'
   | 'eventJobs'
-  | 'myLetters';
+  | 'myLetters'
+  | 'letterhead';
 
 export interface ModuleDef {
   key: ModuleKey;
@@ -32,6 +34,7 @@ export interface ModuleDef {
 export const WORKSPACE_MODULES: ModuleDef[] = [
   { key: 'tasks', label: 'My Tasks', description: 'Tasks assigned to this staff member', path: '/workspace/tasks' },
   { key: 'attendance', label: 'My Attendance', description: 'Punch in/out and attendance history', path: '/workspace/attendance' },
+  { key: 'performance', label: 'My Performance', description: 'View live performance score and estimated incentive', path: '/workspace/performance' },
   { key: 'leave', label: 'Leave Management', description: 'Request leave and track approval status', path: '/workspace/leave' },
   { key: 'leads', label: 'My Leads', description: 'Customer leads assigned to this staff member', path: '/workspace/leads' },
   { key: 'quotations', label: 'My Quotations', description: 'View and create client quotations', path: '/workspace/quotations', canCreate: true },
@@ -42,6 +45,7 @@ export const WORKSPACE_MODULES: ModuleDef[] = [
   { key: 'calendar', label: 'Event Calendar', description: 'View confirmed events on the shared calendar', path: '/workspace/event-calendar' },
   { key: 'eventJobs', label: 'My Event Jobs', description: 'View assigned event workflows and complete operational stages', path: '/workspace/event-jobs' },
   { key: 'myLetters', label: 'My Letters', description: 'View and download letters issued to this staff member', path: '/workspace/my-letters' },
+  { key: 'letterhead', label: 'Letterhead', description: 'Create and download official company letterhead PDFs', path: '/workspace/letterhead' },
 ];
 
 export const MODULE_KEYS: ModuleKey[] = WORKSPACE_MODULES.map((m) => m.key);
@@ -84,4 +88,3 @@ export function accessibleModules(
 export function defaultModuleAccess(): Required<ModuleAccessMap> {
   return MODULE_KEYS.reduce((acc, key) => ({ ...acc, [key]: false }), {} as Required<ModuleAccessMap>);
 }
-

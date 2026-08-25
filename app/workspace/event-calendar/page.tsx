@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Package, Phone, ReceiptText, Loader2, Cake } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Package, Phone, ReceiptText, Loader2, Cake, PartyPopper } from 'lucide-react';
 import CrmHeader from '../../crm/components/CrmHeader';
 import { useSidebar } from '../../crm/sidebar-context';
-import { getConfirmedEvents, getStaffBirthdaysForYears } from '../../crm/event-calendar/event-calendar-data';
-import type { CalendarEvent, BirthdayEvent } from '../../crm/event-calendar/event-calendar-data';
+import { getCompanyHolidaysForYears, getConfirmedEvents, getStaffBirthdaysForYears } from '../../crm/event-calendar/event-calendar-data';
+import type { CalendarEvent, BirthdayEvent, HolidayEvent } from '../../crm/event-calendar/event-calendar-data';
 
 const INVOICE_STYLE: Record<string, string> = {
   Paid: 'bg-emerald-50 text-emerald-700',
@@ -16,13 +16,14 @@ const INVOICE_STYLE: Record<string, string> = {
   Cancelled: 'bg-gray-100 text-gray-500',
 };
 
-type ListItem = ({ kind: 'event' } & CalendarEvent) | ({ kind: 'birthday' } & BirthdayEvent);
+type ListItem = ({ kind: 'event' } & CalendarEvent) | ({ kind: 'birthday' } & BirthdayEvent) | ({ kind: 'holiday' } & HolidayEvent);
 
 export default function WorkspaceEventCalendarPage() {
   const { open } = useSidebar();
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [birthdays, setBirthdays] = useState<BirthdayEvent[]>([]);
+  const [holidays, setHolidays] = useState<HolidayEvent[]>([]);
   const [monthCursor, setMonthCursor] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -37,7 +38,7 @@ export default function WorkspaceEventCalendarPage() {
   // year boundary while navigating months.
   useEffect(() => {
     (async () => {
-      try { setBirthdays(await getStaffBirthdaysForYears([monthCursor.year - 1, monthCursor.year, monthCursor.year + 1])); }
+      try { const years=[monthCursor.year - 1, monthCursor.year, monthCursor.year + 1]; const [birthdayRows,holidayRows]=await Promise.all([getStaffBirthdaysForYears(years),getCompanyHolidaysForYears(years)]); setBirthdays(birthdayRows); setHolidays(holidayRows); }
       catch (err) { console.error(err); }
     })();
   }, [monthCursor.year]);
@@ -54,19 +55,25 @@ export default function WorkspaceEventCalendarPage() {
     return map;
   }, [birthdays]);
 
+  const holidaysByDate = useMemo(() => {
+    const map: Record<string, HolidayEvent[]> = {};
+    holidays.forEach((holiday) => { (map[holiday.holiday_date] ||= []).push(holiday); });
+    return map;
+  }, [holidays]);
+
   const calendarDays = useMemo(() => {
     const { year, month } = monthCursor;
     const firstWeekday = new Date(year, month, 1).getDay();
     const totalDays = new Date(year, month + 1, 0).getDate();
     const todayKey = new Date().toISOString().slice(0, 10);
-    const cells: { key: string; day: number; eventCount: number; birthdayCount: number; isToday: boolean }[] = [];
-    for (let i = 0; i < firstWeekday; i++) cells.push({ key: `pad-${i}`, day: 0, eventCount: 0, birthdayCount: 0, isToday: false });
+    const cells: { key: string; day: number; eventCount: number; birthdayCount: number; holidayCount: number; isToday: boolean }[] = [];
+    for (let i = 0; i < firstWeekday; i++) cells.push({ key: `pad-${i}`, day: 0, eventCount: 0, birthdayCount: 0, holidayCount: 0, isToday: false });
     for (let d = 1; d <= totalDays; d++) {
       const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      cells.push({ key, day: d, eventCount: (eventsByDate[key] || []).length, birthdayCount: (birthdaysByDate[key] || []).length, isToday: key === todayKey });
+      cells.push({ key, day: d, eventCount: (eventsByDate[key] || []).length, birthdayCount: (birthdaysByDate[key] || []).length, holidayCount: (holidaysByDate[key] || []).length, isToday: key === todayKey });
     }
     return cells;
-  }, [monthCursor, eventsByDate, birthdaysByDate]);
+  }, [monthCursor, eventsByDate, birthdaysByDate, holidaysByDate]);
 
   const monthLabel = new Date(monthCursor.year, monthCursor.month, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   const changeMonth = (delta: number) => { setSelectedDate(null); setMonthCursor((c) => { const d = new Date(c.year, c.month + delta, 1); return { year: d.getFullYear(), month: d.getMonth() }; }); };
@@ -76,24 +83,26 @@ export default function WorkspaceEventCalendarPage() {
   const listItems: ListItem[] = useMemo(() => {
     if (selectedDate) {
       return [
+        ...(holidaysByDate[selectedDate] || []).map((holiday) => ({ kind: 'holiday' as const, ...holiday })),
         ...(birthdaysByDate[selectedDate] || []).map((b) => ({ kind: 'birthday' as const, ...b })),
         ...(eventsByDate[selectedDate] || []).map((e) => ({ kind: 'event' as const, ...e })),
       ];
     }
     const upcomingEvents = events.filter((e) => e.event_date >= todayKey).map((e) => ({ kind: 'event' as const, ...e }));
     const upcomingBirthdays = birthdays.filter((b) => b.date >= todayKey).map((b) => ({ kind: 'birthday' as const, ...b }));
-    return [...upcomingEvents, ...upcomingBirthdays].sort((a, b) => {
-      const da = a.kind === 'event' ? a.event_date : a.date;
-      const db = b.kind === 'event' ? b.event_date : b.date;
+    const upcomingHolidays = holidays.filter((holiday) => holiday.holiday_date >= todayKey).map((holiday) => ({ kind: 'holiday' as const, ...holiday }));
+    return [...upcomingEvents, ...upcomingBirthdays, ...upcomingHolidays].sort((a, b) => {
+      const da = a.kind === 'event' ? a.event_date : a.kind === 'birthday' ? a.date : a.holiday_date;
+      const db = b.kind === 'event' ? b.event_date : b.kind === 'birthday' ? b.date : b.holiday_date;
       return da.localeCompare(db);
     });
-  }, [selectedDate, events, birthdays, eventsByDate, birthdaysByDate, todayKey]);
+  }, [selectedDate, events, birthdays, holidays, eventsByDate, birthdaysByDate, holidaysByDate, todayKey]);
 
   return (
     <>
       <CrmHeader
         title="Event Calendar"
-        subtitle="Confirmed bookings and staff birthdays"
+        subtitle="Confirmed bookings, staff birthdays and company holidays"
         onMenuClick={open}
       />
       <div className="p-4 sm:p-6">
@@ -121,14 +130,15 @@ export default function WorkspaceEventCalendarPage() {
                     key={c.key}
                     disabled={c.day === 0}
                     onClick={() => setSelectedDate(selectedDate === c.key ? null : c.key)}
-                    className={`flex aspect-square flex-col items-center justify-center rounded-xl border text-sm transition-colors ${c.day === 0 ? 'invisible' : ''} ${selectedDate === c.key ? 'border-red-600 bg-red-50' : c.isToday ? 'border-red-200 bg-white' : 'border-transparent hover:bg-gray-50'}`}
+                    className={`flex aspect-square flex-col items-center justify-center rounded-xl border text-sm transition-colors ${c.day === 0 ? 'invisible' : ''} ${selectedDate === c.key ? 'border-red-600 bg-red-50' : c.holidayCount ? 'border-amber-100 bg-amber-50/70' : c.isToday ? 'border-red-200 bg-white' : 'border-transparent hover:bg-gray-50'}`}
                   >
                     <span className={`font-bold ${c.isToday ? 'text-red-600' : 'text-gray-700'}`}>{c.day}</span>
-                    {(c.eventCount > 0 || c.birthdayCount > 0) && (
+                    {(c.eventCount > 0 || c.birthdayCount > 0 || c.holidayCount > 0) && (
                       <span className="mt-1 flex items-center gap-0.5">
                         {Array.from({ length: Math.min(c.eventCount, 3) }).map((_, i) => <i key={`e${i}`} className="h-1.5 w-1.5 rounded-full bg-red-500" />)}
                         {c.eventCount > 3 && <span className="text-[8px] font-black text-red-500">+</span>}
                         {c.birthdayCount > 0 && <Cake size={10} className="text-pink-500" />}
+                        {c.holidayCount > 0 && <PartyPopper size={10} className="text-amber-600" />}
                       </span>
                     )}
                   </button>
@@ -138,6 +148,7 @@ export default function WorkspaceEventCalendarPage() {
               <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-gray-100 pt-4 text-[11px] font-semibold text-gray-500">
                 <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-red-500" /> Confirmed event day</span>
                 <span className="flex items-center gap-1.5"><Cake size={12} className="text-pink-500" /> Staff birthday</span>
+                <span className="flex items-center gap-1.5"><PartyPopper size={12} className="text-amber-600" /> Company holiday</span>
                 <span className="ml-auto flex items-center gap-1"><CalendarDays size={13} className="text-gray-400" /> {events.length} confirmed events total</span>
               </div>
             </div>
@@ -157,7 +168,12 @@ export default function WorkspaceEventCalendarPage() {
                     <p className="mt-3 text-sm font-bold text-gray-400">Nothing {selectedDate ? 'on this day' : 'coming up'}</p>
                     <p className="mt-1 text-[11px] text-gray-400">Events appear once an agreement is signed and an invoice is raised.</p>
                   </div>
-                ) : listItems.map((item) => item.kind === 'birthday' ? (
+                ) : listItems.map((item) => item.kind === 'holiday' ? (
+                  <div key={`holiday-${item.holiday_date}-${item.holiday_key}`} className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5">
+                    <div className="flex items-center justify-between gap-2"><p className="flex items-center gap-1.5 truncate text-sm font-bold text-gray-900"><PartyPopper size={14} className="text-amber-600" /> {item.name}</p><span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase text-amber-800">Holiday</span></div>
+                    <p className="mt-1 text-[11px] font-semibold text-amber-700">{new Date(`${item.holiday_date}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  </div>
+                ) : item.kind === 'birthday' ? (
                   <div key={`bday-${item.staff_id}-${item.date}`} className="rounded-xl border border-pink-100 bg-pink-50/40 p-3.5">
                     <div className="flex items-center justify-between gap-2">
                       <p className="flex items-center gap-1.5 truncate text-sm font-bold text-gray-900"><Cake size={14} className="text-pink-500" /> {item.full_name}</p>

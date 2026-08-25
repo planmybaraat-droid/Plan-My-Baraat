@@ -6,6 +6,7 @@ import {
   Users, UserSearch, ClipboardCheck, ReceiptText, Loader2, CalendarDays,
   ChevronLeft, ChevronRight, UserPlus, Cake, UserCog, ListChecks,
   CheckCircle2, Loader as LoaderIcon, Hourglass, AlertCircle, CalendarRange,
+  PartyPopper,
 } from 'lucide-react';
 import CrmHeader from './components/CrmHeader';
 import { useSidebar } from './sidebar-context';
@@ -15,8 +16,8 @@ import { getAgreements } from './lib/supabase-crm';
 import { getInvoices } from './invoices/invoice-data';
 import { effectiveInvoiceStatus } from './invoices/invoice-config';
 import { getStaff } from './staff/staff-data';
-import { deriveConfirmedEvents, getStaffBirthdaysForYears } from './event-calendar/event-calendar-data';
-import type { CalendarEvent, BirthdayEvent } from './event-calendar/event-calendar-data';
+import { deriveConfirmedEvents, getCompanyHolidaysForYears, getStaffBirthdaysForYears } from './event-calendar/event-calendar-data';
+import type { CalendarEvent, BirthdayEvent, HolidayEvent } from './event-calendar/event-calendar-data';
 import type { StaffRecord } from './lib/types';
 import { useCrmProfile } from './lib/useCrmProfile';
 import { isCrmManagerRole, resolveSectionAccess } from '../../lib/crmSectionPermissions';
@@ -67,6 +68,7 @@ export default function CrmDashboard() {
   const [taskCounts, setTaskCounts] = useState({ completed: 0, inProgress: 0, pending: 0, overdue: 0, total: 0 });
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [birthdays, setBirthdays] = useState<BirthdayEvent[]>([]);
+  const [holidays, setHolidays] = useState<HolidayEvent[]>([]);
   const [monthCursor, setMonthCursor] = useState(() => new Date());
 
   useEffect(() => {
@@ -142,13 +144,17 @@ export default function CrmDashboard() {
       }
     }
     load();
+  }, [isManager, canReviewLeave]);
+
+  useEffect(() => {
     (async () => {
       try {
-        const year = new Date().getFullYear();
-        setBirthdays(await getStaffBirthdaysForYears([year - 1, year, year + 1]));
+        const year=monthCursor.getFullYear(); const years=[year-1,year,year+1];
+        const [birthdayRows,holidayRows]=await Promise.all([getStaffBirthdaysForYears(years),getCompanyHolidaysForYears(years)]);
+        setBirthdays(birthdayRows); setHolidays(holidayRows);
       } catch (err) { console.error(err); }
     })();
-  }, [isManager, canReviewLeave]);
+  }, [monthCursor]);
 
   const monthDays = useMemo(() => {
     const first = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
@@ -173,10 +179,17 @@ export default function CrmDashboard() {
     return map;
   }, [birthdays]);
 
+  const holidaysByDate = useMemo(() => {
+    const map: Record<string, HolidayEvent[]> = {};
+    holidays.forEach((holiday) => { (map[holiday.holiday_date] ||= []).push(holiday); });
+    return map;
+  }, [holidays]);
+
   const monthLabel = monthCursor.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   const monthPrefix = `${monthCursor.getFullYear()}-${String(monthCursor.getMonth() + 1).padStart(2, '0')}`;
   const monthEvents = events.filter((event) => event.event_date.startsWith(monthPrefix)).sort((a, b) => a.event_date.localeCompare(b.event_date));
   const monthBirthdays = birthdays.filter((birthday) => birthday.date.startsWith(monthPrefix)).sort((a, b) => a.date.localeCompare(b.date));
+  const monthHolidays = holidays.filter((holiday) => holiday.holiday_date.startsWith(monthPrefix)).sort((a, b) => a.holiday_date.localeCompare(b.holiday_date));
   const todayKey = dateKey(new Date());
   const shiftMonth = (delta: number) => setMonthCursor((cursor) => new Date(cursor.getFullYear(), cursor.getMonth() + delta, 1));
 
@@ -339,7 +352,7 @@ export default function CrmDashboard() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3.5 sm:px-5">
                 <div>
                   <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900"><CalendarDays size={16} className="text-red-500" /> Event Calendar</h3>
-                  <p className="mt-0.5 text-[11px] font-medium text-gray-400">Confirmed events and team birthdays</p>
+                  <p className="mt-0.5 text-[11px] font-medium text-gray-400">Confirmed events, team birthdays and company holidays</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => setMonthCursor(new Date())} className="hidden rounded-lg border border-gray-200 px-2.5 py-1.5 text-[11px] font-bold text-gray-500 hover:bg-gray-50 sm:block">Today</button>
@@ -360,21 +373,28 @@ export default function CrmDashboard() {
                   const key = dateKey(day);
                   const dayEvents = eventsByDate[key] || [];
                   const dayBirthdays = birthdaysByDate[key] || [];
+                  const dayHolidays = holidaysByDate[key] || [];
                   const isToday = key === todayKey;
                   const inMonth = day.getMonth() === monthCursor.getMonth();
+                  const visibleHolidayCount = Math.min(1, dayHolidays.length);
                   const visibleBirthdayCount = Math.min(1, dayBirthdays.length);
-                  const visibleEventCount = Math.min(dayBirthdays.length ? 1 : 2, dayEvents.length);
-                  const hiddenItems = Math.max(0, dayEvents.length + dayBirthdays.length - visibleBirthdayCount - visibleEventCount);
+                  const visibleEventCount = Math.min(dayBirthdays.length || dayHolidays.length ? 1 : 2, dayEvents.length);
+                  const hiddenItems = Math.max(0, dayEvents.length + dayBirthdays.length + dayHolidays.length - visibleHolidayCount - visibleBirthdayCount - visibleEventCount);
                   return (
                     <div key={key} className={`min-h-[4.8rem] min-w-0 p-1.5 sm:min-h-[5.6rem] sm:p-2 ${inMonth ? 'bg-white' : 'bg-gray-50/80'}`}>
                       <div className={`mb-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black sm:h-6 sm:w-6 sm:text-[11px] ${isToday ? 'bg-red-600 text-white shadow-sm' : inMonth ? 'text-gray-700' : 'text-gray-300'}`}>{day.getDate()}</div>
                       <div className="space-y-1">
+                        {dayHolidays.slice(0, 1).map((holiday) => (
+                          <div key={`h-${holiday.holiday_key}`} title={holiday.name} className="flex items-center gap-1 truncate rounded bg-amber-50 px-1 py-0.5 text-[8px] font-bold text-amber-800 sm:text-[9px]">
+                            <PartyPopper size={8} className="shrink-0" /><span className="truncate">{holiday.name}</span>
+                          </div>
+                        ))}
                         {dayBirthdays.slice(0, 1).map((birthday) => (
                           <div key={`b-${birthday.staff_id}`} title={`${birthday.full_name}'s birthday`} className="flex items-center gap-1 truncate rounded bg-pink-50 px-1 py-0.5 text-[8px] font-bold text-pink-700 sm:text-[9px]">
                             <Cake size={8} className="shrink-0" /><span className="truncate">{birthday.full_name}</span>
                           </div>
                         ))}
-                        {dayEvents.slice(0, dayBirthdays.length ? 1 : 2).map((event, index) => (
+                        {dayEvents.slice(0, dayBirthdays.length || dayHolidays.length ? 1 : 2).map((event, index) => (
                           <Link key={event.agreement_id} title={event.groom_name || event.client_name} href={`/crm/agreements/${event.agreement_id}`} className={`block truncate rounded border px-1 py-0.5 text-[8px] font-bold sm:text-[9px] ${EVENT_CHIP_COLORS[index % EVENT_CHIP_COLORS.length]}`}>
                             {event.groom_name || event.client_name}
                           </Link>
@@ -392,24 +412,28 @@ export default function CrmDashboard() {
                 <p className="text-[10px] font-black uppercase tracking-[0.14em] text-red-500">Month at a glance</p>
                 <h3 className="mt-1 text-lg font-black tracking-tight text-gray-900">{monthLabel}</h3>
               </div>
-              <div className="grid grid-cols-2 gap-3 p-4">
+              <div className="grid grid-cols-3 gap-2 p-4">
                 <div className="rounded-xl bg-blue-50 p-3"><p className="text-2xl font-black text-blue-700 tabular-nums">{monthEvents.length}</p><p className="mt-0.5 text-[10px] font-bold text-blue-600/70">Confirmed events</p></div>
                 <div className="rounded-xl bg-pink-50 p-3"><p className="text-2xl font-black text-pink-700 tabular-nums">{monthBirthdays.length}</p><p className="mt-0.5 text-[10px] font-bold text-pink-600/70">Team birthdays</p></div>
+                <div className="rounded-xl bg-amber-50 p-3"><p className="text-2xl font-black text-amber-700 tabular-nums">{monthHolidays.length}</p><p className="mt-0.5 text-[10px] font-bold text-amber-700/70">Holidays</p></div>
               </div>
               <div className="min-h-0 flex-1 px-4 pb-4">
                 <p className="mb-2 px-1 text-[10px] font-black uppercase tracking-wider text-gray-400">Upcoming this month</p>
                 <div className="space-y-2">
-                  {!monthEvents.length && !monthBirthdays.length ? (
-                    <div className="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center"><CalendarDays size={20} className="mx-auto mb-2 text-gray-300" /><p className="text-xs font-semibold text-gray-400">No events scheduled</p></div>
+                  {!monthEvents.length && !monthBirthdays.length && !monthHolidays.length ? (
+                    <div className="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center"><CalendarDays size={20} className="mx-auto mb-2 text-gray-300" /><p className="text-xs font-semibold text-gray-400">Nothing scheduled</p></div>
                   ) : (
                     <>
-                      {monthEvents.slice(0, 4).map((event) => (
+                      {monthHolidays.slice(0, 2).map((holiday) => (
+                        <div key={holiday.holiday_key} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50/70 p-2.5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700"><PartyPopper size={15} /></span><span className="min-w-0"><b className="block truncate text-xs text-gray-800">{holiday.name}</b><small className="text-[10px] font-medium text-amber-700">Company holiday · {Number(holiday.holiday_date.slice(8, 10))} {monthCursor.toLocaleDateString('en-IN', { month: 'short' })}</small></span></div>
+                      ))}
+                      {monthEvents.slice(0, Math.max(0, 4 - monthHolidays.length)).map((event) => (
                         <Link key={event.agreement_id} href={`/crm/agreements/${event.agreement_id}`} className="flex items-center gap-3 rounded-xl border border-gray-100 p-2.5 transition-colors hover:border-red-100 hover:bg-red-50/40">
                           <span className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-gray-900 text-white"><b className="text-xs leading-none">{Number(event.event_date.slice(8, 10))}</b><small className="mt-0.5 text-[7px] font-bold uppercase text-white/60">{new Date(`${event.event_date}T00:00:00`).toLocaleDateString('en-IN', { month: 'short' })}</small></span>
                           <span className="min-w-0"><b className="block truncate text-xs text-gray-800">{event.groom_name || event.client_name}{event.bride_name ? ` & ${event.bride_name}` : ''}</b><small className="block truncate text-[10px] font-medium text-gray-400">{event.package_name}</small></span>
                         </Link>
                       ))}
-                      {monthBirthdays.slice(0, Math.max(0, 4 - monthEvents.length)).map((birthday) => (
+                      {monthBirthdays.slice(0, Math.max(0, 4 - monthEvents.length - monthHolidays.length)).map((birthday) => (
                         <div key={birthday.staff_id} className="flex items-center gap-3 rounded-xl border border-pink-100 bg-pink-50/60 p-2.5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pink-100 text-pink-600"><Cake size={15} /></span><span className="min-w-0"><b className="block truncate text-xs text-gray-800">{birthday.full_name}</b><small className="text-[10px] font-medium text-pink-500">Birthday · {Number(birthday.date.slice(8, 10))} {monthCursor.toLocaleDateString('en-IN', { month: 'short' })}</small></span></div>
                       ))}
                     </>

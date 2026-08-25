@@ -1,5 +1,6 @@
 import { crmSupabase } from '../../crm/lib/supabase-crm';
 import { deriveMonthAttendance, DEFAULT_WORKING_DAYS } from '../../crm/lib/attendance-calendar';
+import { getCompanyHolidays } from '../../crm/lib/company-holidays';
 import type { AttendanceBreakRecord, AttendanceRecord, MyAttendanceState } from '../../crm/lib/types';
 
 function detectBrowser() {
@@ -61,10 +62,11 @@ export async function getMonthAttendance(year: number, month: number) {
   const leaveQuery = crmSupabase.from('crm_leave_requests').select('from_date,to_date,status')
     .eq('status', 'Approved').lte('from_date', to).gte('to_date', from);
   if (staffResult.data?.id) leaveQuery.eq('staff_id', staffResult.data.id);
-  const [attendanceResult, settingsResult, leaveResult] = await Promise.all([
+  const [attendanceResult, settingsResult, leaveResult, holidays] = await Promise.all([
     crmSupabase.from('crm_attendance').select('attendance_date,status,check_in,punch_in_at').gte('attendance_date', from).lte('attendance_date', to),
     crmSupabase.from('crm_attendance_settings').select('working_days').eq('id', 1).maybeSingle(),
     leaveQuery,
+    getCompanyHolidays(from, to),
   ]);
   if (attendanceResult.error) throw new Error(attendanceResult.error.message);
 
@@ -75,6 +77,7 @@ export async function getMonthAttendance(year: number, month: number) {
     leaveRanges: leaveResult.error ? [] : leaveResult.data || [],
     workingDays: settingsResult.data?.working_days || DEFAULT_WORKING_DAYS,
     employmentStartDate: staffResult.data?.joining_date || null,
+    holidayDates: holidays.map((holiday) => holiday.holiday_date),
   });
 }
 

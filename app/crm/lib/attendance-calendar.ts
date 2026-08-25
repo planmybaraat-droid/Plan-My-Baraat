@@ -35,28 +35,19 @@ function isApprovedLeave(key: string, ranges: AttendanceLeaveRange[]) {
   return ranges.some((range) => (!range.status || range.status === 'Approved') && range.from_date <= key && range.to_date >= key);
 }
 
-// Company-wide national holidays. These are never marked Absent, regardless
-// of a staff member's working-day schedule or punch history for that date.
-// Independence Day (15 Aug) and Republic Day (26 Jan) fall on the same
-// calendar date every year; Raksha Bandhan follows the lunar calendar, so it
-// shifts each year and needs an explicit per-year lookup.
-const FIXED_ANNUAL_HOLIDAYS = new Set(['08-15', '01-26']); // MM-DD
+// Safety fallback for the company's date-fixed holidays. The complete annual
+// list (including lunar festivals) is loaded from Supabase and passed to the
+// attendance calculation so every portal uses the same persisted dates.
+const FIXED_ANNUAL_HOLIDAYS = new Set(['01-14', '01-26', '08-15', '10-02']); // MM-DD
 
-const RAKSHA_BANDHAN_DATES = new Set([
-  '2024-08-19',
-  '2025-08-09',
-  '2026-08-28',
-  '2027-08-17',
-  '2028-08-05',
-]);
-
-function isCompanyHoliday(key: string) {
-  return FIXED_ANNUAL_HOLIDAYS.has(key.slice(5)) || RAKSHA_BANDHAN_DATES.has(key);
+export function isCompanyHoliday(key: string, holidayDates?: ReadonlySet<string>) {
+  return FIXED_ANNUAL_HOLIDAYS.has(key.slice(5)) || !!holidayDates?.has(key);
 }
 
 /**
  * Creates a complete month view from persisted attendance. Missing completed
- * working days are absences; future dates are intentionally left unmarked.
+ * working days are absences. Scheduled company holidays and approved leave
+ * remain visible in advance, while ordinary future dates stay unmarked.
  */
 export function deriveMonthAttendance(options: {
   year: number;
@@ -66,6 +57,7 @@ export function deriveMonthAttendance(options: {
   workingDays?: number[];
   employmentStartDate?: string | null;
   todayKey?: string;
+  holidayDates?: Iterable<string>;
 }) {
   const {
     year,
@@ -75,7 +67,9 @@ export function deriveMonthAttendance(options: {
     workingDays = DEFAULT_WORKING_DAYS,
     employmentStartDate,
     todayKey = dateKeyInIndia(),
+    holidayDates = [],
   } = options;
+  const companyHolidayDates = holidayDates instanceof Set ? holidayDates : new Set(holidayDates);
   const firstEligibleDate = employmentStartDate && employmentStartDate > CRM_ATTENDANCE_START_DATE
     ? employmentStartDate
     : CRM_ATTENDANCE_START_DATE;
@@ -90,13 +84,15 @@ export function deriveMonthAttendance(options: {
       map[key] = row.check_in || row.punch_in_at ? 'Present' : row.status;
       continue;
     }
-    if (key < firstEligibleDate || key >= todayKey) continue;
-    if (isCompanyHoliday(key)) {
+    if (key < firstEligibleDate) continue;
+    if (isCompanyHoliday(key, companyHolidayDates)) {
       map[key] = 'Holiday';
-    } else if (!workingDays.includes(weekdayForKey(key))) {
-      map[key] = 'Weekly Off';
     } else if (isApprovedLeave(key, leaveRanges)) {
       map[key] = 'On Leave';
+    } else if (key >= todayKey) {
+      continue;
+    } else if (!workingDays.includes(weekdayForKey(key))) {
+      map[key] = 'Weekly Off';
     } else {
       map[key] = 'Absent';
     }

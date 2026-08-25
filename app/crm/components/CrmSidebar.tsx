@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, UserSearch, MoreHorizontal,
   Building2, Tag, Package, Calculator, Settings, X, ChevronRight, LogOut, MessageSquare, ScrollText, ReceiptText, FileText, UserCog, CalendarCheck2, ListChecks, Bell, CalendarDays, Handshake,
-  FileSignature, FolderCheck, Wallet, CalendarRange, ClipboardList, BriefcaseBusiness, IdCardLanyard,
+  FileSignature, FolderCheck, Wallet, CalendarRange, ClipboardList, BriefcaseBusiness, IdCardLanyard, FilePenLine, Gauge,
 } from 'lucide-react';
 import { crmSupabase } from '../lib/supabase-crm';
 import { useCrmProfile, initialsFrom } from '../lib/useCrmProfile';
@@ -52,8 +52,10 @@ const sidebarSections: { label: string; items: SidebarItem[] }[] = [
   { label: 'HR management', items: [
     { href: '/crm/hr', label: 'HR Overview', icon: LayoutDashboard, exact: true, sectionKey: 'hrOverview' },
     { href: '/crm/hr/letters', label: 'Letters', icon: FileSignature, sectionKey: 'letters' },
+    { href: '/crm/hr/letterhead', label: 'Letterhead', icon: FilePenLine, sectionKey: 'letterhead' },
     { href: '/crm/hr/kyc', label: 'KYC & Documents', icon: FolderCheck, sectionKey: 'kyc' },
     { href: '/crm/hr/payroll', label: 'Salary & Payroll', icon: Wallet, sectionKey: 'salaryPayroll' },
+    { href: '/crm/performance', label: 'Staff Performance', icon: Gauge, sectionKey: 'performance' },
     { href: '/crm/hr/id-cards', label: 'ID Cards', icon: IdCardLanyard, sectionKey: 'idCards' },
     { href: '/crm/event-calendar', label: 'Event Calendar', icon: CalendarDays, sectionKey: 'eventCalendar' },
   ] },
