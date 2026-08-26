@@ -3,6 +3,7 @@ import 'server-only';
 import { readFile } from 'fs/promises';
 import path from 'path';
 import { jsPDF } from 'jspdf';
+import { createPdfPermissionLock } from './pdf-security';
 import nodemailer from 'nodemailer';
 import { supabaseAdmin } from './supabase-admin';
 
@@ -230,7 +231,13 @@ async function logoDataUrl() {
 }
 
 export async function createDailyStaffReportPdf(report: DailyStaffReport) {
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+    compress: true,
+    encryption: createPdfPermissionLock(),
+  });
   const logo = await logoDataUrl();
   const pageWidth = 210;
   const pageHeight = 297;

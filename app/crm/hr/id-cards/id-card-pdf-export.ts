@@ -2,6 +2,7 @@
 
 import type { jsPDF as JsPdf } from 'jspdf';
 import type { IdCardRecord, IdCardSettings, StaffRecord } from '../../lib/types';
+import { createPdfPermissionLock } from '../../lib/pdf-security';
 import { mmToPx } from './id-card-config';
 
 const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -91,7 +92,7 @@ async function pdfFromFaceImages(front: string, back: string, settings: IdCardSe
   const w = settings.card_width_mm;
   const h = settings.card_height_mm;
   const orientation = w >= h ? 'landscape' : 'portrait';
-  const pdf = new jsPDF({ unit: 'mm', format: [w, h], orientation, compress: true });
+  const pdf = new jsPDF({ unit: 'mm', format: [w, h], orientation, compress: true, encryption: createPdfPermissionLock() });
   pdf.addImage(front, 'PNG', 0, 0, w, h, undefined, 'FAST');
   pdf.addPage([w, h], orientation);
   pdf.addImage(back, 'PNG', 0, 0, w, h, undefined, 'FAST');
@@ -199,7 +200,7 @@ async function buildIndividualBundleFromCaptures(captured: CapturedCard[], setti
   const w = settings.card_width_mm;
   const h = settings.card_height_mm;
   const orientation = w >= h ? 'landscape' : 'portrait';
-  const pdf = new jsPDF({ unit: 'mm', format: [w, h], orientation, compress: true });
+  const pdf = new jsPDF({ unit: 'mm', format: [w, h], orientation, compress: true, encryption: createPdfPermissionLock() });
   let first = true;
   for (const item of captured) {
     if (faces !== 'back') {
@@ -260,7 +261,7 @@ async function buildSheetBundleFromCaptures(captured: CapturedCard[], settings: 
   const perSheet = cols * rows;
   if (perSheet < 1) throw new Error('The configured card size does not fit the configured sheet size.');
 
-  const pdf = new jsPDF({ unit: 'mm', format: [sheetW, sheetH], orientation: sheetW >= sheetH ? 'landscape' : 'portrait', compress: true });
+  const pdf = new jsPDF({ unit: 'mm', format: [sheetW, sheetH], orientation: sheetW >= sheetH ? 'landscape' : 'portrait', compress: true, encryption: createPdfPermissionLock() });
 
   const frontImages = faces !== 'back' ? captured.map(c => c.front) : [];
   const backImages = faces !== 'front' ? captured.map(c => c.back) : [];

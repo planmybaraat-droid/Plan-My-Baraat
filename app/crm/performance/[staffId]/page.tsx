@@ -7,9 +7,15 @@ import { useParams, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   CheckCircle2,
+  Clock3,
+  Eye,
+  FileText,
   Loader2,
   ShieldCheck,
+  TimerReset,
+  X,
   XCircle,
+  Zap,
 } from "lucide-react";
 import CrmHeader from "../../components/CrmHeader";
 import { useSidebar } from "../../sidebar-context";
@@ -19,6 +25,7 @@ import {
   formatPerformanceTime,
   loadPerformance,
   type IncentiveConfig,
+  type PerformanceDay,
   type PerformanceResult,
 } from "../../lib/performance-data";
 const money = (v: number) =>
@@ -46,6 +53,8 @@ export default function PerformanceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [selectedReportDay, setSelectedReportDay] =
+    useState<PerformanceDay | null>(null);
   const load = async () => {
     setLoading(true);
     setError("");
@@ -191,6 +200,32 @@ export default function PerformanceDetailPage() {
                 note={`${result.reportDays}/${result.eligibleDays} submitted`}
               />
             </div>
+            <section className="grid gap-3 sm:grid-cols-3">
+              <TimingValue
+                icon={<Clock3 size={16} />}
+                label="Original late time"
+                value={formatPerformanceMinutes(
+                  result.totalOriginalLateMinutes,
+                )}
+                note="Before extra work is adjusted"
+              />
+              <TimingValue
+                icon={<TimerReset size={16} />}
+                label="Late time recovered"
+                value={formatPerformanceMinutes(
+                  result.totalCompensatedLateMinutes,
+                )}
+                note={`${formatPerformanceMinutes(result.totalLateMinutes)} final late time`}
+                tone="green"
+              />
+              <TimingValue
+                icon={<Zap size={16} />}
+                label="Actual overtime"
+                value={formatPerformanceMinutes(result.totalOvertimeMinutes)}
+                note={`${result.overtimeDays} overtime ${result.overtimeDays === 1 ? "day" : "days"}`}
+                tone="red"
+              />
+            </section>
             <section className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
               <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
                 <div>
@@ -266,7 +301,7 @@ export default function PerformanceDetailPage() {
                 </button>
               </div>
               <div className="hidden overflow-x-auto md:block">
-                <table className="w-full min-w-[920px] text-left">
+                <table className="w-full min-w-[1060px] text-left">
                   <thead className="bg-gray-50 text-[9px] uppercase tracking-wider text-gray-400">
                     <tr>
                       {[
@@ -276,9 +311,10 @@ export default function PerformanceDetailPage() {
                         "Net work",
                         "8 hours",
                         "Punctuality",
+                        "Late recovery",
+                        "Overtime",
                         "Breaks",
                         "Daily report",
-                        "Reason",
                       ].map((v) => (
                         <th key={v} className="px-3 py-3 font-black">
                           {v}
@@ -321,15 +357,38 @@ export default function PerformanceDetailPage() {
                               : "On time"}
                         </td>
                         <td className="px-3 py-3 text-[10px]">
+                          {d.state !== "Complete" || !d.originalLateMinutes
+                            ? "—"
+                            : d.compensatedLateMinutes
+                              ? `${d.originalLateMinutes} min − ${d.compensatedLateMinutes} min`
+                              : `${d.originalLateMinutes} min · Not recovered`}
+                        </td>
+                        <td className="px-3 py-3 text-[10px] font-bold">
+                          {d.state !== "Complete" || !d.overtimeMinutes
+                            ? "—"
+                            : formatPerformanceMinutes(d.overtimeMinutes)}
+                        </td>
+                        <td className="px-3 py-3 text-[10px]">
                           {d.breakCount} /{" "}
                           {d.breakCompliant ? "Within limit" : "Violation"}
                         </td>
-                        <Bool
-                          value={d.reportSubmitted}
-                          muted={d.state !== "Complete"}
-                        />
-                        <td className="max-w-xs px-3 py-3 text-[10px] text-gray-500">
-                          {d.reason}
+                        <td className="px-3 py-3">
+                          {d.reportSubmitted && d.report ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedReportDay(d)}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-[10px] font-bold text-gray-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                              aria-label={`View daily work report for ${labelDate(d.date)}`}
+                            >
+                              <Eye size={13} /> View
+                            </button>
+                          ) : d.state !== "Complete" ? (
+                            <span className="text-gray-300">—</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-500">
+                              <XCircle size={14} /> Missing
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -364,18 +423,42 @@ export default function PerformanceDetailPage() {
                         </b>
                       </span>
                       <span>
+                        Late recovered{" "}
+                        <b>
+                          {d.state === "Complete"
+                            ? formatPerformanceMinutes(
+                                d.compensatedLateMinutes,
+                              )
+                            : "—"}
+                        </b>
+                      </span>
+                      <span>
+                        Overtime{" "}
+                        <b>
+                          {d.state === "Complete"
+                            ? formatPerformanceMinutes(d.overtimeMinutes)
+                            : "—"}
+                        </b>
+                      </span>
+                      <span>
                         Breaks <b>{d.breakCount}</b>
                       </span>
                       <span>
                         8 hours <b>{d.completedHours ? "Yes" : "No"}</b>
                       </span>
-                      <span>
+                      <span className="flex items-center gap-2">
                         DWR <b>{d.reportSubmitted ? "Submitted" : "Missing"}</b>
+                        {d.reportSubmitted && d.report && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedReportDay(d)}
+                            className="inline-flex h-7 items-center gap-1 rounded-lg border border-gray-200 px-2 font-bold text-gray-700"
+                          >
+                            <Eye size={12} /> View
+                          </button>
+                        )}
                       </span>
                     </div>
-                    <p className="mt-3 text-[10px] leading-relaxed text-gray-500">
-                      {d.reason}
-                    </p>
                   </article>
                 ))}
               </div>
@@ -383,7 +466,172 @@ export default function PerformanceDetailPage() {
           </>
         )}
       </main>
+      {selectedReportDay?.report && (
+        <ReportViewer
+          day={selectedReportDay}
+          staffName={result?.staff.full_name || "Staff member"}
+          onClose={() => setSelectedReportDay(null)}
+        />
+      )}
     </>
+  );
+}
+function TimingValue({
+  icon,
+  label,
+  value,
+  note,
+  tone = "gray",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  note: string;
+  tone?: "gray" | "green" | "red";
+}) {
+  const palette =
+    tone === "green"
+      ? "border-emerald-100 bg-emerald-50/70 text-emerald-700"
+      : tone === "red"
+        ? "border-red-100 bg-red-50/70 text-red-700"
+        : "border-gray-200 bg-white text-gray-700";
+  return (
+    <div className={`rounded-2xl border p-4 shadow-sm ${palette}`}>
+      <div className="flex items-center gap-2">
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 shadow-sm">
+          {icon}
+        </span>
+        <p className="text-[9px] font-black uppercase tracking-wider text-gray-500">
+          {label}
+        </p>
+      </div>
+      <p className="mt-3 text-xl font-black">{value}</p>
+      <p className="mt-1 text-[10px] text-gray-500">{note}</p>
+    </div>
+  );
+}
+function ReportViewer({
+  day,
+  staffName,
+  onClose,
+}: {
+  day: PerformanceDay;
+  staffName: string;
+  onClose: () => void;
+}) {
+  const report = day.report!;
+  const done = report.items.filter(
+    (item) => item.activity_status === "DONE",
+  ).length;
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-gray-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-5"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Daily work report for ${labelDate(day.date)}`}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
+        <header className="flex items-start justify-between gap-4 border-b border-gray-100 p-5 sm:p-6">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+              <FileText size={18} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[9px] font-black uppercase tracking-[.18em] text-red-600">
+                Submitted daily work report
+              </p>
+              <h2 className="mt-1 truncate text-lg font-black text-gray-950">
+                {labelDate(day.date)}
+              </h2>
+              <p className="mt-1 text-xs text-gray-500">{staffName}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition hover:bg-gray-50"
+            aria-label="Close daily work report"
+          >
+            <X size={16} />
+          </button>
+        </header>
+        <div className="grid grid-cols-3 gap-2 border-b border-gray-100 bg-gray-50/70 p-4 sm:px-6">
+          <ReportStat label="Activities" value={String(report.items.length)} />
+          <ReportStat label="Completed" value={String(done)} />
+          <ReportStat
+            label="Pending"
+            value={String(report.items.length - done)}
+          />
+        </div>
+        <div className="overflow-y-auto p-4 sm:p-6">
+          {!report.items.length ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 px-5 py-12 text-center text-sm text-gray-400">
+              No activities were included in this report.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {report.items.map((item, index) => (
+                <article
+                  key={item.id}
+                  className="rounded-2xl border border-gray-200 p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 gap-3">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-[10px] font-black text-gray-500">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-black text-gray-900">
+                          {item.activity_title}
+                        </h3>
+                        <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-gray-600">
+                          {item.description}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-wider ${
+                        item.activity_status === "DONE"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {item.activity_status === "DONE" ? "Done" : "Pending"}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-5 py-4 text-[10px] text-gray-500 sm:px-6">
+          <span>
+            Status: <b className="text-gray-800">{report.report_status}</b>
+          </span>
+          <span>
+            Submitted: {report.submitted_at
+              ? new Date(report.submitted_at).toLocaleString("en-IN", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })
+              : "—"}
+          </span>
+        </footer>
+      </section>
+    </div>
+  );
+}
+function ReportStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-white px-3 py-2.5 text-center shadow-sm">
+      <p className="text-sm font-black text-gray-900">{value}</p>
+      <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wider text-gray-400">
+        {label}
+      </p>
+    </div>
   );
 }
 function Card({

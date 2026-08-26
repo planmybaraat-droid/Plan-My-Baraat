@@ -1,6 +1,7 @@
 'use client';
 
 import type { jsPDF as JsPdf } from 'jspdf';
+import { createPdfPermissionLock } from './pdf-security';
 
 const A4_WIDTH_PX = 794;
 const A4_HEIGHT_PX = 1123;
@@ -89,7 +90,13 @@ export async function buildCrmPdf(root: HTMLElement, options: CrmPdfOptions): Pr
   root.classList.add('crm-pdf-capture');
   try {
     await waitForPdfAssets(root, options.requireVerificationImages !== false);
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+      compress: true,
+      encryption: createPdfPermissionLock(),
+    });
 
     for (let index = 0; index < pages.length; index += 1) {
       const page = pages[index];

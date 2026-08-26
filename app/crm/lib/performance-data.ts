@@ -55,12 +55,33 @@ export interface PerformanceDay {
   requiredMinutes: number;
   completedHours: boolean;
   late: boolean;
+  originalLateMinutes: number;
+  compensatedLateMinutes: number;
+  adjustedLateMinutes: number;
   lateMinutes: number;
   lateSeverity: "On Time" | "Slightly Late" | "Late" | "Severely Late";
+  extraMinutes: number;
+  overtimeMinutes: number;
   breakCount: number;
   breakCompliant: boolean;
   reportSubmitted: boolean;
+  report: PerformanceDailyReport | null;
   reason: string;
+}
+export interface PerformanceReportItem {
+  id: string;
+  activity_title: string;
+  description: string;
+  activity_status: "DONE" | "PENDING";
+  created_at: string;
+  deleted_at: string | null;
+}
+export interface PerformanceDailyReport {
+  id: string;
+  report_status: string;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  items: PerformanceReportItem[];
 }
 export interface PerformanceResult {
   staff: PerformanceStaff;
@@ -71,7 +92,11 @@ export interface PerformanceResult {
   completedHoursDays: number;
   onTimeDays: number;
   lateDays: number;
+  totalOriginalLateMinutes: number;
+  totalCompensatedLateMinutes: number;
   totalLateMinutes: number;
+  totalOvertimeMinutes: number;
+  overtimeDays: number;
   slightlyLateDays: number;
   lateArrivalDays: number;
   severelyLateDays: number;
@@ -111,10 +136,13 @@ interface BreakRow {
   duration_minutes: number | null;
 }
 interface ReportRow {
+  id: string;
   user_id: string;
   report_date: string;
   report_status: string;
   submitted_at: string | null;
+  reviewed_at: string | null;
+  crm_daily_work_report_items: PerformanceReportItem[] | null;
 }
 interface LeaveRow {
   staff_id: string;
@@ -205,6 +233,23 @@ const arrivalDelayMinutes = (
   if (difference < -720) difference += 1440;
   if (difference > 720) difference -= 1440;
   return Math.max(0, difference);
+};
+const extraMinutesAfterShift = (
+  checkIn: number | null,
+  checkOut: number | null,
+  shiftStart: number | null,
+  shiftEnd: number | null,
+) => {
+  if (
+    checkIn === null ||
+    checkOut === null ||
+    shiftStart === null ||
+    shiftEnd === null
+  )
+    return 0;
+  const scheduledEnd = shiftEnd <= shiftStart ? shiftEnd + 1440 : shiftEnd;
+  const actualEnd = checkOut < checkIn ? checkOut + 1440 : checkOut;
+  return Math.max(0, actualEnd - scheduledEnd);
 };
 const lateSeverity = (
   minutes: number,
@@ -329,7 +374,9 @@ export async function loadPerformance(options: {
     userIds.length
       ? crmSupabase
           .from("crm_daily_work_reports")
-          .select("user_id,report_date,report_status,submitted_at")
+          .select(
+            "id,user_id,report_date,report_status,submitted_at,reviewed_at,crm_daily_work_report_items(id,activity_title,description,activity_status,created_at,deleted_at)",
+          )
           .in("user_id", userIds)
           .gte("report_date", options.start)
           .lte("report_date", options.end)
@@ -374,7 +421,18 @@ export async function loadPerformance(options: {
     const reportsByDate = new Map(
       reports
         .filter((r) => r.user_id === person.user_id)
-        .map((r) => [r.report_date, r]),
+        .map((r) => [
+          r.report_date,
+          {
+            id: r.id,
+            report_status: r.report_status,
+            submitted_at: r.submitted_at,
+            reviewed_at: r.reviewed_at,
+            items: (r.crm_daily_work_report_items || [])
+              .filter((item) => !item.deleted_at)
+              .sort((a, b) => a.created_at.localeCompare(b.created_at)),
+          } satisfies PerformanceDailyReport,
+        ]),
     );
     const leaveRows = leaves.filter((r) => r.staff_id === person.id);
     const first = [
@@ -390,7 +448,11 @@ export async function loadPerformance(options: {
       hours = 0,
       onTime = 0,
       late = 0,
+      totalOriginalLateMinutes = 0,
+      totalCompensatedLateMinutes = 0,
       totalLateMinutes = 0,
+      totalOvertimeMinutes = 0,
+      overtimeDays = 0,
       slightlyLate = 0,
       lateArrival = 0,
       severelyLate = 0,
@@ -432,11 +494,17 @@ export async function loadPerformance(options: {
           requiredMinutes: config.required_work_minutes,
           completedHours: false,
           late: false,
+          originalLateMinutes: 0,
+          compensatedLateMinutes: 0,
+          adjustedLateMinutes: 0,
           lateMinutes: 0,
           lateSeverity: "On Time",
+          extraMinutes: 0,
+          overtimeMinutes: 0,
           breakCount: 0,
           breakCompliant: true,
           reportSubmitted: false,
+          report: null,
           reason: "Excluded from the incentive period",
         });
         continue;
@@ -452,8 +520,13 @@ export async function loadPerformance(options: {
           requiredMinutes: config.required_work_minutes,
           completedHours: false,
           late: false,
+          originalLateMinutes: 0,
+          compensatedLateMinutes: 0,
+          adjustedLateMinutes: 0,
           lateMinutes: 0,
           lateSeverity: "On Time",
+          extraMinutes: 0,
+          overtimeMinutes: 0,
           breakCount: breaks.filter(
             (b) =>
               b.staff_id === person.id &&
@@ -461,6 +534,7 @@ export async function loadPerformance(options: {
           ).length,
           breakCompliant: true,
           reportSubmitted: false,
+          report: null,
           reason: "Current day is not finalized",
         });
         continue;
@@ -484,14 +558,28 @@ export async function loadPerformance(options: {
       const hoursOk = hasPunch && net !== null && net >= required;
       if (hoursOk) hours++;
       const check = timeMinutes(row?.check_in);
+      const checkout = timeMinutes(row?.check_out);
       const shift = timeMinutes(person.shift_start || "10:00");
-      const delay = hasPunch ? arrivalDelayMinutes(check, shift) : 0;
-      const severity = lateSeverity(delay, config.late_grace_minutes);
+      const shiftEnd = timeMinutes(person.shift_end || "19:00");
+      const originalDelay = hasPunch
+        ? arrivalDelayMinutes(check, shift)
+        : 0;
+      const extraMinutes = hasPunch && hasOut
+        ? extraMinutesAfterShift(check, checkout, shift, shiftEnd)
+        : 0;
+      const compensatedLateMinutes = Math.min(originalDelay, extraMinutes);
+      const adjustedDelay = Math.max(0, originalDelay - extraMinutes);
+      const overtimeMinutes = Math.max(0, extraMinutes - originalDelay);
+      const severity = lateSeverity(adjustedDelay, config.late_grace_minutes);
       const isLate = hasPunch && severity !== "On Time";
+      totalOriginalLateMinutes += originalDelay;
+      totalCompensatedLateMinutes += compensatedLateMinutes;
+      totalOvertimeMinutes += overtimeMinutes;
+      if (overtimeMinutes > 0) overtimeDays++;
       if (hasPunch && !isLate) onTime++;
       if (isLate) {
         late++;
-        totalLateMinutes += delay;
+        totalLateMinutes += adjustedDelay;
         punctualityDeductions += lateDeduction(severity);
         if (severity === "Slightly Late") slightlyLate++;
         else if (severity === "Late") lateArrival++;
@@ -511,7 +599,11 @@ export async function loadPerformance(options: {
       if (!hasPunch) reasons.push("No valid punch in");
       if (hasPunch && !hoursOk)
         reasons.push("Required working hours not completed");
-      if (isLate) reasons.push(`${severity} by ${delay} minutes`);
+      if (isLate) reasons.push(`${severity} by ${adjustedDelay} minutes`);
+      if (compensatedLateMinutes > 0)
+        reasons.push(`${compensatedLateMinutes} late minutes recovered`);
+      if (overtimeMinutes > 0)
+        reasons.push(`${overtimeMinutes} overtime minutes`);
       if (!breakOk)
         reasons.push(
           dayBreaks.some((b) => !b.break_end_at)
@@ -529,11 +621,17 @@ export async function loadPerformance(options: {
         requiredMinutes: required,
         completedHours: hoursOk,
         late: isLate,
-        lateMinutes: delay,
+        originalLateMinutes: originalDelay,
+        compensatedLateMinutes,
+        adjustedLateMinutes: adjustedDelay,
+        lateMinutes: adjustedDelay,
         lateSeverity: severity,
+        extraMinutes,
+        overtimeMinutes,
         breakCount: dayBreaks.length,
         breakCompliant: breakOk,
         reportSubmitted: submitted,
+        report: submitted ? report || null : null,
         reason: reasons.join(" · ") || "All requirements completed",
       });
     }
@@ -600,7 +698,11 @@ export async function loadPerformance(options: {
       completedHoursDays: hours,
       onTimeDays: onTime,
       lateDays: late,
+      totalOriginalLateMinutes,
+      totalCompensatedLateMinutes,
       totalLateMinutes,
+      totalOvertimeMinutes,
+      overtimeDays,
       slightlyLateDays: slightlyLate,
       lateArrivalDays: lateArrival,
       severelyLateDays: severelyLate,
@@ -669,7 +771,11 @@ export async function approvePerformance(
       completedHoursDays: result.completedHoursDays,
       onTimeDays: result.onTimeDays,
       lateDays: result.lateDays,
+      totalOriginalLateMinutes: result.totalOriginalLateMinutes,
+      totalCompensatedLateMinutes: result.totalCompensatedLateMinutes,
       totalLateMinutes: result.totalLateMinutes,
+      totalOvertimeMinutes: result.totalOvertimeMinutes,
+      overtimeDays: result.overtimeDays,
       slightlyLateDays: result.slightlyLateDays,
       lateArrivalDays: result.lateArrivalDays,
       severelyLateDays: result.severelyLateDays,
