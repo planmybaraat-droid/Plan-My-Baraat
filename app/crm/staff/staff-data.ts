@@ -19,7 +19,7 @@ function normalizeStaff(row: Record<string, unknown>): StaffRecord {
   return {
     id: String(row.id), employee_code: String(row.employee_code || ''), full_name: String(row.full_name || ''), mobile: String(row.mobile || ''), email: String(row.email || ''),
     job_title: String(row.job_title || ''), department: String(row.department || ''), employment_type: row.employment_type as StaffRecord['employment_type'], joining_date: String(row.joining_date || ''),
-    date_of_birth: String(row.date_of_birth || ''), status: row.status as StaffRecord['status'], work_location: String(row.work_location || ''), shift_start: String(row.shift_start || '').slice(0, 5),
+    date_of_birth: String(row.date_of_birth || ''), blood_group: String(row.blood_group || ''), status: row.status as StaffRecord['status'], work_location: String(row.work_location || ''), shift_start: String(row.shift_start || '').slice(0, 5),
     shift_end: String(row.shift_end || '').slice(0, 5), address: String(row.address || ''), emergency_contact_name: String(row.emergency_contact_name || ''), emergency_contact_mobile: String(row.emergency_contact_mobile || ''), notes: String(row.notes || ''),
     crm_id: String(row.crm_id || ''), role: (row.role as StaffRecord['role']) || 'staff', user_id: row.user_id ? String(row.user_id) : null,
     created_at: String(row.created_at || ''), updated_at: String(row.updated_at || ''),
@@ -33,7 +33,7 @@ function normalizeStaff(row: Record<string, unknown>): StaffRecord {
 }
 
 export function createBlankStaff(nextCode: string): StaffFormData {
-  return { employee_code: nextCode, full_name: '', mobile: '', email: '', job_title: '', department: 'Operations', employment_type: 'Full Time', joining_date: new Date().toISOString().slice(0, 10), date_of_birth: '', status: 'Active', work_location: 'Vadodara', shift_start: '10:00', shift_end: '19:00', address: '', emergency_contact_name: '', emergency_contact_mobile: '', notes: '', crm_id: nextCode, role: 'staff', password: '' };
+  return { employee_code: nextCode, full_name: '', mobile: '', email: '', job_title: '', department: 'Operations', employment_type: 'Full Time', joining_date: new Date().toISOString().slice(0, 10), date_of_birth: '', blood_group: '', status: 'Active', work_location: 'Vadodara', shift_start: '10:00', shift_end: '19:00', address: '', emergency_contact_name: '', emergency_contact_mobile: '', notes: '', crm_id: nextCode, role: 'staff', password: '' };
 }
 
 async function staffApi(method: string, body: object) {

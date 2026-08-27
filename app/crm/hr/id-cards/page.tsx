@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Eye, Loader2, Plus, RefreshCw, Search, Trash2, UserRound } from 'lucide-react';
 import CrmHeader from '../../components/CrmHeader';
@@ -12,6 +12,11 @@ import { deleteIdCard, getStaff, listIdCards } from './id-card-data';
 import { formatAgreementDate, STATUS_STYLES } from './id-card-config';
 import IdCardEditorModal from './components/IdCardEditorModal';
 import BulkGenerateModal from './components/BulkGenerateModal';
+
+function mergeCardsWithLiveStaff(cardList: IdCardRecord[], staffList: StaffRecord[]) {
+  const staffById = new Map(staffList.map(staff => [staff.id, staff]));
+  return cardList.map(card => ({ ...card, employee: staffById.get(card.employee_id) || card.employee }));
+}
 
 export default function IdCardsPage() {
   const { open } = useSidebar();
@@ -30,12 +35,7 @@ export default function IdCardsPage() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [loadError, setLoadError] = useState('');
 
-  const mergeCardsWithLiveStaff = (cardList: IdCardRecord[], staffList: StaffRecord[]) => {
-    const staffById = new Map(staffList.map(staff => [staff.id, staff]));
-    return cardList.map(card => ({ ...card, employee: staffById.get(card.employee_id) || card.employee }));
-  };
-
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
@@ -47,9 +47,9 @@ export default function IdCardsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const departments = useMemo(() => Array.from(new Set(cards.map(c => c.employee?.department).filter(Boolean))) as string[], [cards]);
 

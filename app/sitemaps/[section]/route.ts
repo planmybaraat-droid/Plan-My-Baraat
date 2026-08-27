@@ -28,6 +28,7 @@ function getUrlsForSection(section: string) {
       `${BASE_URL}/about`,
       `${BASE_URL}/contact`,
       `${BASE_URL}/gallery`,
+      `${BASE_URL}/opportunities`,
       `${BASE_URL}/packages`,
       `${BASE_URL}/baraat-planning-guide`,
       `${BASE_URL}/service-areas`,

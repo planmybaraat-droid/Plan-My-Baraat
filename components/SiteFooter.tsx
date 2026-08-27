@@ -15,6 +15,7 @@ const QUICK_LINKS = [
   { href: "/service-areas", label: "Service Areas" },
   { href: "/about", label: "About Us" },
   { href: "/gallery", label: "Gallery" },
+  { href: "/opportunities", label: "Opportunities" },
   { href: "/testimonials", label: "Testimonials" },
   { href: "/contact", label: "Contact Us" },
 ];
@@ -44,6 +45,7 @@ export default function SiteFooter({ variant = "default" }: SiteFooterProps) {
                 width={207}
                 height={56}
                 className="h-12 w-auto object-contain sm:h-14"
+                style={{ width: "auto" }}
               />
               <h2 className="mt-7 max-w-sm text-2xl font-extrabold leading-tight tracking-[-0.035em] sm:text-3xl">
                 Your Baraat, planned with precision.
@@ -189,6 +191,7 @@ export default function SiteFooter({ variant = "default" }: SiteFooterProps) {
               width={185}
               height={50}
               className="h-10 w-auto object-contain sm:h-12"
+              style={{ width: "auto" }}
             />
             <p className="text-xs leading-relaxed">
               Gujarat&apos;s trusted baraat specialists — double-decker DJ trucks, vintage cars,

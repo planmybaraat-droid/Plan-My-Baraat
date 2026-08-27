@@ -3036,6 +3036,71 @@ display: grid;
   resize: vertical;
 }
 
+.opportunity-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.opportunity-field label {
+  color: #010101;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.opportunity-field label > span:first-of-type {
+  color: #e30b1d;
+}
+
+.opportunity-field input,
+.opportunity-field select,
+.opportunity-field textarea {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.75rem;
+  background: #ffffff;
+  color: #010101;
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  padding: 0.85rem 0.95rem;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.opportunity-field input::placeholder,
+.opportunity-field textarea::placeholder {
+  color: rgba(0, 0, 0, 0.34);
+}
+
+.opportunity-field input:focus,
+.opportunity-field select:focus,
+.opportunity-field textarea:focus {
+  border-color: rgba(227, 11, 29, 0.7);
+  box-shadow: 0 0 0 3px rgba(227, 11, 29, 0.08);
+  outline: none;
+}
+
+.opportunity-field textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.opportunities-page .inner-page-hero-title {
+  letter-spacing: -0.025em;
+}
+
+.opportunities-page .inner-page-hero-eyebrow {
+  letter-spacing: 0.1em;
+}
+
+.opportunities-copy {
+  letter-spacing: 0.005em;
+  word-spacing: 0.025em;
+}
+
 .contact-submit {
   display: flex;
   width: 100%;

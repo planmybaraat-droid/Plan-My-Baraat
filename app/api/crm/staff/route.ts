@@ -44,6 +44,7 @@ function staffColumns(data: StaffFormData) {
     employment_type: data.employment_type,
     joining_date: data.joining_date,
     date_of_birth: data.date_of_birth || null,
+    blood_group: data.blood_group || null,
     status: data.status,
     work_location: data.work_location || null,
     shift_start: data.shift_start,

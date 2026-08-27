@@ -82,7 +82,7 @@ function normalizeStaffLite(row: Record<string, unknown>): StaffRecord {
     id: String(row.id), employee_code: String(row.employee_code || ''), full_name: String(row.full_name || ''),
     mobile: String(row.mobile || ''), email: String(row.email || ''), job_title: String(row.job_title || ''),
     department: String(row.department || ''), employment_type: (row.employment_type as StaffRecord['employment_type']) || 'Full Time',
-    joining_date: String(row.joining_date || ''), date_of_birth: String(row.date_of_birth || ''),
+    joining_date: String(row.joining_date || ''), date_of_birth: String(row.date_of_birth || ''), blood_group: String(row.blood_group || ''),
     status: (row.status as StaffRecord['status']) || 'Active', work_location: String(row.work_location || ''),
     shift_start: String(row.shift_start || ''), shift_end: String(row.shift_end || ''), address: String(row.address || ''),
     emergency_contact_name: String(row.emergency_contact_name || ''), emergency_contact_mobile: String(row.emergency_contact_mobile || ''),
@@ -135,7 +135,7 @@ export async function getOrCreateDraft(staff: StaffRecord): Promise<IdCardRecord
     const backSnapshot = buildBackSnapshot(staff);
     const { data, error } = await crmSupabase.from('crm_id_cards').update({
       front_snapshot: frontSnapshot,
-      back_snapshot: { ...backSnapshot, blood_group: draft.back_snapshot?.blood_group || '' },
+      back_snapshot: backSnapshot,
       updated_at: new Date().toISOString(),
     }).eq('id', draft.id).select().single();
     if (error) throw new Error(error.message);
@@ -190,7 +190,7 @@ export async function finalizeGeneratedCard(
   const { data, error } = await crmSupabase.from('crm_id_cards').update({
     status: 'Generated',
     front_snapshot: buildLiveFrontSnapshot(staff, photoUrl),
-    back_snapshot: { ...buildBackSnapshot(staff), blood_group: card.back_snapshot?.blood_group || '' },
+    back_snapshot: buildBackSnapshot(staff),
     pdf_path: path,
     issued_date: issuedDate,
     expires_on: expiresOn,

@@ -649,6 +649,7 @@ export interface StaffFormData {
   employment_type: EmploymentType;
   joining_date: string;
   date_of_birth: string;
+  blood_group: string;
   status: StaffStatus;
   work_location: string;
   shift_start: string;
@@ -937,8 +938,8 @@ export type IdCardStatus = 'Draft' | 'Generated' | 'Active' | 'Expired' | 'Revok
 // What was actually printed on a given version — captured at generation time
 // so a later edit to the staff record never silently rewrites an
 // already-issued card. Deliberately excludes anything not shown in #7 of the
-// spec that isn't already stored on crm_staff (e.g. no blood group — it
-// isn't a real column on crm_staff today).
+// spec. Blood group is copied from crm_staff when a draft is created so an
+// issued card remains an immutable historical snapshot.
 export interface IdCardFrontSnapshot {
   full_name: string;
   employee_code: string;

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Building2, Tag, Package, Calculator, Settings, ChevronRight, HelpCircle, LogOut, ReceiptText, FileText, ScrollText, UserCog, CalendarCheck2, ListChecks, ClipboardList, FilePenLine
+  Building2, Tag, Package, Calculator, Settings, ChevronRight, HelpCircle, LogOut, ReceiptText, FileText, ScrollText, UserCog, CalendarCheck2, ListChecks, ClipboardList, FilePenLine, UserRoundSearch
 } from 'lucide-react';
 import CrmHeader from '../components/CrmHeader';
 import { useSidebar } from '../sidebar-context';
@@ -37,6 +37,7 @@ export default function MorePage() {
     { href: '/crm/attendance', label: 'Attendance', desc: 'Daily attendance, timings and monthly summaries', icon: CalendarCheck2, sectionKey: 'attendance' },
     { href: '/crm/daily-work-reports', label: 'Daily Work Reports', desc: 'Review date-wise work reported by staff', icon: ClipboardList, sectionKey: 'dailyWorkReports' },
     { href: '/crm/leave', label: 'Leave Management', desc: 'Review and decide staff leave requests', icon: CalendarCheck2, sectionKey: 'leaveManagement' },
+    { href: '/crm/recruitment', label: 'Recruitment', desc: 'Review applicants and manage interviews', icon: UserRoundSearch, sectionKey: 'recruitment' },
     { href: '/crm/hr', label: 'HR Overview', desc: 'Company-wide HR summary', icon: UserCog, sectionKey: 'hrOverview' },
     { href: '/crm/hr/letters', label: 'Letters', desc: 'Generate and manage employee letters', icon: ScrollText, sectionKey: 'letters' },
     { href: '/crm/hr/letterhead', label: 'Letterhead', desc: 'Create official blank or custom letterhead PDFs', icon: FilePenLine, sectionKey: 'letterhead' },

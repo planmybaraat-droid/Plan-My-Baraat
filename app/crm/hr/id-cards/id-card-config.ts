@@ -64,6 +64,7 @@ export function buildBackSnapshot(staff: StaffRecord): IdCardBackSnapshot {
     address: staff.address || '',
     emergency_contact_name: staff.emergency_contact_name || '',
     emergency_contact_mobile: staff.emergency_contact_mobile || '',
+    blood_group: staff.blood_group || '',
   };
 }
 

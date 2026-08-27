@@ -65,6 +65,7 @@ export default function SiteHeader({
             className={`w-auto object-contain transition-all duration-300 ${
               isCompact ? "h-8" : "h-10"
             }`}
+            style={{ width: "auto" }}
             priority
           />
           <span

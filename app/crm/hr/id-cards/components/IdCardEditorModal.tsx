@@ -71,13 +71,6 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
     return '';
   }, [staff]);
 
-  const updateBloodGroup = (value: string) => {
-    setCard(current => current ? ({
-      ...current,
-      back_snapshot: { ...current.back_snapshot, blood_group: value },
-    }) : current);
-  };
-
   const handlePhotoChange = async (file: File) => {
     if (!staff) return;
     setPhotoBusy(true);
@@ -192,21 +185,8 @@ export default function IdCardEditorModal({ employeeId, onClose, onSaved }: IdCa
                     <div><span className="text-gray-400">Joining date</span><p className="font-bold text-gray-900">{staff.joining_date}</p></div>
                     <div><span className="text-gray-400">Mobile</span><p className="font-bold text-gray-900">{staff.mobile}</p></div>
                     <div><span className="text-gray-400">Email</span><p className="font-bold text-gray-900">{staff.email}</p></div>
+                    <div><span className="text-gray-400">Blood group</span><p className="font-bold text-gray-900">{staff.blood_group || '—'}</p></div>
                   </div>
-                </div>
-
-                <div className="rounded-2xl border border-gray-200 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">ID card only details</p>
-                  <label className="mt-3 block text-xs font-bold text-gray-600">
-                    Blood group
-                    <input
-                      value={card.back_snapshot?.blood_group || ''}
-                      onChange={e => updateBloodGroup(e.target.value)}
-                      placeholder="Example: B+"
-                      className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:border-red-400"
-                    />
-                  </label>
-                  <p className="mt-2 text-[11px] font-semibold text-gray-400">This is saved only with the ID card. Staff master data is not changed.</p>
                 </div>
 
                 <div className="rounded-2xl border border-gray-200 p-4">

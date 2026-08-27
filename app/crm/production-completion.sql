@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS crm_staff (
   full_name VARCHAR(255) NOT NULL, mobile VARCHAR(50) NOT NULL, email VARCHAR(255) NOT NULL UNIQUE,
   job_title VARCHAR(255) NOT NULL, designation VARCHAR(255), department VARCHAR(120) NOT NULL,
   employment_type VARCHAR(30) NOT NULL CHECK (employment_type IN ('Full Time','Part Time','Contract','Intern')),
-  joining_date DATE NOT NULL, date_of_birth DATE,
+  joining_date DATE NOT NULL, date_of_birth DATE, blood_group VARCHAR(3),
   status VARCHAR(30) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active','On Leave','Inactive')),
   hr_lifecycle_status VARCHAR(30) NOT NULL DEFAULT 'Active' CHECK (hr_lifecycle_status IN ('Active','Intern','Notice Period','Terminated','Ex-Employee')),
   work_location VARCHAR(255), shift_start TIME NOT NULL DEFAULT '10:00', shift_end TIME NOT NULL DEFAULT '19:00',

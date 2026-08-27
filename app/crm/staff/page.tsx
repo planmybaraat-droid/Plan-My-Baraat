@@ -15,6 +15,7 @@ import { CRM_SECTIONS, isCrmAdminRole } from '../../../lib/crmSectionPermissions
 const DEPARTMENTS = ['Operations', 'Sales', 'Client Servicing', 'Production', 'Accounts', 'Marketing', 'IT', 'Management'];
 const EMPLOYMENT: EmploymentType[] = ['Full Time', 'Part Time', 'Contract', 'Intern'];
 const STATUSES: StaffStatus[] = ['Active', 'On Leave', 'Inactive'];
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const STATUS_STYLE: Record<StaffStatus, string> = { Active: 'bg-emerald-50 text-emerald-700', 'On Leave': 'bg-amber-50 text-amber-700', Inactive: 'bg-gray-100 text-gray-600' };
 const ROLES: { value: CrmRole; label: string }[] = [
   { value: 'staff', label: 'Staff' }, { value: 'sales', label: 'Sales Executive' }, { value: 'manager', label: 'Manager' },
@@ -55,7 +56,8 @@ function StaffModal({ initial, nextCode, onClose, onSaved }: { initial: StaffRec
     <Field label="Employment type"><select value={data.employment_type} onChange={event => text('employment_type', event.target.value)}>{EMPLOYMENT.map(item => <option key={item}>{item}</option>)}</select></Field><Field label="Status"><select value={data.status} onChange={event => text('status', event.target.value)}>{STATUSES.map(item => <option key={item}>{item}</option>)}</select></Field>
     <Field label="Joining date" required><input type="date" value={data.joining_date} onChange={event => text('joining_date', event.target.value)} /></Field><Field label="Date of birth"><input type="date" value={data.date_of_birth} onChange={event => text('date_of_birth', event.target.value)} /></Field>
     <Field label="Shift start"><input type="time" value={data.shift_start} onChange={event => text('shift_start', event.target.value)} /></Field><Field label="Shift end"><input type="time" value={data.shift_end} onChange={event => text('shift_end', event.target.value)} /></Field>
-    <Field label="Work location" wide><input value={data.work_location} onChange={event => text('work_location', event.target.value)} /></Field><Field label="Residential address" wide><textarea rows={2} value={data.address} onChange={event => text('address', event.target.value)} /></Field>
+    <Field label="Blood group"><select value={data.blood_group} onChange={event => text('blood_group', event.target.value)}><option value="">Select blood group</option>{BLOOD_GROUPS.map(item => <option key={item} value={item}>{item}</option>)}</select></Field><Field label="Work location"><input value={data.work_location} onChange={event => text('work_location', event.target.value)} /></Field>
+    <Field label="Residential address" wide><textarea rows={2} value={data.address} onChange={event => text('address', event.target.value)} /></Field>
     <Field label="Emergency contact name"><input value={data.emergency_contact_name} onChange={event => text('emergency_contact_name', event.target.value)} /></Field><Field label="Emergency contact mobile"><input value={data.emergency_contact_mobile} onChange={event => text('emergency_contact_mobile', event.target.value)} /></Field>
     <Field label="Internal notes" wide><textarea rows={3} value={data.notes} onChange={event => text('notes', event.target.value)} /></Field>
     <div className="sm:col-span-2 mt-1 rounded-2xl border border-red-100 bg-red-50/40 p-4"><p className="text-[10px] font-black uppercase tracking-[.2em] text-red-600">CRM login</p><div className="mt-3 grid gap-4 sm:grid-cols-3">
