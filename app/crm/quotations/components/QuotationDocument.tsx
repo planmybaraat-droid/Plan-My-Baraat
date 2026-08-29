@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
 import type { QuotationRecord, QuotationService } from '../../lib/types';
 import { formatQuotationDate, quotationCurrency } from '../quotation-config';
+import { amountInWordsINR } from '../../lib/number-to-words';
 import { SERVICE_AVAILABILITY_NOTE } from '../../agreements/agreement-config';
 
 // Empty optional fields never create labels or gaps in the client document.
@@ -26,7 +27,8 @@ function Footer({ quotation, page, total, qr }: { quotation: QuotationRecord; pa
 }
 
 function Page({ quotation, page, total, qr, children }: { quotation: QuotationRecord; page: number; total: number; qr: string; children: React.ReactNode }) {
-  return <section className="quotation-pdf-page" data-pdf-page><Header quotation={quotation} /><main>{children}</main><Footer quotation={quotation} page={page} total={total} qr={qr} /></section>;
+  /* eslint-disable-next-line @next/next/no-img-element */
+  return <section className="quotation-pdf-page" data-pdf-page><img src="/logo.png" alt="" className="pdf-watermark-logo" /><Header quotation={quotation} /><main>{children}</main><Footer quotation={quotation} page={page} total={total} qr={qr} /></section>;
 }
 
 function ServiceCard({ service, number, pricingMode }: { service: QuotationService; number: number; pricingMode: QuotationRecord['pricing_mode'] }) {
@@ -94,6 +96,7 @@ const QuotationDocument = forwardRef<HTMLDivElement, { quotation: QuotationRecor
         <div><span>Taxable value</span><strong>{quotationCurrency(quotation.taxable_value)}</strong></div>
         {quotation.gst_amount > 0 && <div><span>GST ({quotation.gst_percent}%)</span><strong>{quotationCurrency(quotation.gst_amount)}</strong></div>}
         <div className="quotation-doc-summary-total"><span>Total quotation value</span><strong>{quotationCurrency(quotation.total_amount)}</strong></div>
+        <div className="quotation-doc-summary-words"><span>Amount in words</span><strong>{amountInWordsINR(quotation.total_amount)}</strong></div>
         {quotation.suggested_booking_amount > 0 && <div><span>Suggested booking amount</span><strong>{quotationCurrency(quotation.suggested_booking_amount)}</strong></div>}
       </div>
       <div className="quotation-doc-terms">

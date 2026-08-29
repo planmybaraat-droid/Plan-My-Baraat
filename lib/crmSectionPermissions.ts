@@ -20,7 +20,8 @@ export type CrmSectionKey =
   | 'eventJobs'
   | 'idCards'
   | 'letterhead'
-  | 'recruitment';
+  | 'recruitment'
+  | 'assetManagement';
 
 export interface CrmSectionDef {
   key: CrmSectionKey;
@@ -43,6 +44,7 @@ export const CRM_SECTIONS: CrmSectionDef[] = [
   { key: 'eventCalendar', label: 'Event Calendar', description: 'View the event calendar', path: '/crm/event-calendar' },
   { key: 'eventJobs', label: 'Event Jobs', description: 'Monitor and manage confirmed event workflows', path: '/crm/event-jobs' },
   { key: 'recruitment', label: 'Recruitment', description: 'Review applicants and manage interviews', path: '/crm/recruitment' },
+  { key: 'assetManagement', label: 'Asset Management', description: 'Manage company vehicles, maintenance and documents', path: '/crm/assets' },
   { key: 'idCards', label: 'ID Cards', description: 'Create, generate and print employee ID cards', path: '/crm/hr/id-cards' },
   { key: 'letterhead', label: 'Letterhead', description: 'Create and download official company letterhead PDFs', path: '/crm/hr/letterhead' },
 ];

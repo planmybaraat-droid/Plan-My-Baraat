@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
 import type { AgreementRecord, AgreementService } from '../../lib/types';
 import { SERVICE_AVAILABILITY_NOTE, currency, formatAgreementDate } from '../agreement-config';
+import { amountInWordsINR } from '../../lib/number-to-words';
 
 const TERMS = [
   "The Client confirms that all event details, service specifications, quantities, pricing and operational requirements stated in this Agreement are accurate and approved at signing.",
@@ -71,7 +72,7 @@ function estimateClauseHeight(text: string, isFirstPage: boolean) {
 // (~94px) on every terms page, plus — on the first terms page only — the
 // payment summary card (~180px) and the embedded "Terms & conditions"
 // heading (~101px) that appear above the list there.
-const FIRST_TERMS_PAGE_BUDGET = 535;
+const FIRST_TERMS_PAGE_BUDGET = 511; // 535 minus ~24px for the amount-in-words line under the payment summary card
 const CONTINUATION_TERMS_PAGE_BUDGET = 830;
 
 function useTermsPages() {
@@ -153,6 +154,8 @@ function Page({ agreement, page, total, qr, children, className = '' }: {
 }) {
   return (
     <section className={`agreement-pdf-page ${className}`} data-pdf-page>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt="" className="pdf-watermark-logo" />
       <DocHeader agreement={agreement} />
       <div className="agreement-doc-content">{children}</div>
       <DocFooter agreement={agreement} page={page} total={total} qr={qr} />
@@ -313,6 +316,7 @@ const AgreementDocument = forwardRef<HTMLDivElement, AgreementDocumentProps>(fun
                     {agreement.final_payment > 0 && <div><span>Final payment</span><strong>{currency(agreement.final_payment)}</strong></div>}
                   </div>
                 </div>
+                <p className="agreement-doc-amount-words">Amount in words: <strong>{amountInWordsINR(agreement.final_amount)}</strong></p>
                 <div className="agreement-doc-embedded-terms-heading">
                   <span>Terms & conditions</span>
                   <h3>Terms & conditions</h3>

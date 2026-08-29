@@ -15,6 +15,7 @@ export interface QuoteMakerQuote {
   transport_cost: number;
   discount: number;
   grand_total: number;
+  valid_until: string;
   created_at: string;
   updated_at: string;
 }
@@ -28,4 +29,5 @@ export interface QuoteMakerQuotePayload {
   final_price: number;
   transport_cost: number;
   discount: number;
+  valid_until: string;
 }

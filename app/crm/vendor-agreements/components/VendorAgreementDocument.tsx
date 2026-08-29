@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
 import type { VendorAgreementRecord, VendorAgreementService } from '../../lib/types';
 import { currency, formatAgreementDate } from '../../agreements/agreement-config';
+import { amountInWordsINR } from '../../lib/number-to-words';
 import { VENDOR_DOCUMENT_CATEGORIES, calculateVendorAgreementAmounts } from '../vendor-agreement-config';
 
 // The full legal text generated into the PDF. The Step 5 wizard preview
@@ -40,7 +41,7 @@ function estimateClauseHeight(text: string, isFirstPage: boolean) {
   return lines * lineHeight + gap;
 }
 
-const FIRST_TERMS_PAGE_BUDGET = 620;
+const FIRST_TERMS_PAGE_BUDGET = 596; // 620 minus ~24px for the amount-in-words line under the payment summary card
 const CONTINUATION_TERMS_PAGE_BUDGET = 830;
 
 function useTermsPages() {
@@ -119,6 +120,8 @@ function Page({ agreement, page, total, qr, children, className = '' }: {
 }) {
   return (
     <section className={`agreement-pdf-page ${className}`} data-pdf-page>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt="" className="pdf-watermark-logo" />
       <DocHeader agreement={agreement} />
       <div className="agreement-doc-content">{children}</div>
       <DocFooter agreement={agreement} page={page} total={total} qr={qr} />
@@ -291,6 +294,7 @@ const VendorAgreementDocument = forwardRef<HTMLDivElement, VendorAgreementDocume
                     <div><span>Auto-renewal</span><strong>{agreement.auto_renewal ? 'Enabled' : 'Manual'}</strong></div>
                   </div>
                 </div>
+                <p className="agreement-doc-amount-words">Amount in words: <strong>{amountInWordsINR(amounts.estimatedValue)}</strong></p>
                 <div className="agreement-doc-embedded-terms-heading">
                   <span>Terms & conditions</span>
                   <h3>Terms & conditions</h3>

@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, ListChecks, CalendarCheck2, UserSearch, FileText, ScrollText, Bell, UserCircle, Settings, X, ChevronRight, LogOut,
   ReceiptText, Package, CalendarDays, Lock, Handshake, ClipboardList,
-  BriefcaseBusiness, FilePenLine, Gauge,
+  BriefcaseBusiness, FilePenLine, Gauge, Truck,
 } from 'lucide-react';
 import { crmSupabase } from '../../crm/lib/supabase-crm';
 import { useCrmProfile, initialsFrom } from '../../crm/lib/useCrmProfile';
@@ -29,6 +29,7 @@ const MODULE_ICONS: Record<ModuleKey, typeof LayoutDashboard> = {
   eventJobs: BriefcaseBusiness,
   myLetters: FileText,
   letterhead: FilePenLine,
+  assetManagement: Truck,
 };
 
 const MODULE_NAV: { key: ModuleKey; href: string; label: string }[] = [
@@ -46,6 +47,7 @@ const MODULE_NAV: { key: ModuleKey; href: string; label: string }[] = [
   { key: 'eventJobs', href: '/workspace/event-jobs', label: 'Event Jobs' },
   { key: 'myLetters', href: '/workspace/my-letters', label: 'My Letters' },
   { key: 'letterhead', href: '/workspace/letterhead', label: 'Letterhead' },
+  { key: 'assetManagement', href: '/workspace/assets', label: 'Asset Management' },
 ];
 
 const UTILITY_NAV = [

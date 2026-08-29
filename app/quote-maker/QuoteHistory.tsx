@@ -1,7 +1,9 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, FileText, IndianRupee, Loader2, Phone, Plus, RefreshCw, Search } from 'lucide-react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { CalendarDays, ChevronLeft, ChevronRight, Copy, Download, FileText, IndianRupee, Loader2, MoreHorizontal, Pencil, Phone, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
+import ConfirmDialog from '../crm/components/ConfirmDialog';
 import type { QuoteMakerQuote } from './quote-types';
 
 const formatCurrency = (value: number) =>
@@ -10,15 +12,26 @@ const formatCurrency = (value: number) =>
 const formatDate = (value: string) =>
   new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
+const isPastDate = (value: string) => {
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parsed.getTime() < today.getTime();
+};
+
 const formatDateTime = (value: string) =>
   new Date(value).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 interface QuoteHistoryProps {
   onCreateNew: () => void;
+  onEdit: (quote: QuoteMakerQuote) => void;
+  onDuplicate: (quote: QuoteMakerQuote) => void;
+  onDownload: (quote: QuoteMakerQuote) => void;
   refreshKey: number;
 }
 
-export default function QuoteHistory({ onCreateNew, refreshKey }: QuoteHistoryProps) {
+export default function QuoteHistory({ onCreateNew, onEdit, onDuplicate, onDownload, refreshKey }: QuoteHistoryProps) {
   const [quotes, setQuotes] = useState<QuoteMakerQuote[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -27,6 +40,12 @@ export default function QuoteHistory({ onCreateNew, refreshKey }: QuoteHistoryPr
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<QuoteMakerQuote | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const menuRef = useRef<HTMLDivElement>(null);
   const pageSize = 10;
 
   const load = useCallback(async () => {
@@ -50,6 +69,59 @@ export default function QuoteHistory({ onCreateNew, refreshKey }: QuoteHistoryPr
   }, [page, search]);
 
   useEffect(() => { load(); }, [load, refreshKey]);
+
+  // The row menu renders in a portal at document.body, positioned with
+  // `fixed` coordinates computed from the trigger button — same pattern as
+  // the "..." menu on the Agreements list (app/crm/agreements/page.tsx) so
+  // it floats above the card list and isn't clipped by rounded containers.
+  const openMenu = (id: string, event: React.MouseEvent<HTMLButtonElement>) => {
+    if (menuId === id) { setMenuId(null); return; }
+    const rect = event.currentTarget.getBoundingClientRect();
+    const menuWidth = 176;
+    const menuHeight = 190;
+    let top = rect.bottom + 6;
+    let left = rect.right - menuWidth;
+    if (top + menuHeight > window.innerHeight - 12) top = rect.top - menuHeight - 6;
+    if (left < 12) left = 12;
+    if (left + menuWidth > window.innerWidth - 12) left = window.innerWidth - menuWidth - 12;
+    setMenuPos({ top, left });
+    setMenuId(id);
+  };
+
+  useEffect(() => {
+    if (!menuId) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuId(null);
+    };
+    const closeOnScrollOrResize = () => setMenuId(null);
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    window.addEventListener('scroll', closeOnScrollOrResize, true);
+    window.addEventListener('resize', closeOnScrollOrResize);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      window.removeEventListener('scroll', closeOnScrollOrResize, true);
+      window.removeEventListener('resize', closeOnScrollOrResize);
+    };
+  }, [menuId]);
+
+  const menuTarget = quotes.find((item) => item.id === menuId) || null;
+
+  const removeQuote = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const response = await fetch(`/quote-maker/api/quotes?id=${encodeURIComponent(deleteTarget.id)}`, { method: 'DELETE' });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || 'Unable to delete this quote.');
+      setDeleteTarget(null);
+      await load();
+    } catch (cause) {
+      setDeleteError(cause instanceof Error ? cause.message : 'Unable to delete this quote.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const range = useMemo(() => {
@@ -93,6 +165,7 @@ export default function QuoteHistory({ onCreateNew, refreshKey }: QuoteHistoryPr
       </section>
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
+      {deleteError ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{deleteError}</div> : null}
 
       {loading ? (
         <div className="flex min-h-56 items-center justify-center rounded-2xl border border-gray-200 bg-white"><Loader2 size={24} className="animate-spin text-red-600" /></div>
@@ -108,14 +181,30 @@ export default function QuoteHistory({ onCreateNew, refreshKey }: QuoteHistoryPr
             const expanded = expandedId === quote.id;
             return (
               <article key={quote.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                <button onClick={() => setExpandedId(expanded ? null : quote.id)} className="grid w-full gap-4 p-4 text-left transition-colors hover:bg-gray-50 sm:grid-cols-[minmax(0,1.25fr)_minmax(0,0.8fr)_auto] sm:items-center sm:p-5">
+                <div
+                  onClick={() => setExpandedId(expanded ? null : quote.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setExpandedId(expanded ? null : quote.id); } }}
+                  className="grid w-full cursor-pointer gap-4 p-4 text-left transition-colors hover:bg-gray-50 sm:grid-cols-[minmax(0,1.25fr)_minmax(0,0.8fr)_auto] sm:items-center sm:p-5"
+                >
                   <span className="min-w-0">
-                    <span className="flex flex-wrap items-center gap-2"><b className="truncate text-sm text-gray-950">{quote.client_name}</b><small className="rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black text-red-700">{quote.quote_number}</small></span>
-                    <span className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-medium text-gray-500"><span className="flex items-center gap-1"><Phone size={11} /> {quote.client_number}</span><span className="flex items-center gap-1"><CalendarDays size={11} /> Event: {formatDate(quote.event_date)}</span></span>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <b className="truncate text-sm text-gray-950">{quote.client_name}</b>
+                      <small className="rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black text-red-700">{quote.quote_number}</small>
+                      {isPastDate(quote.valid_until) ? <small className="rounded-full bg-gray-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-gray-500">Expired</small> : null}
+                    </span>
+                    <span className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-medium text-gray-500"><span className="flex items-center gap-1"><Phone size={11} /> {quote.client_number}</span><span className="flex items-center gap-1"><CalendarDays size={11} /> Event: {formatDate(quote.event_date)}</span><span className="flex items-center gap-1"><CalendarDays size={11} /> Valid till: {formatDate(quote.valid_until)}</span></span>
                   </span>
                   <span className="min-w-0"><span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">{quote.selected_services.length} services</span><span className="mt-1 block truncate text-xs text-gray-600">{quote.selected_services.map((service) => service.name).join(', ')}</span></span>
-                  <span className="flex items-center justify-between gap-5 sm:block sm:text-right"><span><small className="block text-[9px] font-bold uppercase tracking-wider text-gray-400">Grand total</small><b className="mt-1 block text-base text-emerald-700">{formatCurrency(quote.grand_total)}</b></span><ChevronRight size={17} className={`text-gray-400 transition-transform ${expanded ? 'rotate-90' : ''}`} /></span>
-                </button>
+                  <span className="flex items-center justify-between gap-3 sm:justify-end">
+                    <span className="text-left sm:text-right"><small className="block text-[9px] font-bold uppercase tracking-wider text-gray-400">Grand total</small><b className="mt-1 block text-base text-emerald-700">{formatCurrency(quote.grand_total)}</b></span>
+                    <span className="flex items-center gap-1">
+                      <button onClick={(event) => { event.stopPropagation(); openMenu(quote.id, event); }} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-900"><MoreHorizontal size={16} /></button>
+                      <ChevronRight size={17} className={`text-gray-400 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+                    </span>
+                  </span>
+                </div>
 
                 {expanded ? (
                   <div className="border-t border-gray-100 bg-[#fcfbf9] p-4 sm:p-5">
@@ -131,7 +220,7 @@ export default function QuoteHistory({ onCreateNew, refreshKey }: QuoteHistoryPr
                       <div className="rounded-xl border border-gray-200 bg-white p-4">
                         <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-gray-400"><IndianRupee size={11} /> Pricing</p>
                         <dl className="mt-3 space-y-2 text-xs"><div className="flex justify-between"><dt className="text-gray-500">Final price</dt><dd className="font-bold text-gray-800">{formatCurrency(quote.final_price)}</dd></div><div className="flex justify-between"><dt className="text-gray-500">Transport</dt><dd className="font-bold text-gray-800">{formatCurrency(quote.transport_cost)}</dd></div><div className="flex justify-between"><dt className="text-gray-500">Discount</dt><dd className="font-bold text-red-600">− {formatCurrency(quote.discount)}</dd></div><div className="flex justify-between border-t border-gray-100 pt-2"><dt className="font-black text-gray-800">Grand total</dt><dd className="font-black text-emerald-700">{formatCurrency(quote.grand_total)}</dd></div></dl>
-                        <p className="mt-4 border-t border-gray-100 pt-3 text-[10px] text-gray-400">Saved {formatDateTime(quote.created_at)}</p>
+                        <p className="mt-4 border-t border-gray-100 pt-3 text-[10px] text-gray-400">Valid until {formatDate(quote.valid_until)} &middot; Saved {formatDateTime(quote.created_at)}</p>
                       </div>
                     </div>
                   </div>
@@ -146,6 +235,26 @@ export default function QuoteHistory({ onCreateNew, refreshKey }: QuoteHistoryPr
         <span>{range}</span>
         <div className="flex items-center justify-between gap-2 sm:justify-end"><button onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || loading} className="inline-flex h-9 items-center gap-1 rounded-xl border border-gray-200 px-3 font-bold disabled:opacity-40"><ChevronLeft size={14} /> Previous</button><span className="min-w-20 text-center font-bold text-gray-700">Page {page} of {pageCount}</span><button onClick={() => setPage((current) => Math.min(pageCount, current + 1))} disabled={page >= pageCount || loading} className="inline-flex h-9 items-center gap-1 rounded-xl border border-gray-200 px-3 font-bold disabled:opacity-40">Next <ChevronRight size={14} /></button></div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete quote"
+        message={`Delete ${deleteTarget?.quote_number}? This cannot be undone.`}
+        confirmLabel="Delete quote"
+        loading={deleting}
+        onConfirm={removeQuote}
+        onCancel={() => { setDeleteTarget(null); setDeleteError(''); }}
+      />
+
+      {menuTarget && menuPos && typeof document !== 'undefined' && createPortal(
+        <div ref={menuRef} style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }} className="z-[70] w-44 rounded-xl border border-gray-200 bg-white p-1.5 shadow-2xl">
+          <button onClick={() => { setMenuId(null); onEdit(menuTarget); }} className="agreement-menu-item w-full"><Pencil size={14} /> Edit / revise</button>
+          <button onClick={() => { setMenuId(null); onDuplicate(menuTarget); }} className="agreement-menu-item w-full"><Copy size={14} /> Duplicate</button>
+          <button onClick={() => { setMenuId(null); onDownload(menuTarget); }} className="agreement-menu-item w-full"><Download size={14} /> Download</button>
+          <button onClick={() => { setMenuId(null); setDeleteError(''); setDeleteTarget(menuTarget); }} className="agreement-menu-item w-full text-red-600"><Trash2 size={14} /> Delete</button>
+        </div>,
+        document.body
+      )}
     </main>
   );
 }

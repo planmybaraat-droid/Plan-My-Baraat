@@ -28,6 +28,7 @@ function parsePayload(value: unknown): { data?: QuoteMakerQuotePayload; error?: 
   const id = typeof source.id === 'string' && UUID_PATTERN.test(source.id) ? source.id : undefined;
   const clientName = typeof source.client_name === 'string' ? source.client_name.trim().replace(/\s+/g, ' ') : '';
   const eventDate = typeof source.event_date === 'string' ? source.event_date.trim() : '';
+  const validUntil = typeof source.valid_until === 'string' ? source.valid_until.trim() : '';
   const clientNumber = typeof source.client_number === 'string' ? source.client_number.trim() : '';
   const finalPrice = money(source.final_price);
   const transportCost = money(source.transport_cost);
@@ -35,6 +36,7 @@ function parsePayload(value: unknown): { data?: QuoteMakerQuotePayload; error?: 
 
   if (clientName.length < 2 || clientName.length > 120) return { error: 'Enter a valid client name.' };
   if (!DATE_PATTERN.test(eventDate) || Number.isNaN(new Date(`${eventDate}T00:00:00`).getTime())) return { error: 'Enter a valid event date.' };
+  if (!DATE_PATTERN.test(validUntil) || Number.isNaN(new Date(`${validUntil}T00:00:00`).getTime())) return { error: 'Enter a valid "quote valid until" date.' };
   if (!/^\+?[0-9 ()-]{7,20}$/.test(clientNumber) || clientNumber.replace(/\D/g, '').length < 7) return { error: 'Enter a valid client number.' };
   if (finalPrice === null || finalPrice <= 0 || transportCost === null || discount === null) return { error: 'Enter valid pricing details.' };
   if (discount > finalPrice + transportCost) return { error: 'Discount cannot be greater than the quote value.' };
@@ -68,6 +70,7 @@ function parsePayload(value: unknown): { data?: QuoteMakerQuotePayload; error?: 
       final_price: finalPrice,
       transport_cost: transportCost,
       discount,
+      valid_until: validUntil,
     },
   };
 }
@@ -111,10 +114,28 @@ export async function POST(request: NextRequest) {
     p_final_price: values.final_price,
     p_transport_cost: values.transport_cost,
     p_discount: values.discount,
+    p_valid_until: values.valid_until,
   });
 
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 500 });
   const quote = Array.isArray(result.data) ? result.data[0] : result.data;
   if (!quote) return NextResponse.json({ error: 'Saved quote was not returned.' }, { status: 500 });
   return NextResponse.json({ quote }, { status: values.id ? 200 : 201 });
+}
+
+export async function DELETE(request: NextRequest) {
+  if (!authorized(request)) return NextResponse.json({ error: 'Your Quote Maker session has expired.' }, { status: 401 });
+  if (!supabase) return NextResponse.json({ error: 'Quote storage is not configured on the server.' }, { status: 503 });
+
+  const id = request.nextUrl.searchParams.get('id') || '';
+  if (!UUID_PATTERN.test(id)) return NextResponse.json({ error: 'Invalid quote id.' }, { status: 400 });
+
+  const token = request.cookies.get(QUOTE_MAKER_COOKIE_NAME)!.value;
+  const { error } = await supabase.rpc('crm_quote_maker_delete_quote', {
+    p_session_token: token,
+    p_id: id,
+  });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
 }

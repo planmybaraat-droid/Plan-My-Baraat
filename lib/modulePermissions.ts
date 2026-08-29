@@ -21,7 +21,8 @@ export type ModuleKey =
   | 'calendar'
   | 'eventJobs'
   | 'myLetters'
-  | 'letterhead';
+  | 'letterhead'
+  | 'assetManagement';
 
 export interface ModuleDef {
   key: ModuleKey;
@@ -46,6 +47,7 @@ export const WORKSPACE_MODULES: ModuleDef[] = [
   { key: 'eventJobs', label: 'My Event Jobs', description: 'View assigned event workflows and complete operational stages', path: '/workspace/event-jobs' },
   { key: 'myLetters', label: 'My Letters', description: 'View and download letters issued to this staff member', path: '/workspace/my-letters' },
   { key: 'letterhead', label: 'Letterhead', description: 'Create and download official company letterhead PDFs', path: '/workspace/letterhead' },
+  { key: 'assetManagement', label: 'Asset Management', description: 'Manage company vehicles, maintenance and documents', path: '/workspace/assets' },
 ];
 
 export const MODULE_KEYS: ModuleKey[] = WORKSPACE_MODULES.map((m) => m.key);

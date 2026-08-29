@@ -2,6 +2,7 @@
 
 import type { BusinessProfile, InvoiceRecord } from '../../lib/types';
 import { currency, formatInvoiceDate } from '../invoice-config';
+import { amountInWordsINR } from '../../lib/number-to-words';
 
 export function PdfText({ value }: { value: string }) {
   const words = String(value || '').split(' ');
@@ -56,6 +57,8 @@ export default function InvoiceDocument({ invoice, profile, qr }: { invoice: Inv
       const firstPage = pageIndex === 0;
       const lastPage = pageIndex === totalPages - 1;
       return <section className="invoice-pdf-page" data-pdf-page key={pageIndex}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="" className="pdf-watermark-logo" />
         <InvoiceHeader invoice={invoice} isVoucher={isVoucher} page={pageIndex + 1} total={totalPages} />
 
         {firstPage ? <>
@@ -78,7 +81,7 @@ export default function InvoiceDocument({ invoice, profile, qr }: { invoice: Inv
         {lastPage && <>
           <section className="invoice-doc-settlement">
             <div className="invoice-doc-payment-info"><span><PdfText value="Payment details" /></span>{profile.bank_name || profile.upi_id ? <><h3><PdfText value={profile.bank_name || 'UPI payment'} /></h3>{profile.account_name && <p><strong><PdfText value="Account name" /></strong> <PdfText value={profile.account_name} /></p>}{profile.account_number && <p><strong>Account</strong> {profile.account_number}</p>}{profile.ifsc && <p><strong>IFSC</strong> {profile.ifsc}</p>}{profile.upi_id && <p><strong>UPI</strong> {profile.upi_id}</p>}</> : <><h3><PdfText value="Payment details on request" /></h3><p>Approved account · Contact PlanMyBaraat coordinator</p></>}</div>
-            <div className="invoice-doc-totals"><div><span>Subtotal</span><strong>{currency(invoice.subtotal)}</strong></div>{invoice.discount > 0 && <div><span>Discount</span><strong>- {currency(invoice.discount)}</strong></div>}<div><span>Taxable</span><strong>{currency(invoice.taxable_value)}</strong></div>{gstPercent > 0 && (invoice.igst_amount > 0 ? <div><span>IGST ({gstPercent}%)</span><strong>{currency(invoice.igst_amount)}</strong></div> : <><div><span>CGST ({gstPercent / 2}%)</span><strong>{currency(invoice.cgst_amount)}</strong></div><div><span>SGST ({gstPercent / 2}%)</span><strong>{currency(invoice.sgst_amount)}</strong></div></>)}<div className="invoice-doc-grand-total"><span>Total</span><strong>{currency(invoice.total_amount)}</strong></div><div><span>Paid</span><strong className="invoice-doc-paid">{currency(invoice.amount_paid)}</strong></div><div className="invoice-doc-balance"><span>Balance</span><strong>{currency(invoice.balance_due)}</strong></div></div>
+            <div className="invoice-doc-totals"><div><span>Subtotal</span><strong>{currency(invoice.subtotal)}</strong></div>{invoice.discount > 0 && <div><span>Discount</span><strong>- {currency(invoice.discount)}</strong></div>}<div><span>Taxable</span><strong>{currency(invoice.taxable_value)}</strong></div>{gstPercent > 0 && (invoice.igst_amount > 0 ? <div><span>IGST ({gstPercent}%)</span><strong>{currency(invoice.igst_amount)}</strong></div> : <><div><span>CGST ({gstPercent / 2}%)</span><strong>{currency(invoice.cgst_amount)}</strong></div><div><span>SGST ({gstPercent / 2}%)</span><strong>{currency(invoice.sgst_amount)}</strong></div></>)}<div className="invoice-doc-grand-total"><span>Total</span><strong>{currency(invoice.total_amount)}</strong></div><div className="invoice-doc-words"><span>Amount in words</span><strong>{amountInWordsINR(invoice.total_amount)}</strong></div><div><span>Paid</span><strong className="invoice-doc-paid">{currency(invoice.amount_paid)}</strong></div><div className="invoice-doc-balance"><span>Balance</span><strong>{currency(invoice.balance_due)}</strong></div></div>
           </section>
           {(invoice.client_note || invoice.payment_terms) && <section className="invoice-doc-notes">{invoice.client_note && <div><span>Note</span><p><PdfText value={invoice.client_note} /></p></div>}{invoice.payment_terms && <div><span><PdfText value="Payment terms" /></span><p><PdfText value={invoice.payment_terms} /></p></div>}</section>}
           <section className="invoice-doc-signoff"><div><span><PdfText value="Prepared by" /></span><strong><PdfText value={invoice.created_by_name} /></strong><p>For · {profile.trade_name}</p></div><div><i><img src="/agreement-signature.png" alt="Authorized signature" className="invoice-doc-signature-stamp" /></i><strong>{separated(profile.authorized_signatory || 'Authorized Signatory')}</strong><p>Authorized · signatory</p></div></section>

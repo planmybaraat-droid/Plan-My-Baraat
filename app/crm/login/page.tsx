@@ -1,11 +1,11 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, ShieldCheck, CheckCircle2, KeyRound, Sparkles } from 'lucide-react';
-import { crmSupabase, isCrmSupabaseConfigured } from '../lib/supabase-crm';
+import { isCrmSupabaseConfigured } from '../lib/supabase-crm';
 
 const TRUST_POINTS = [
   { icon: ShieldCheck, label: 'Supabase Auth', desc: 'Encrypted sessions, never stored in plain text' },
@@ -14,9 +14,11 @@ const TRUST_POINTS = [
 ];
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/crm';
+  const requestedRedirect = searchParams.get('redirect');
+  const redirectTo = requestedRedirect?.startsWith('/crm') && !requestedRedirect.startsWith('//')
+    ? requestedRedirect
+    : '/crm';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -59,23 +61,23 @@ function LoginForm() {
     }
 
     try {
-      const { data, error: authError } = await crmSupabase.auth.signInWithPassword({
-        email: trimmedEmail,
-        password: trimmedPassword,
+      const response = await fetch('/api/crm/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
       });
+      const result = await response.json().catch(() => null) as { email?: string; error?: string } | null;
 
-      if (authError) throw new Error(authError.message);
+      if (!response.ok) throw new Error(result?.error || 'Unable to sign in.');
 
-      if (data?.session) {
-        localStorage.setItem('crm_session', 'true');
-        localStorage.setItem('crm_remember', rememberMe ? 'true' : 'false');
-        localStorage.setItem('crm_user', JSON.stringify({ email: data.user.email, name: data.user.email }));
-        sessionStorage.setItem('crm_active_session', '1');
+      localStorage.setItem('crm_session', 'true');
+      localStorage.setItem('crm_remember', rememberMe ? 'true' : 'false');
+      localStorage.setItem('crm_user', JSON.stringify({ email: result?.email || trimmedEmail, name: result?.email || trimmedEmail }));
+      sessionStorage.setItem('crm_active_session', '1');
 
-        setSuccess(true);
-        setTimeout(() => router.push(redirectTo), 400);
-        return;
-      }
+      setSuccess(true);
+      window.location.assign(redirectTo);
+      return;
     } catch (err: unknown) {
       setError(err instanceof Error ? friendlyError(err.message) : 'Invalid login credentials.');
     } finally {

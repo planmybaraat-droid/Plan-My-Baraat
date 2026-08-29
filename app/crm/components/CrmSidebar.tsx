@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, UserSearch, MoreHorizontal,
   Building2, Tag, Package, Calculator, Settings, X, ChevronRight, LogOut, MessageSquare, ScrollText, ReceiptText, FileText, UserCog, CalendarCheck2, ListChecks, Bell, CalendarDays, Handshake,
-  FileSignature, FolderCheck, Wallet, CalendarRange, ClipboardList, BriefcaseBusiness, IdCardLanyard, FilePenLine, Gauge, UserRoundSearch,
+  FileSignature, FolderCheck, Wallet, CalendarRange, ClipboardList, BriefcaseBusiness, IdCardLanyard, FilePenLine, Gauge, UserRoundSearch, Truck,
 } from 'lucide-react';
 import { crmSupabase } from '../lib/supabase-crm';
 import { useCrmProfile, initialsFrom } from '../lib/useCrmProfile';
@@ -38,41 +38,46 @@ const sidebarSections: { label: string; items: SidebarItem[] }[] = [
   { label: 'Overview', items: [
     { href: '/crm', label: 'Dashboard', icon: LayoutDashboard, exact: true },
     { href: '/crm/notifications', label: 'Notifications', icon: Bell },
-    { href: '/crm/settings', label: 'Settings', icon: Settings },
   ] },
   { label: 'People & operations', items: [
     { href: '/crm/staff', label: 'Staff', icon: UserCog, sectionKey: 'staff' },
     { href: '/crm/tasks', label: 'Tasks', icon: ListChecks, sectionKey: 'tasks' },
-    { href: '/crm/event-jobs', label: 'Event Jobs', icon: BriefcaseBusiness, sectionKey: 'eventJobs' },
     { href: '/crm/attendance', label: 'Attendance', icon: CalendarCheck2, sectionKey: 'attendance' },
     { href: '/crm/daily-work-reports', label: 'Daily Work Reports', icon: ClipboardList, sectionKey: 'dailyWorkReports' },
     { href: '/crm/leave', label: 'Leave Management', icon: CalendarRange, sectionKey: 'leaveManagement' },
     { href: '/crm/recruitment', label: 'Recruitment', icon: UserRoundSearch, sectionKey: 'recruitment' },
     { href: '/crm/vendors', label: 'Vendors', icon: Users, adminOnly: true },
+    { href: '/crm/vendor-agreements', label: 'Vendor Agreements', icon: Handshake, adminOnly: true },
+    { href: '/crm/assets', label: 'Asset Management', icon: Truck, sectionKey: 'assetManagement' },
   ] },
-  { label: 'HR management', items: [
-    { href: '/crm/hr', label: 'HR Overview', icon: LayoutDashboard, exact: true, sectionKey: 'hrOverview' },
-    { href: '/crm/hr/letters', label: 'Letters', icon: FileSignature, sectionKey: 'letters' },
-    { href: '/crm/hr/letterhead', label: 'Letterhead', icon: FilePenLine, sectionKey: 'letterhead' },
-    { href: '/crm/hr/kyc', label: 'KYC & Documents', icon: FolderCheck, sectionKey: 'kyc' },
-    { href: '/crm/hr/payroll', label: 'Salary & Payroll', icon: Wallet, sectionKey: 'salaryPayroll' },
-    { href: '/crm/performance', label: 'Staff Performance', icon: Gauge, sectionKey: 'performance' },
-    { href: '/crm/hr/id-cards', label: 'ID Cards', icon: IdCardLanyard, sectionKey: 'idCards' },
+  { label: 'Events & planning', items: [
+    { href: '/crm/event-jobs', label: 'Event Jobs', icon: BriefcaseBusiness, sectionKey: 'eventJobs' },
     { href: '/crm/event-calendar', label: 'Event Calendar', icon: CalendarDays, sectionKey: 'eventCalendar' },
   ] },
-  { label: 'Sales & documents', items: [
+  { label: 'Sales & client management', items: [
     { href: '/crm/leads', label: 'Customer Leads', icon: UserSearch, adminOnly: true },
     { href: '/crm/baraat-leads', label: 'Baraat Enquiries', icon: MessageSquare, adminOnly: true },
     { href: '/crm/quotations', label: 'Client Quotations', icon: FileText, adminOnly: true },
     { href: '/crm/agreements', label: 'Client Agreements', icon: ScrollText, adminOnly: true },
-    { href: '/crm/vendor-agreements', label: 'Vendor Agreements', icon: Handshake, adminOnly: true },
     { href: '/crm/invoices', label: 'Invoices & Payments', icon: ReceiptText, adminOnly: true },
+  ] },
+  { label: 'HR management', items: [
+    { href: '/crm/hr', label: 'HR Overview', icon: LayoutDashboard, exact: true, sectionKey: 'hrOverview' },
+    { href: '/crm/performance', label: 'Staff Performance', icon: Gauge, sectionKey: 'performance' },
+    { href: '/crm/hr/letters', label: 'Letters', icon: FileSignature, sectionKey: 'letters' },
+    { href: '/crm/hr/letterhead', label: 'Letterhead', icon: FilePenLine, sectionKey: 'letterhead' },
+    { href: '/crm/hr/kyc', label: 'KYC & Documents', icon: FolderCheck, sectionKey: 'kyc' },
+    { href: '/crm/hr/payroll', label: 'Salary & Payroll', icon: Wallet, sectionKey: 'salaryPayroll' },
+    { href: '/crm/hr/id-cards', label: 'ID Cards', icon: IdCardLanyard, sectionKey: 'idCards' },
   ] },
   { label: 'Configuration', items: [
     { href: '/crm/cities', label: 'Cities', icon: Building2, adminOnly: true },
     { href: '/crm/categories', label: 'Categories', icon: Tag, adminOnly: true },
     { href: '/crm/packages', label: 'Packages', icon: Package, adminOnly: true },
     { href: '/crm/package-maker', label: 'Package Maker', icon: Calculator, adminOnly: true },
+  ] },
+  { label: 'System', items: [
+    { href: '/crm/settings', label: 'Settings', icon: Settings },
   ] },
 ];
 

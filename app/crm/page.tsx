@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  Users, UserSearch, ClipboardCheck, ReceiptText, Loader2, CalendarDays,
+  Users, UserSearch, Loader2, CalendarDays,
   ChevronLeft, ChevronRight, UserPlus, Cake, UserCog, ListChecks,
-  CheckCircle2, Loader as LoaderIcon, Hourglass, AlertCircle, CalendarRange,
-  PartyPopper,
+  CalendarRange, PartyPopper, Banknote, FileSignature, FilePlus2, IndianRupee,
 } from 'lucide-react';
 import CrmHeader from './components/CrmHeader';
 import { useSidebar } from './sidebar-context';
@@ -23,20 +22,13 @@ import { useCrmProfile } from './lib/useCrmProfile';
 import { isCrmManagerRole, resolveSectionAccess } from '../../lib/crmSectionPermissions';
 import type { Vendor } from './lib/types';
 import DownloadCenterCard from './components/DownloadCenterCard';
+import { getEventJobs, type EventJob } from './lib/event-job-data';
 
 interface StaffRosterRow {
   staff: StaffRecord;
   checkIn: string | null;
   checkOut: string | null;
   pendingTasks: number;
-}
-
-function formatPunchTime(t: string | null) {
-  if (!t) return null;
-  const [h, m] = t.split(':').map(Number);
-  const period = h >= 12 ? 'PM' : 'AM';
-  const hour12 = h % 12 === 0 ? 12 : h % 12;
-  return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
 }
 
 const EVENT_CHIP_COLORS = [
@@ -47,6 +39,14 @@ const EVENT_CHIP_COLORS = [
   'bg-pink-50 text-pink-700 border-pink-100',
 ];
 
+const currency = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
+const WORKFLOW_STAGES = ['booking', 'confirmation', 'vendor_blocking', 'client_meeting', 'final_checklist', 'dispatch', 'event_execution', 'payment_closure', 'feedback'];
+function workflowProgress(stage: string, status: EventJob['status']) {
+  if (status === 'Completed') return 100;
+  const index = WORKFLOW_STAGES.indexOf(stage);
+  return index < 0 ? 10 : Math.max(10, Math.round(((index + 1) / WORKFLOW_STAGES.length) * 100));
+}
+
 function dateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -56,17 +56,19 @@ export default function CrmDashboard() {
   const { profile } = useCrmProfile();
   const isManager = isCrmManagerRole(profile?.role);
   const canReviewLeave = !isManager || resolveSectionAccess(profile?.role, profile?.sectionAccess, 'leaveManagement');
+  const canViewEventJobs = !isManager || resolveSectionAccess(profile?.role, profile?.sectionAccess, 'eventJobs');
+  const canReviewReports = !isManager || resolveSectionAccess(profile?.role, profile?.sectionAccess, 'dailyWorkReports');
   const [loading, setLoading] = useState(true);
 
-  const [vendorTotal, setVendorTotal] = useState(0);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [leadTotal, setLeadTotal] = useState(0);
-  const [agreementsPending, setAgreementsPending] = useState(0);
-  const [invoicesOverdue, setInvoicesOverdue] = useState(0);
   const [pendingLeave, setPendingLeave] = useState(0);
   const [staffRoster, setStaffRoster] = useState<StaffRosterRow[]>([]);
   const [taskCounts, setTaskCounts] = useState({ completed: 0, inProgress: 0, pending: 0, overdue: 0, total: 0 });
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [eventJobs, setEventJobs] = useState<EventJob[]>([]);
+  const [financials, setFinancials] = useState({ invoiced: 0, collected: 0, outstanding: 0, overdue: 0 });
+  const [reportsSubmitted, setReportsSubmitted] = useState(0);
   const [birthdays, setBirthdays] = useState<BirthdayEvent[]>([]);
   const [holidays, setHolidays] = useState<HolidayEvent[]>([]);
   const [monthCursor, setMonthCursor] = useState(() => new Date());
@@ -78,7 +80,7 @@ export default function CrmDashboard() {
         // A Manager account can't read Vendors/Leads/Agreements/Invoices
         // (those stay Admin-only), so skip fetching them entirely rather
         // than showing misleading zeros from a blocked query.
-        const [vendors, leads, _quotations, agreements, invoices, taskRows, staff, attendanceRows, taskAssigneeRows] = await Promise.all([
+        const [vendors, leads, _quotations, agreements, invoices, taskRows, staff, attendanceRows, taskAssigneeRows, jobRows, reportRows] = await Promise.all([
           isManager ? Promise.resolve([]) : getVendors(),
           isManager ? Promise.resolve([]) : getLeads(),
           isManager ? Promise.resolve([]) : getQuotations(),
@@ -88,14 +90,21 @@ export default function CrmDashboard() {
           getStaff({ status: 'Active' }),
           crmSupabase.from('crm_attendance').select('staff_id, check_in, check_out').eq('attendance_date', today),
           crmSupabase.from('crm_tasks').select('status, crm_task_assignees(staff_user_id)').not('status', 'in', '(Completed,Rejected)'),
+          canViewEventJobs ? getEventJobs().catch(() => []) : Promise.resolve([]),
+          canReviewReports ? crmSupabase.from('crm_daily_work_reports').select('report_status').eq('report_date', today) : Promise.resolve({ data: [], error: null }),
         ]);
 
-        setVendorTotal(vendors.length);
         setVendors(vendors);
         setLeadTotal(leads.length);
-        setAgreementsPending(agreements.filter((a) => ['Draft', 'Sent'].includes(a.status)).length);
-        setInvoicesOverdue(invoices.filter((i) => effectiveInvoiceStatus(i) === 'Overdue').length);
+        setFinancials({
+          invoiced: invoices.reduce((sum, invoice) => sum + Number(invoice.total_amount || 0), 0),
+          collected: invoices.reduce((sum, invoice) => sum + Number(invoice.amount_paid || 0), 0),
+          outstanding: invoices.reduce((sum, invoice) => sum + Number(invoice.balance_due || 0), 0),
+          overdue: invoices.filter((invoice) => effectiveInvoiceStatus(invoice) === 'Overdue').reduce((sum, invoice) => sum + Number(invoice.balance_due || 0), 0),
+        });
         setEvents(deriveConfirmedEvents(agreements, invoices));
+        setEventJobs(jobRows);
+        setReportsSubmitted((reportRows.data || []).filter((report) => ['SUBMITTED', 'REVIEWED'].includes(String(report.report_status))).length);
         if (canReviewLeave) {
           const { count } = await crmSupabase.from('crm_leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'Pending');
           setPendingLeave(count || 0);
@@ -144,7 +153,7 @@ export default function CrmDashboard() {
       }
     }
     load();
-  }, [isManager, canReviewLeave]);
+  }, [isManager, canReviewLeave, canReviewReports, canViewEventJobs]);
 
   useEffect(() => {
     (async () => {
@@ -193,7 +202,35 @@ export default function CrmDashboard() {
   const todayKey = dateKey(new Date());
   const shiftMonth = (delta: number) => setMonthCursor((cursor) => new Date(cursor.getFullYear(), cursor.getMonth() + delta, 1));
 
-  const taskBar = (count: number) => (taskCounts.total ? Math.max((count / taskCounts.total) * 100, count > 0 ? 4 : 0) : 0);
+  const openTasks = taskCounts.pending + taskCounts.inProgress;
+  const staffOnDuty = staffRoster.filter((row) => row.checkIn && !row.checkOut).length;
+  const attendanceRate = staffRoster.length ? Math.round((staffRoster.filter((row) => row.checkIn).length / staffRoster.length) * 100) : 0;
+  const upcomingJobs = eventJobs.filter((job) => job.event_date >= todayKey && !['Completed', 'Cancelled'].includes(job.status)).slice(0, 5);
+  const upcomingEventCount = events.filter((event) => event.event_date >= todayKey).length;
+  const dashboardKpis = isManager ? [
+    { label: 'Upcoming Events', value: upcomingEventCount, note: 'Confirmed bookings', icon: CalendarDays, tone: 'bg-red-50 text-red-600', href: '/crm/event-calendar' },
+    { label: 'Active Staff', value: staffRoster.length, note: 'Current team', icon: UserCog, tone: 'bg-blue-50 text-blue-600', href: '/crm/staff' },
+    { label: 'Staff On Duty', value: `${staffOnDuty}/${staffRoster.length}`, note: 'Working now', icon: Users, tone: 'bg-emerald-50 text-emerald-600', href: '/crm/attendance' },
+    { label: 'Open Tasks', value: openTasks, note: `${taskCounts.overdue} overdue`, icon: ListChecks, tone: 'bg-amber-50 text-amber-600', href: '/crm/tasks' },
+    { label: 'Leave Pending', value: pendingLeave, note: 'Awaiting review', icon: CalendarRange, tone: 'bg-violet-50 text-violet-600', href: '/crm/leave' },
+  ] : [
+    { label: 'Upcoming Events', value: upcomingEventCount, note: 'Confirmed bookings', icon: CalendarDays, tone: 'bg-red-50 text-red-600', href: '/crm/event-calendar' },
+    { label: 'Open Leads', value: leadTotal, note: 'Across all sources', icon: UserSearch, tone: 'bg-emerald-50 text-emerald-600', href: '/crm/leads' },
+    { label: 'Outstanding', value: currency(financials.outstanding), note: 'Total balance due', icon: IndianRupee, tone: 'bg-amber-50 text-amber-600', href: '/crm/invoices' },
+    { label: 'Staff On Duty', value: `${staffOnDuty}/${staffRoster.length}`, note: 'Working now', icon: Users, tone: 'bg-blue-50 text-blue-600', href: '/crm/attendance' },
+    { label: 'Open Tasks', value: openTasks, note: `${taskCounts.overdue} overdue`, icon: ListChecks, tone: 'bg-violet-50 text-violet-600', href: '/crm/tasks' },
+  ];
+  const quickActions = isManager ? [
+    { label: 'Attendance', href: '/crm/attendance', icon: Users },
+    ...(canReviewLeave ? [{ label: 'Review Leave', href: '/crm/leave', icon: CalendarRange }] : []),
+    ...(canReviewReports ? [{ label: 'Work Reports', href: '/crm/daily-work-reports', icon: FilePlus2 }] : []),
+    ...(canViewEventJobs ? [{ label: 'Event Jobs', href: '/crm/event-jobs', icon: CalendarDays }] : []),
+  ] : [
+    { label: 'Add Lead', href: '/crm/leads/new', icon: UserPlus },
+    { label: 'Create Quotation', href: '/crm/quotations/new', icon: FilePlus2 },
+    { label: 'Create Agreement', href: '/crm/agreements/new', icon: FileSignature },
+    { label: 'Record Payment', href: '/crm/invoices', icon: Banknote },
+  ];
 
   return (
     <>
@@ -220,138 +257,57 @@ export default function CrmDashboard() {
           <Loader2 size={32} className="animate-spin text-red-500" />
         </div>
       ) : (
-        <div className="space-y-4 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 p-4 sm:p-5">
           {/* KPI row */}
-          {isManager ? (
-            <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
-              <Link href="/crm/staff" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+          <div className="order-1 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            {dashboardKpis.map(({ label, value, note, icon: Icon, tone, href }) => (
+              <Link key={label} href={href} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><UserCog size={19} /></span>
-                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{staffRoster.length}</p><p className="text-[11px] font-semibold text-gray-400">Active staff</p></div>
+                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tone}`}><Icon size={19} /></span>
+                  <div className="min-w-0"><p className="truncate text-xl font-black leading-tight text-gray-950 tabular-nums sm:text-2xl">{value}</p><p className="truncate text-[11px] font-bold text-gray-700">{label}</p></div>
                 </div>
-                <p className="mt-2.5 text-[11px] font-bold text-red-600">View staff →</p>
+                <p className="mt-2.5 truncate text-[10px] font-semibold text-gray-400">{note}</p>
               </Link>
-              <Link href="/crm/attendance" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><Users size={19} /></span>
-                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{staffRoster.filter((r) => r.checkIn && !r.checkOut).length}</p><p className="text-[11px] font-semibold text-gray-400">On duty now</p></div>
-                </div>
-                <p className="mt-2.5 text-[11px] font-bold text-emerald-600">View attendance →</p>
-              </Link>
-              <Link href="/crm/tasks" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><ListChecks size={19} /></span>
-                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{taskCounts.pending + taskCounts.inProgress}</p><p className="text-[11px] font-semibold text-gray-400">Open tasks</p></div>
-                </div>
-                <p className="mt-2.5 text-[11px] font-bold text-amber-600">View tasks →</p>
-              </Link>
-              {canReviewLeave && <Link href="/crm/leave" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-                <div className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><CalendarRange size={19} /></span><div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{pendingLeave}</p><p className="text-[11px] font-semibold text-gray-400">Leave pending</p></div></div>
-                <p className="mt-2.5 text-[11px] font-bold text-violet-600">Review requests →</p>
-              </Link>}
-            </div>
-          ) : (
-            <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-5">
-              <Link href="/crm/vendors" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><Users size={19} /></span>
-                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{vendorTotal}</p><p className="text-[11px] font-semibold text-gray-400">Vendors</p></div>
-                </div>
-                <p className="mt-2.5 text-[11px] font-bold text-red-600">View all vendors →</p>
-              </Link>
-              <Link href="/crm/leads" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><UserSearch size={19} /></span>
-                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{leadTotal}</p><p className="text-[11px] font-semibold text-gray-400">Leads</p></div>
-                </div>
-                <p className="mt-2.5 text-[11px] font-bold text-blue-600">View all leads →</p>
-              </Link>
-              <Link href="/crm/agreements" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><ClipboardCheck size={19} /></span>
-                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{agreementsPending}</p><p className="text-[11px] font-semibold text-gray-400">Agreement Pending</p></div>
-                </div>
-                <p className="mt-2.5 text-[11px] font-bold text-emerald-600">View all agreements →</p>
-              </Link>
-              <Link href="/crm/invoices" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><ReceiptText size={19} /></span>
-                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{invoicesOverdue}</p><p className="text-[11px] font-semibold text-gray-400">Invoices Overdue</p></div>
-                </div>
-                <p className="mt-2.5 text-[11px] font-bold text-amber-600">View all invoices →</p>
-              </Link>
-              <Link href="/crm/leave" className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><CalendarRange size={19} /></span>
-                  <div className="min-w-0"><p className="text-2xl font-black leading-tight text-gray-950 tabular-nums">{pendingLeave}</p><p className="text-[11px] font-semibold text-gray-400">Leave Pending</p></div>
-                </div>
-                <p className="mt-2.5 text-[11px] font-bold text-violet-600">Review requests →</p>
-              </Link>
-            </div>
-          )}
+            ))}
+          </div>
 
-          <DownloadCenterCard vendors={vendors} canDownloadVendors={!isManager} />
+          <div className="order-5"><DownloadCenterCard vendors={vendors} canDownloadVendors={!isManager} /></div>
 
-          {/* Staff On Duty Today + Tasks Overview */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:min-h-[20rem]">
-              <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800"><UserCog size={15} className="text-emerald-500" /> Staff On Duty Today</h3>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700">{staffRoster.filter((r) => r.checkIn && !r.checkOut).length} on duty</span>
-                  <Link href="/crm/attendance" className="text-xs font-semibold text-red-600 hover:underline">View all</Link>
-                </div>
-              </div>
-              <div className="crm-thin-scroll divide-y divide-gray-50 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-                {!staffRoster.length ? (
-                  <p className="py-10 text-center text-sm text-gray-400">No active staff yet</p>
-                ) : staffRoster.map((r) => {
-                  const onDuty = r.checkIn && !r.checkOut;
-                  const done = r.checkIn && r.checkOut;
-                  return (
-                    <div key={r.staff.id} className="flex items-center gap-3 px-5 py-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-600">{r.staff.full_name.charAt(0)}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-gray-900">{r.staff.full_name}</p>
-                        <p className="truncate text-xs text-gray-400">{r.staff.job_title || r.staff.department}{r.checkIn ? ` · In ${formatPunchTime(r.checkIn)}` : ''}{r.checkOut ? ` · Out ${formatPunchTime(r.checkOut)}` : ''}</p>
-                      </div>
-                      <span className={`shrink-0 flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase ${r.pendingTasks >= 5 ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-500'}`}><ListChecks size={10} /> {r.pendingTasks}</span>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase ${onDuty ? 'bg-emerald-50 text-emerald-700' : done ? 'bg-gray-100 text-gray-500' : 'bg-amber-50 text-amber-700'}`}>{onDuty ? 'On duty' : done ? 'Done' : 'Not in yet'}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          {/* Event operations + financial/manager snapshot */}
+          <div className="order-3 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(19rem,0.8fr)]">
+            <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4"><div><h3 className="text-sm font-black text-gray-900">Upcoming Event Operations</h3><p className="mt-1 text-[10px] font-semibold text-gray-400">Live workflow status from Event Jobs</p></div>{canViewEventJobs&&<Link href="/crm/event-jobs" className="text-xs font-bold text-red-600 hover:underline">View all</Link>}</div>
+              {!canViewEventJobs?<div className="px-5 py-12 text-center text-xs font-semibold text-gray-400">Event Jobs access is not enabled for this account.</div>:!upcomingJobs.length?<div className="px-5 py-12 text-center"><CalendarDays size={24} className="mx-auto text-gray-300"/><p className="mt-2 text-xs font-semibold text-gray-400">No upcoming active Event Jobs</p></div>:<><div className="hidden overflow-x-auto md:block"><table className="w-full text-left"><thead className="bg-gray-50 text-[9px] font-black uppercase tracking-wider text-gray-400"><tr><th className="px-5 py-3">Event</th><th className="px-4 py-3">Date</th><th className="px-4 py-3">Workflow</th><th className="px-5 py-3">Status</th></tr></thead><tbody className="divide-y divide-gray-100">{upcomingJobs.map(job=>{const progress=workflowProgress(job.current_stage_key,job.status);return <tr key={job.id} className="hover:bg-gray-50"><td className="px-5 py-3.5"><Link href={`/crm/event-jobs/${job.id}`} className="text-xs font-black text-gray-900 hover:text-red-600">{job.event_name||job.client_name}</Link><p className="mt-0.5 text-[10px] text-gray-400">{job.client_name} · {job.city||'City not set'}</p></td><td className="px-4 py-3.5 text-xs font-semibold text-gray-600">{new Date(`${job.event_date}T00:00:00`).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</td><td className="min-w-44 px-4 py-3.5"><div className="flex items-center gap-2"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100"><span className="block h-full rounded-full bg-emerald-500" style={{width:`${progress}%`}}/></div><b className="text-[10px] text-gray-500">{progress}%</b></div><p className="mt-1 text-[9px] capitalize text-gray-400">{job.current_stage_key.replaceAll('_',' ')}</p></td><td className="px-5 py-3.5"><span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${job.status==='Blocked'||job.status==='Needs Rework'?'bg-red-50 text-red-600':'bg-emerald-50 text-emerald-700'}`}>{job.status}</span></td></tr>})}</tbody></table></div><div className="divide-y md:hidden">{upcomingJobs.map(job=><Link key={job.id} href={`/crm/event-jobs/${job.id}`} className="block p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><b className="block truncate text-xs text-gray-900">{job.event_name||job.client_name}</b><p className="mt-1 text-[10px] text-gray-400">{job.client_name} · {new Date(`${job.event_date}T00:00:00`).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</p></div><span className="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-[8px] font-black uppercase text-gray-600">{job.status}</span></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-gray-100"><span className="block h-full rounded-full bg-emerald-500" style={{width:`${workflowProgress(job.current_stage_key,job.status)}%`}}/></div></Link>)}</div></>}
+            </section>
+            <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-100 px-5 py-4"><h3 className="text-sm font-black text-gray-900">{isManager?'Operations Snapshot':'Financial Snapshot'}</h3><p className="mt-1 text-[10px] font-semibold text-gray-400">{isManager?'Live team compliance':'Live totals from invoices and payments'}</p></div>
+              <div className="divide-y divide-gray-100 px-5">{(isManager?[['Attendance today',`${attendanceRate}%`],['Open tasks',openTasks],['Overdue tasks',taskCounts.overdue],['Reports submitted',`${reportsSubmitted}/${staffRoster.length}`],['Pending leave',pendingLeave]]:[['Total invoiced',currency(financials.invoiced)],['Collected',currency(financials.collected)],['Outstanding',currency(financials.outstanding)],['Overdue',currency(financials.overdue)]]).map(([label,value])=><div key={String(label)} className="flex items-center justify-between gap-4 py-4"><span className="text-xs font-semibold text-gray-500">{label}</span><b className={`text-sm tabular-nums ${label==='Overdue'&&Number(financials.overdue)>0?'text-red-600':'text-gray-950'}`}>{value}</b></div>)}</div>
+              <Link href={isManager?'/crm/daily-work-reports':'/crm/invoices'} className="m-4 block rounded-xl bg-gray-950 px-4 py-3 text-center text-xs font-bold text-white hover:bg-red-600">{isManager?'View daily reports':'View invoices & payments'} →</Link>
+            </section>
+          </div>
 
-            <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:min-h-[20rem]">
-              <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
-                <h3 className="text-sm font-bold text-gray-800">Tasks Overview</h3>
-                <Link href="/crm/tasks" className="text-xs font-semibold text-red-600 hover:underline">View all</Link>
-              </div>
-              <div className="crm-thin-scroll flex flex-col gap-6 p-5 lg:min-h-0 lg:flex-1 lg:justify-around lg:gap-0 lg:overflow-y-auto">
-                {[
-                  { label: 'Completed', count: taskCounts.completed, icon: CheckCircle2, iconBg: 'bg-emerald-500', barColor: 'bg-emerald-500' },
-                  { label: 'In Progress', count: taskCounts.inProgress, icon: LoaderIcon, iconBg: 'bg-blue-500', barColor: 'bg-blue-500' },
-                  { label: 'Pending', count: taskCounts.pending, icon: Hourglass, iconBg: 'bg-amber-500', barColor: 'bg-amber-500' },
-                  { label: 'Overdue', count: taskCounts.overdue, icon: AlertCircle, iconBg: 'bg-red-500', barColor: 'bg-red-500' },
-                ].map((row) => (
-                  <div key={row.label} className="flex items-center gap-3">
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${row.iconBg} text-white`}><row.icon size={14} /></span>
-                    <span className="w-24 shrink-0 text-sm font-semibold text-gray-700">{row.label}</span>
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100"><span className={`block h-full rounded-full ${row.barColor}`} style={{ width: `${taskBar(row.count)}%` }} /></div>
-                    <span className="w-5 shrink-0 text-right text-sm font-bold text-gray-800 tabular-nums">{row.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="order-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(20rem,0.9fr)]">
+            <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4"><div><h3 className="text-sm font-black text-gray-900">Team Compliance</h3><p className="mt-1 text-[10px] font-semibold text-gray-400">Today&rsquo;s attendance, reports and approvals</p></div><Link href="/crm/attendance" className="text-xs font-bold text-red-600 hover:underline">View details</Link></div>
+              <div className="grid grid-cols-2 divide-x divide-y divide-gray-100 sm:grid-cols-4 sm:divide-y-0">{[
+                {label:'Attendance',value:`${attendanceRate}%`,note:`${staffOnDuty} on duty`,tone:'text-emerald-600'},
+                {label:'Pending Leave',value:pendingLeave,note:'Awaiting approval',tone:'text-violet-600'},
+                {label:'Reports Submitted',value:reportsSubmitted,note:`of ${staffRoster.length} staff`,tone:'text-blue-600'},
+                {label:'Overdue Tasks',value:taskCounts.overdue,note:'Need attention',tone:'text-red-600'},
+              ].map(item=><div key={item.label} className="min-w-0 p-4 sm:p-5"><b className={`block text-2xl font-black tabular-nums ${item.tone}`}>{item.value}</b><p className="mt-2 truncate text-[10px] font-black uppercase tracking-wide text-gray-600">{item.label}</p><p className="mt-1 truncate text-[9px] font-semibold text-gray-400">{item.note}</p></div>)}</div>
+            </section>
+            <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-100 px-5 py-4"><h3 className="text-sm font-black text-gray-900">Quick Actions</h3><p className="mt-1 text-[10px] font-semibold text-gray-400">Frequently used CRM actions</p></div>
+              <div className="grid grid-cols-2 gap-3 p-4">{quickActions.map(({label,href,icon:Icon})=><Link key={label} href={href} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50/30 p-3 text-center text-red-600 transition-colors hover:border-red-300 hover:bg-red-50"><Icon size={20}/><span className="text-[10px] font-black">{label}</span></Link>)}</div>
+            </section>
           </div>
 
           {/* Compact full-month calendar */}
-          <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(17rem,0.7fr)]">
+          <div className="order-6 grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(17rem,0.7fr)]">
             <section className="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3.5 sm:px-5">
                 <div>
-                  <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900"><CalendarDays size={16} className="text-red-500" /> Event Calendar</h3>
+                  <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900"><CalendarDays size={16} className="text-red-500" /> Event Operations Calendar</h3>
                   <p className="mt-0.5 text-[11px] font-medium text-gray-400">Confirmed events, team birthdays and company holidays</p>
                 </div>
                 <div className="flex items-center gap-1.5">
