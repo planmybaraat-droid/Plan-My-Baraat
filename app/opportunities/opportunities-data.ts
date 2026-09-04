@@ -1,7 +1,7 @@
 export type Opportunity = {
-  id: string;
+  id: "sales-executive" | "video-editor";
   title: string;
-  type: "Internship" | "Full-time";
+  type: "Full-time";
   department: string;
   location: string;
   summary: string;
@@ -10,16 +10,25 @@ export type Opportunity = {
 
 export const OPPORTUNITIES: Opportunity[] = [
   {
-    id: "full-stack-developer-intern",
-    title: "Full Stack Developer Intern",
-    type: "Internship",
-    department: "Technology",
+    id: "sales-executive",
+    title: "Sales Executive (Female)",
+    type: "Full-time",
+    department: "Sales",
     location: "Vadodara",
-    summary: "Work on real Plan My Baraat website and CRM features while learning how production-ready applications are designed, developed and tested.",
-    responsibilities: [
-      "Build responsive interfaces with React and Next.js",
-      "Work with APIs, Supabase and application data",
-      "Test, debug and improve live product features",
-    ],
+    summary: "Own lead follow-ups, understand wedding requirements and help families choose the right Plan My Baraat experience.",
+    responsibilities: ["Call and follow up with qualified enquiries", "Understand requirements and present suitable packages", "Maintain clear sales updates and client communication"],
+  },
+  {
+    id: "video-editor",
+    title: "Video Editor",
+    type: "Full-time",
+    department: "Creative",
+    location: "Vadodara",
+    summary: "Create polished reels, wedding films and social content with strong storytelling, pace and reliable delivery.",
+    responsibilities: ["Edit wedding, event and brand content", "Deliver platform-ready reels and videos on schedule", "Maintain consistent quality across fast-moving projects"],
   },
 ];
+
+export function findOpportunity(id: string) {
+  return OPPORTUNITIES.find((role) => role.id === id);
+}

@@ -6,12 +6,12 @@ import OpportunitiesClient from "./OpportunitiesClient";
 import { OPPORTUNITIES } from "./opportunities-data";
 
 export const metadata: Metadata = {
-  title: "Career Opportunities & Internships",
-  description: "Explore internships and full-time opportunities at Plan My Baraat in Vadodara. Choose an open position and apply directly through WhatsApp.",
+  title: "Career Opportunities",
+  description: "Explore current opportunities at Plan My Baraat in Vadodara and submit a role-specific application.",
   alternates: { canonical: "/opportunities" },
   openGraph: {
     title: "Career Opportunities at Plan My Baraat",
-    description: "Join the team behind premium Baraat experiences. Explore internships and full-time openings in Vadodara.",
+    description: "Join the team behind premium Baraat experiences. Explore current openings in Vadodara.",
     url: "/opportunities",
     type: "website",
   },
@@ -24,7 +24,7 @@ export default function OpportunitiesPage() {
     title: role.title,
     description: `${role.summary} Responsibilities include: ${role.responsibilities.join(", ")}.`,
     datePosted: "2026-08-26",
-    employmentType: role.type === "Internship" ? "INTERN" : "FULL_TIME",
+    employmentType: "FULL_TIME",
     hiringOrganization: {
       "@type": "Organization",
       name: "Plan My Baraat",
