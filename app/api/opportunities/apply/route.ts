@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'node:crypto';
 import { publicSupabaseKey, publicSupabaseUrl } from '../../../../lib/deployment-config';
 
 const roles = {
@@ -67,14 +68,16 @@ export async function POST(request: Request) {
   }
 
   const supabase = createClient(publicSupabaseUrl, publicSupabaseKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data, error } = await supabase.from('crm_recruitment_applications').insert({
+  const applicationId = randomUUID();
+  const { error } = await supabase.from('crm_recruitment_applications').insert({
+    id: applicationId,
     full_name: fullName, phone, email, city, position: roles[role], education: 'Not requested', experience_level: experience,
     skills, availability: joiningDate, resume_url: resumeLink, introduction, application_data: applicationData,
     role_slug: role, status: 'New', source: 'Website', updated_by: null,
-  }).select('id').single();
-  if (error || !data) {
+  });
+  if (error) {
     console.error('Opportunity application failed', error);
     return NextResponse.json({ error: 'We could not save your application. Please try again.' }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, applicationId: data.id });
+  return NextResponse.json({ ok: true, applicationId });
 }

@@ -27,15 +27,19 @@ export default function RoleApplicationForm({ role }: { role: Opportunity }) {
       values[key] = current ? (Array.isArray(current) ? [...current, text] : [current, text]) : text;
     });
     setState({ type: "submitting", message: "Saving your application…" });
+    const whatsappWindow = window.open("about:blank", "_blank");
     try {
       const response = await fetch("/api/opportunities/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: role.id, ...values }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to save your application.");
       const message = `Hello Plan My Baraat,\n\nI have submitted my application for *${role.title}*.\n\nName: ${values.fullName}\nWhatsApp: ${values.phone}\nEmail: ${values.email}\nApplication ID: ${result.applicationId}\n\nPlease let me know the next steps. Thank you.`;
+      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
       setState({ type: "success", message: "Application submitted successfully. Opening WhatsApp…" });
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+      if (whatsappWindow) whatsappWindow.location.href = whatsappUrl;
+      else window.location.href = whatsappUrl;
       form.reset();
     } catch (error) {
+      whatsappWindow?.close();
       setState({ type: "error", message: error instanceof Error ? error.message : "Unable to submit your application." });
     }
   }
