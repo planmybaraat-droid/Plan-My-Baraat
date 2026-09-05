@@ -1,7 +1,7 @@
 import { crmSupabase } from '../../crm/lib/supabase-crm';
 import { deriveMonthAttendance, DEFAULT_WORKING_DAYS } from '../../crm/lib/attendance-calendar';
 import { getCompanyHolidays } from '../../crm/lib/company-holidays';
-import type { AttendanceBreakRecord, AttendanceRecord, MyAttendanceState } from '../../crm/lib/types';
+import type { AttendanceBreakRecord, AttendanceRecord, MyAttendanceState, PunchInRequirements } from '../../crm/lib/types';
 
 function detectBrowser() {
   const ua = navigator.userAgent;
@@ -101,9 +101,27 @@ async function uploadBreakSelfie(blob: Blob, label: string) {
   return path;
 }
 
-export async function punchIn(selfie: Blob) {
+export async function getPunchInRequirements(): Promise<PunchInRequirements> {
+  const { data, error } = await crmSupabase.rpc('crm_get_my_punch_in_requirements');
+  if (error) throw new Error(error.message);
+  const value = (data || {}) as Partial<PunchInRequirements>;
+  return {
+    attendance_date: String(value.attendance_date || ''),
+    is_company_holiday: !!value.is_company_holiday,
+    late_minutes: Math.max(0, Number(value.late_minutes || 0)),
+    requires_late_reason: !!value.requires_late_reason,
+  };
+}
+
+export async function punchIn(selfie: Blob, lateReason?: string) {
   const path = await uploadSelfie(selfie, 'in');
-  const { data, error } = await crmSupabase.rpc('punch_in', { p_selfie_url: path, p_device: detectDevice(), p_browser: detectBrowser(), p_ip: null });
+  const { data, error } = await crmSupabase.rpc('crm_punch_in_with_late_reason', {
+    p_selfie_url: path,
+    p_late_reason: lateReason?.trim() || null,
+    p_device: detectDevice(),
+    p_browser: detectBrowser(),
+    p_ip: null,
+  });
   if (error) throw new Error(error.message);
   return data as AttendanceRecord;
 }

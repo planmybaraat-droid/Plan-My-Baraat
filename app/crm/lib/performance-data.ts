@@ -46,6 +46,7 @@ export interface PerformanceStaff {
   shift_end: string | null;
 }
 export interface PerformanceDay {
+  attendanceId?: string | null;
   date: string;
   state: "Complete" | "In Progress" | "Pending" | "Excluded";
   attendance: string;
@@ -62,6 +63,11 @@ export interface PerformanceDay {
   lateSeverity: "On Time" | "Slightly Late" | "Late" | "Severely Late";
   extraMinutes: number;
   overtimeMinutes: number;
+  isHolidayWork?: boolean;
+  lateReason?: string | null;
+  lateReasonStatus?: "Pending" | "Approved" | "Rejected" | null;
+  lateReviewNote?: string | null;
+  lateExcused?: boolean;
   breakCount: number;
   breakCompliant: boolean;
   reportSubmitted: boolean;
@@ -127,6 +133,10 @@ interface AttendanceRow {
   punch_in_at: string | null;
   punch_out_at: string | null;
   break_minutes: number | null;
+  late_minutes_at_punch_in: number | null;
+  late_reason: string | null;
+  late_reason_status: "Pending" | "Approved" | "Rejected" | null;
+  late_reason_review_note: string | null;
 }
 interface BreakRow {
   attendance_id: string;
@@ -358,7 +368,7 @@ export async function loadPerformance(options: {
     crmSupabase
       .from("crm_attendance")
       .select(
-        "id,staff_id,attendance_date,status,check_in,check_out,punch_in_at,punch_out_at,break_minutes",
+        "id,staff_id,attendance_date,status,check_in,check_out,punch_in_at,punch_out_at,break_minutes,late_minutes_at_punch_in,late_reason,late_reason_status,late_reason_review_note",
       )
       .in("staff_id", ids)
       .gte("attendance_date", options.start)
@@ -467,14 +477,15 @@ export async function loadPerformance(options: {
         (r) => r.from_date <= date && r.to_date >= date,
       );
       const holiday = isCompanyHoliday(date, holidayDates);
-      const excluded =
-        date < first ||
-        !workingDays.includes(weekday) ||
-        holiday ||
-        leave ||
-        ["holiday", "weekly off", "on leave"].includes(status);
       const hasPunch = !!(row?.punch_in_at || row?.check_in);
       const hasOut = !!(row?.punch_out_at || row?.check_out);
+      const workedHoliday = holiday && hasPunch;
+      const excluded =
+        date < first ||
+        (!workingDays.includes(weekday) && !workedHoliday) ||
+        (holiday && !workedHoliday) ||
+        leave ||
+        (["holiday", "weekly off", "on leave"].includes(status) && !workedHoliday);
       const current = date === today;
       const future = date > today;
       if (excluded || future) {
@@ -513,7 +524,7 @@ export async function loadPerformance(options: {
         days.push({
           date,
           state: hasPunch ? "In Progress" : "Pending",
-          attendance: hasPunch ? "Present" : "Pending",
+          attendance: workedHoliday ? "Holiday Work" : hasPunch ? "Present" : "Pending",
           punchIn: row?.check_in || null,
           punchOut: null,
           workingMinutes: null,
@@ -536,6 +547,49 @@ export async function loadPerformance(options: {
           reportSubmitted: false,
           report: null,
           reason: "Current day is not finalized",
+        });
+        continue;
+      }
+      if (workedHoliday) {
+        const dayBreaks = breaks.filter(
+          (b) =>
+            b.staff_id === person.id &&
+            String(b.break_start_at).slice(0, 10) === date,
+        );
+        const breakMinutes = dayBreaks.length
+          ? dayBreaks.reduce((sum, b) => sum + Number(b.duration_minutes || 0), 0)
+          : Number(row?.break_minutes || 0);
+        const gross = duration(row?.check_in, row?.check_out);
+        const net = gross === null ? null : Math.max(0, gross - breakMinutes);
+        const overtimeMinutes = hasOut && net !== null ? net : 0;
+        totalOvertimeMinutes += overtimeMinutes;
+        if (overtimeMinutes > 0) overtimeDays++;
+        days.push({
+          attendanceId: row?.id || null,
+          date,
+          state: hasOut ? "Complete" : "Pending",
+          attendance: "Holiday Work",
+          punchIn: row?.check_in || null,
+          punchOut: row?.check_out || null,
+          workingMinutes: net,
+          requiredMinutes: 0,
+          completedHours: true,
+          late: false,
+          originalLateMinutes: 0,
+          compensatedLateMinutes: 0,
+          adjustedLateMinutes: 0,
+          lateMinutes: 0,
+          lateSeverity: "On Time",
+          extraMinutes: 0,
+          overtimeMinutes,
+          isHolidayWork: true,
+          breakCount: dayBreaks.length,
+          breakCompliant: true,
+          reportSubmitted: false,
+          report: null,
+          reason: hasOut
+            ? `${overtimeMinutes} holiday overtime minutes`
+            : "Holiday work is awaiting punch out",
         });
         continue;
       }
@@ -568,7 +622,9 @@ export async function loadPerformance(options: {
         ? extraMinutesAfterShift(check, checkout, shift, shiftEnd)
         : 0;
       const compensatedLateMinutes = Math.min(originalDelay, extraMinutes);
-      const adjustedDelay = Math.max(0, originalDelay - extraMinutes);
+      const lateExcused = lower(row?.late_reason_status) === "approved";
+      const rawAdjustedDelay = Math.max(0, originalDelay - extraMinutes);
+      const adjustedDelay = lateExcused ? 0 : rawAdjustedDelay;
       const overtimeMinutes = Math.max(0, extraMinutes - originalDelay);
       const severity = lateSeverity(adjustedDelay, config.late_grace_minutes);
       const isLate = hasPunch && severity !== "On Time";
@@ -602,6 +658,8 @@ export async function loadPerformance(options: {
       if (isLate) reasons.push(`${severity} by ${adjustedDelay} minutes`);
       if (compensatedLateMinutes > 0)
         reasons.push(`${compensatedLateMinutes} late minutes recovered`);
+      if (lateExcused)
+        reasons.push(`${rawAdjustedDelay} late minutes excused by management`);
       if (overtimeMinutes > 0)
         reasons.push(`${overtimeMinutes} overtime minutes`);
       if (!breakOk)
@@ -612,6 +670,7 @@ export async function loadPerformance(options: {
         );
       if (!submitted) reasons.push("Daily work report not submitted");
       days.push({
+        attendanceId: row?.id || null,
         date,
         state: "Complete",
         attendance: hasPunch ? (half ? "Half Day" : "Present") : "Absent",
@@ -628,6 +687,10 @@ export async function loadPerformance(options: {
         lateSeverity: severity,
         extraMinutes,
         overtimeMinutes,
+        lateReason: row?.late_reason || null,
+        lateReasonStatus: row?.late_reason_status || null,
+        lateReviewNote: row?.late_reason_review_note || null,
+        lateExcused,
         breakCount: dayBreaks.length,
         breakCompliant: breakOk,
         reportSubmitted: submitted,
@@ -792,6 +855,23 @@ export async function approvePerformance(
     .from("crm_incentive_snapshots")
     .upsert(payload, { onConflict: "staff_id,period_start,period_end" });
   if (error) throw new Error(error.message);
+}
+
+export async function reviewLateReason(
+  attendanceId: string,
+  decision: "Approved" | "Rejected",
+  reviewNote = "",
+) {
+  const { data, error } = await crmSupabase.rpc(
+    "crm_review_attendance_late_reason",
+    {
+      p_attendance_id: attendanceId,
+      p_decision: decision,
+      p_review_note: reviewNote.trim() || null,
+    },
+  );
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export const formatPerformanceTime = (value: string | null) => {

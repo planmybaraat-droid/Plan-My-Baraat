@@ -699,6 +699,12 @@ export interface AttendanceRecord {
   punch_out_browser?: string | null;
   punch_in_at?: string | null;
   punch_out_at?: string | null;
+  late_minutes_at_punch_in?: number;
+  late_reason?: string | null;
+  late_reason_status?: 'Pending' | 'Approved' | 'Rejected' | null;
+  late_reason_review_note?: string | null;
+  late_reason_reviewed_by?: string | null;
+  late_reason_reviewed_at?: string | null;
   is_locked?: boolean;
   lock_at?: string | null;
   created_at?: string;
@@ -733,6 +739,13 @@ export interface MyAttendanceState {
   net_working_minutes: number;
   is_locked?: boolean;
   lock_at?: string | null;
+}
+
+export interface PunchInRequirements {
+  attendance_date: string;
+  is_company_holiday: boolean;
+  late_minutes: number;
+  requires_late_reason: boolean;
 }
 
 export interface StaffFilters {

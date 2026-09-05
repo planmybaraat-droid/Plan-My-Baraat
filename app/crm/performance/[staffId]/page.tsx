@@ -11,6 +11,7 @@ import {
   Eye,
   FileText,
   Loader2,
+  MessageSquareText,
   ShieldCheck,
   TimerReset,
   X,
@@ -24,6 +25,7 @@ import {
   formatPerformanceMinutes,
   formatPerformanceTime,
   loadPerformance,
+  reviewLateReason,
   type IncentiveConfig,
   type PerformanceDay,
   type PerformanceResult,
@@ -53,6 +55,7 @@ export default function PerformanceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [reviewingAttendanceId, setReviewingAttendanceId] = useState<string | null>(null);
   const [selectedReportDay, setSelectedReportDay] =
     useState<PerformanceDay | null>(null);
   const load = async () => {
@@ -87,6 +90,18 @@ export default function PerformanceDetailPage() {
       setError(c instanceof Error ? c.message : "Unable to approve incentive.");
     } finally {
       setBusy(false);
+    }
+  };
+  const reviewLate = async (day: PerformanceDay, decision: "Approved" | "Rejected") => {
+    if (!day.attendanceId) return;
+    setReviewingAttendanceId(day.attendanceId); setError("");
+    try {
+      await reviewLateReason(day.attendanceId, decision);
+      await load();
+    } catch (c) {
+      setError(c instanceof Error ? c.message : "Unable to review the late explanation.");
+    } finally {
+      setReviewingAttendanceId(null);
     }
   };
   const previewBonus = result
@@ -312,6 +327,7 @@ export default function PerformanceDetailPage() {
                         "8 hours",
                         "Punctuality",
                         "Late recovery",
+                        "Late explanation",
                         "Overtime",
                         "Breaks",
                         "Daily report",
@@ -352,16 +368,36 @@ export default function PerformanceDetailPage() {
                         <td className="px-3 py-3 text-[10px]">
                           {d.state !== "Complete"
                             ? "—"
-                            : d.late
+                            : d.lateExcused
+                              ? `Excused · ${d.originalLateMinutes} min actual`
+                              : d.late
                               ? `${d.lateSeverity} · ${d.lateMinutes} min`
                               : "On time"}
                         </td>
                         <td className="px-3 py-3 text-[10px]">
                           {d.state !== "Complete" || !d.originalLateMinutes
                             ? "—"
+                            : d.lateExcused
+                              ? `${d.originalLateMinutes} min · Approved genuine`
                             : d.compensatedLateMinutes
                               ? `${d.originalLateMinutes} min − ${d.compensatedLateMinutes} min`
                               : `${d.originalLateMinutes} min · Not recovered`}
+                        </td>
+                        <td className="px-3 py-3 text-[10px]">
+                          {!d.lateReason ? (
+                            <span className="text-gray-300">—</span>
+                          ) : (
+                            <div className="min-w-40 space-y-1.5">
+                              <p className="leading-relaxed text-gray-600">{d.lateReason}</p>
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-[8px] font-black uppercase ${d.lateReasonStatus === "Approved" ? "bg-emerald-50 text-emerald-700" : d.lateReasonStatus === "Rejected" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>{d.lateReasonStatus || "Pending"}</span>
+                              {d.lateReasonStatus === "Pending" && d.attendanceId && (
+                                <div className="flex gap-1">
+                                  <button type="button" disabled={reviewingAttendanceId === d.attendanceId} onClick={() => reviewLate(d, "Approved")} className="rounded-lg bg-emerald-600 px-2 py-1 text-[9px] font-bold text-white disabled:opacity-50">Approve genuine</button>
+                                  <button type="button" disabled={reviewingAttendanceId === d.attendanceId} onClick={() => reviewLate(d, "Rejected")} className="rounded-lg border border-gray-200 px-2 py-1 text-[9px] font-bold text-gray-600 disabled:opacity-50">Reject</button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td className="px-3 py-3 text-[10px] font-bold">
                           {d.state !== "Complete" || !d.overtimeMinutes
@@ -416,7 +452,9 @@ export default function PerformanceDetailPage() {
                         Punctuality{" "}
                         <b>
                           {d.state === "Complete"
-                            ? d.late
+                            ? d.lateExcused
+                              ? `${d.originalLateMinutes} min · Excused`
+                              : d.late
                               ? `${d.lateMinutes} min late`
                               : "On time"
                             : "—"}
@@ -432,6 +470,16 @@ export default function PerformanceDetailPage() {
                             : "—"}
                         </b>
                       </span>
+                      {d.lateReason && (
+                        <div className="col-span-2 rounded-xl border border-gray-100 bg-gray-50 p-3">
+                          <p className="flex items-center gap-1.5 font-black text-gray-700"><MessageSquareText size={12} /> Late explanation</p>
+                          <p className="mt-1.5 leading-relaxed text-gray-600">{d.lateReason}</p>
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            <span className={`rounded-full px-2 py-1 text-[8px] font-black uppercase ${d.lateReasonStatus === "Approved" ? "bg-emerald-50 text-emerald-700" : d.lateReasonStatus === "Rejected" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>{d.lateReasonStatus || "Pending"}</span>
+                            {d.lateReasonStatus === "Pending" && d.attendanceId && <><button type="button" disabled={reviewingAttendanceId === d.attendanceId} onClick={() => reviewLate(d, "Approved")} className="rounded-lg bg-emerald-600 px-2 py-1 font-bold text-white disabled:opacity-50">Approve genuine</button><button type="button" disabled={reviewingAttendanceId === d.attendanceId} onClick={() => reviewLate(d, "Rejected")} className="rounded-lg border border-gray-200 bg-white px-2 py-1 font-bold text-gray-600 disabled:opacity-50">Reject</button></>}
+                          </div>
+                        </div>
+                      )}
                       <span>
                         Overtime{" "}
                         <b>

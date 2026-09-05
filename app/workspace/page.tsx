@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Camera, CheckCircle2, Clock, Coffee, ListChecks, LogOut as PunchOutIcon, UserSearch, Bell, TimerReset, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
+import { Camera, CheckCircle2, Clock, Coffee, ListChecks, LogOut as PunchOutIcon, UserSearch, Bell, TimerReset, ChevronLeft, ChevronRight, CalendarRange, MessageSquareText } from 'lucide-react';
 import CrmHeader from '../crm/components/CrmHeader';
 import { useSidebar } from '../crm/sidebar-context';
 import { useCrmProfile } from '../crm/lib/useCrmProfile';
 import { useCrmNotifications } from '../crm/lib/useCrmNotifications';
 import { crmSupabase, getVendors } from '../crm/lib/supabase-crm';
 import SelfieCapture from './components/SelfieCapture';
-import { endBreak, getTodayAttendanceState, getSelfieUrl, punchIn, punchOut, getMonthAttendance, startBreak } from './lib/attendance-data';
+import { endBreak, getPunchInRequirements, getTodayAttendanceState, getSelfieUrl, punchIn, punchOut, getMonthAttendance, startBreak } from './lib/attendance-data';
 import type { AttendanceBreakRecord, MyAttendanceState, Vendor } from '../crm/lib/types';
 import { useSearchParams } from 'next/navigation';
 import { resolveModuleAccess } from '../../lib/modulePermissions';
@@ -68,6 +68,8 @@ export default function WorkspaceDashboard() {
   const [capturing, setCapturing] = useState<'in' | 'out' | 'break-start' | 'break-end' | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [latePromptMinutes, setLatePromptMinutes] = useState<number | null>(null);
+  const [lateReason, setLateReason] = useState('');
   const [tasks, setTasks] = useState<{ id: string; title: string; status: string; due_date: string | null; progress: number; priority: string }[]>([]);
   const [leadCount, setLeadCount] = useState(0);
   const [leaveSummary, setLeaveSummary] = useState({ pending: 0, approvedDays: 0 });
@@ -105,15 +107,32 @@ export default function WorkspaceDashboard() {
   const handleCapture = async (blob: Blob) => {
     setBusy(true); setError('');
     try {
-      if (capturing === 'in') await punchIn(blob);
+      if (capturing === 'in') await punchIn(blob, lateReason);
       else if (capturing === 'out') await punchOut(blob);
       else if (capturing === 'break-start') await startBreak(blob);
       else if (capturing === 'break-end') await endBreak(blob);
       await loadAttendance();
       setCapturing(null);
+      setLateReason('');
       setMonthMap(await getMonthAttendance(monthCursor.year, monthCursor.month));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Something went wrong.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const beginPunchIn = async () => {
+    setBusy(true); setError('');
+    try {
+      const requirements = await getPunchInRequirements();
+      if (requirements.requires_late_reason) {
+        setLatePromptMinutes(requirements.late_minutes);
+      } else {
+        setCapturing('in');
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to start punch in.');
     } finally {
       setBusy(false);
     }
@@ -255,7 +274,7 @@ export default function WorkspaceDashboard() {
                 {attendance?.punch_out_selfie_url && <SelfieLink path={attendance.punch_out_selfie_url} label="Out selfie" />}
               </div>
               {!attendance?.check_in ? (
-                <button disabled={busy} onClick={() => setCapturing('in')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Camera size={15} /> Punch In</button>
+                <button disabled={busy} onClick={beginPunchIn} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Camera size={15} /> {busy ? 'Checking...' : 'Punch In'}</button>
               ) : attendanceState?.state === 'on_break' ? (
                 <button disabled={busy} onClick={() => setCapturing('break-end')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"><Coffee size={15} /> End Break</button>
               ) : attendanceState?.state === 'working' ? (
@@ -357,6 +376,23 @@ export default function WorkspaceDashboard() {
           onCapture={handleCapture}
           onClose={() => setCapturing(null)}
         />
+      )}
+      {latePromptMinutes !== null && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-gray-950/60 p-4 backdrop-blur-sm">
+          <div role="dialog" aria-modal="true" aria-labelledby="late-reason-title" className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl sm:p-6">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600"><MessageSquareText size={18} /></span>
+            <h2 id="late-reason-title" className="mt-4 text-lg font-black text-gray-950">Tell us why you are late</h2>
+            <p className="mt-1 text-xs leading-relaxed text-gray-500">You are {latePromptMinutes} minute{latePromptMinutes === 1 ? '' : 's'} after your shift start. Your actual punch time will stay unchanged. Management can review a genuine reason for performance scoring.</p>
+            <label className="mt-4 block">
+              <span className="text-[10px] font-black uppercase tracking-wider text-gray-500">Reason for late arrival</span>
+              <textarea value={lateReason} onChange={(event) => setLateReason(event.target.value)} rows={4} maxLength={500} placeholder="Briefly explain the reason" className="mt-2 w-full resize-none rounded-xl border border-gray-200 px-3.5 py-3 text-sm outline-none focus:border-red-500" />
+            </label>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => { setLatePromptMinutes(null); setLateReason(''); }} className="rounded-xl border border-gray-200 px-4 py-3 text-xs font-bold text-gray-600">Cancel</button>
+              <button type="button" disabled={lateReason.trim().length < 3} onClick={() => { setLatePromptMinutes(null); setCapturing('in'); }} className="rounded-xl bg-red-600 px-4 py-3 text-xs font-bold text-white disabled:bg-gray-200 disabled:text-gray-400">Continue to selfie</button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

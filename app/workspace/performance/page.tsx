@@ -9,6 +9,8 @@ import {
   Loader2,
   ShieldCheck,
   TrendingUp,
+  Zap,
+  MessageSquareText,
 } from "lucide-react";
 import CrmHeader from "../../crm/components/CrmHeader";
 import { useSidebar } from "../../crm/sidebar-context";
@@ -174,6 +176,20 @@ export default function MyPerformancePage() {
                 note={`${result.reportDays} submitted`}
               />
             </div>
+            <section className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-red-100 bg-red-50/60 p-4">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-red-600"><Zap size={16} /></span>
+                <p className="mt-3 text-xl font-black text-gray-950">{Math.floor(result.totalOvertimeMinutes / 60)}h {result.totalOvertimeMinutes % 60}m</p>
+                <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-gray-500">Actual overtime</p>
+                <p className="mt-2 text-[10px] text-gray-500">Includes all verified net work completed on company holidays.</p>
+              </div>
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><MessageSquareText size={16} /></span>
+                <p className="mt-3 text-xl font-black text-gray-950">{result.days.filter((day) => day.lateReasonStatus === "Pending").length}</p>
+                <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-gray-500">Late explanations pending</p>
+                <p className="mt-2 text-[10px] text-gray-500">Approved genuine reasons do not reduce your punctuality score.</p>
+              </div>
+            </section>
             <section className="rounded-2xl border border-gray-200 bg-white shadow-sm">
               <div className="border-b border-gray-100 p-4">
                 <h2 className="text-sm font-black">
