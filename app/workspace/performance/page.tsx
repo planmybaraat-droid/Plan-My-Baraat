@@ -61,6 +61,13 @@ export default function MyPerformancePage() {
   useEffect(() => {
     load();
   }, [load]);
+  const nonWorkingDayOvertime = result
+    ? result.days
+        .filter((day) =>
+          day.attendance === "Weekly Off Work" || day.attendance === "Holiday Work",
+        )
+        .reduce((total, day) => total + day.overtimeMinutes, 0)
+    : 0;
   return (
     <>
       <CrmHeader
@@ -176,12 +183,18 @@ export default function MyPerformancePage() {
                 note={`${result.reportDays} submitted`}
               />
             </div>
-            <section className="grid gap-3 sm:grid-cols-2">
+            <section className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-red-100 bg-red-50/60 p-4">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-red-600"><Zap size={16} /></span>
                 <p className="mt-3 text-xl font-black text-gray-950">{Math.floor(result.totalOvertimeMinutes / 60)}h {result.totalOvertimeMinutes % 60}m</p>
                 <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-gray-500">Actual overtime</p>
-                <p className="mt-2 text-[10px] text-gray-500">Includes all verified net work completed on company holidays.</p>
+                <p className="mt-2 text-[10px] text-gray-500">Includes regular-day, Sunday and company-holiday overtime.</p>
+              </div>
+              <div className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600"><Zap size={16} /></span>
+                <p className="mt-3 text-xl font-black text-gray-950">{Math.floor(nonWorkingDayOvertime / 60)}h {nonWorkingDayOvertime % 60}m</p>
+                <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-gray-500">Sunday & holiday overtime</p>
+                <p className="mt-2 text-[10px] text-gray-500">Net time after breaks on your configured weekly off or a company holiday.</p>
               </div>
               <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><MessageSquareText size={16} /></span>

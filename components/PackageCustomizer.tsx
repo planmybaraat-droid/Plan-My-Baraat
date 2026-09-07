@@ -36,7 +36,7 @@ export default function PackageCustomizer() {
     const form = new FormData(event.currentTarget);
     const name = String(form.get("name") || "").trim();
     const mobile = String(form.get("mobile") || "").trim();
-    const city = String(form.get("city") || "").trim();
+    const venueLocation = String(form.get("venueLocation") || "").trim();
     const weddingDate = String(form.get("weddingDate") || "").trim();
     const startingPackage = String(form.get("startingPackage") || "").trim();
     const notes = String(form.get("notes") || "").trim();
@@ -48,7 +48,7 @@ export default function PackageCustomizer() {
       "",
       `Name: ${name}`,
       `Mobile: ${mobile}`,
-      `City: ${city || "Not specified"}`,
+      `Venue / Location: ${venueLocation || "Not specified"}`,
       `Wedding Date: ${weddingDate || "Not specified"}`,
       `Starting Package: ${startingPackage}`,
       "",
@@ -96,12 +96,12 @@ export default function PackageCustomizer() {
           />
         </label>
         <label className="contact-field">
-          <span>Wedding City</span>
+          <span>Venue / Location</span>
           <input
             type="text"
-            name="city"
-            autoComplete="address-level2"
-            placeholder="Vadodara, Ahmedabad..."
+            name="venueLocation"
+            autoComplete="street-address"
+            placeholder="Venue name, area or city"
           />
         </label>
         <label className="contact-field">

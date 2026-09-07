@@ -110,6 +110,7 @@ export default function MyAttendancePage() {
                         {item.break_end_selfie_url && <SelfieButton path={item.break_end_selfie_url} label="End" />}
                       </span>
                     ))}</div>}
+                    {r.late_reason && <div className="mt-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-[10px] text-gray-600"><b className="text-gray-800">Late explanation:</b> {r.late_reason} <span className={`ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase ${r.late_reason_status === 'Approved' ? 'bg-emerald-50 text-emerald-700' : r.late_reason_status === 'Rejected' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{r.late_reason_status || 'Pending'}</span></div>}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {r.punch_in_selfie_url && <SelfieButton path={r.punch_in_selfie_url} label="In selfie" />}

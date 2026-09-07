@@ -1,741 +1,530 @@
-/* The loader is intentionally tied to the URL period and staff id. */
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import { useEffect, useState } from "react";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
 import {
-  ArrowLeft,
-  CheckCircle2,
-  Clock3,
-  Eye,
-  FileText,
+  Award,
+  CalendarDays,
+  ChevronRight,
   Loader2,
-  MessageSquareText,
-  ShieldCheck,
-  TimerReset,
-  X,
-  XCircle,
-  Zap,
+  Save,
+  Search,
+  Settings2,
+  TrendingUp,
+  Users,
 } from "lucide-react";
-import CrmHeader from "../../components/CrmHeader";
-import { useSidebar } from "../../sidebar-context";
+import CrmHeader from "../components/CrmHeader";
+import { useSidebar } from "../sidebar-context";
 import {
-  approvePerformance,
-  formatPerformanceMinutes,
-  formatPerformanceTime,
   loadPerformance,
-  reviewLateReason,
+  updateIncentiveConfig,
   type IncentiveConfig,
-  type PerformanceDay,
   type PerformanceResult,
-} from "../../lib/performance-data";
-const money = (v: number) =>
+} from "../lib/performance-data";
+import { useCrmProfile } from "../lib/useCrmProfile";
+import { resolveSectionAccess } from "../../../lib/crmSectionPermissions";
+
+const today = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+const monthBounds = (month: string) => ({
+  start: `${month}-01`,
+  end: [
+    month,
+    new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)
+      .getDate()
+      .toString()
+      .padStart(2, "0"),
+  ].join("-"),
+});
+const money = (value: number) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(v);
-const labelDate = (v: string) =>
-  new Date(`${v}T12:00:00`).toLocaleDateString("en-IN", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
-export default function PerformanceDetailPage() {
+  }).format(value);
+const overtime = (minutes: number) => {
+  const safe = Math.max(0, Number(minutes || 0));
+  return `${Math.floor(safe / 60)}h ${safe % 60}m`;
+};
+
+export default function PerformancePage() {
   const { open } = useSidebar();
-  const params = useParams<{ staffId: string }>();
-  const query = useSearchParams();
-  const start =
-    query.get("start") || new Date().toISOString().slice(0, 7) + "-01";
-  const end = query.get("end") || new Date().toISOString().slice(0, 10);
-  const [result, setResult] = useState<PerformanceResult | null>(null);
+  const { profile } = useCrmProfile();
+  const initial = today().slice(0, 7);
+  const [month, setMonth] = useState(initial);
+  const [{ start, end }, setRange] = useState(monthBounds(initial));
+  const [rows, setRows] = useState<PerformanceResult[]>([]);
   const [config, setConfig] = useState<IncentiveConfig | null>(null);
-  const [managementBonusPercent, setManagementBonusPercent] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [reviewingAttendanceId, setReviewingAttendanceId] = useState<string | null>(null);
-  const [selectedReportDay, setSelectedReportDay] =
-    useState<PerformanceDay | null>(null);
-  const load = async () => {
+  const [search, setSearch] = useState("");
+  const [department, setDepartment] = useState("");
+  const [performance, setPerformance] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await loadPerformance({
-        start,
-        end,
-        staffId: params.staffId,
-      });
-      const next = data.results[0] || null;
-      setResult(next);
-      setManagementBonusPercent(next?.managementBonusPercent || 0);
+      const data = await loadPerformance({ start, end });
+      setRows(data.results);
       setConfig(data.config);
     } catch (c) {
-      setError(c instanceof Error ? c.message : "Unable to load performance.");
+      setError(
+        c instanceof Error ? c.message : "Unable to load staff performance.",
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [start, end]);
   useEffect(() => {
     load();
-  }, [params.staffId, start, end]);
-  const approve = async () => {
-    if (!result || !config) return;
-    setBusy(true);
+  }, [load]);
+  const selectMonth = (value: string) => {
+    setMonth(value);
+    setRange(monthBounds(value));
+  };
+  const departments = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          rows.map((r) => r.staff.department).filter(Boolean) as string[],
+        ),
+      ).sort(),
+    [rows],
+  );
+  const filtered = useMemo(
+    () =>
+      rows.filter((r) => {
+        const term =
+          `${r.staff.full_name} ${r.staff.employee_code || ""} ${r.staff.job_title || ""}`.toLowerCase();
+        if (search && !term.includes(search.toLowerCase())) return false;
+        if (department && r.staff.department !== department) return false;
+        if (performance === "excellent" && r.totalScore < 85) return false;
+        if (performance === "good" && (r.totalScore < 60 || r.totalScore >= 85))
+          return false;
+        if (performance === "attention" && r.totalScore >= 60) return false;
+        return true;
+      }),
+    [rows, search, department, performance],
+  );
+  const canConfigure = resolveSectionAccess(
+    profile?.role,
+    profile?.sectionAccess,
+    "performance",
+  );
+  const saveConfig = async () => {
+    if (!config) return;
+    const total =
+      config.attendance_weight +
+      config.working_hours_weight +
+      config.punctuality_weight +
+      config.break_weight +
+      config.daily_report_weight;
+    if (total !== 100) {
+      setMessage("Category weights must total 100.");
+      return;
+    }
+    setSaving(true);
+    setMessage("");
     try {
-      await approvePerformance(result, config, "", managementBonusPercent);
+      await updateIncentiveConfig(config);
+      setMessage("Incentive rules saved. Live scores have been recalculated.");
       await load();
     } catch (c) {
-      setError(c instanceof Error ? c.message : "Unable to approve incentive.");
+      setMessage(
+        c instanceof Error ? c.message : "Unable to save incentive rules.",
+      );
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
   };
-  const reviewLate = async (day: PerformanceDay, decision: "Approved" | "Rejected") => {
-    if (!day.attendanceId) return;
-    setReviewingAttendanceId(day.attendanceId); setError("");
-    try {
-      await reviewLateReason(day.attendanceId, decision);
-      await load();
-    } catch (c) {
-      setError(c instanceof Error ? c.message : "Unable to review the late explanation.");
-    } finally {
-      setReviewingAttendanceId(null);
-    }
-  };
-  const previewBonus = result
-    ? Math.round(
-        (result.managementBonusBaseAmount * managementBonusPercent) / 100,
-      )
+  const average = rows.length
+    ? Math.round(rows.reduce((s, r) => s + r.totalScore, 0) / rows.length)
     : 0;
+  const approved = rows.filter((r) => r.status !== "Estimated").length;
   return (
     <>
       <CrmHeader
-        title={result?.staff.full_name || "Performance details"}
-        subtitle={`${start} to ${end}`}
+        title="Staff Performance & Incentives"
+        subtitle="Live scores from attendance, breaks and daily work reports"
         onMenuClick={open}
-        actions={
-          <Link
-            href="/crm/performance"
-            className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-200 px-3 text-[10px] font-bold"
-          >
-            <ArrowLeft size={13} /> Back
-          </Link>
-        }
       />
-      <main className="mx-auto max-w-7xl space-y-4 p-3 sm:p-6">
+      <main className="mx-auto w-full max-w-7xl space-y-4 p-3 sm:p-6">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Summary icon={Users} label="Staff" value={rows.length} />
+          <Summary
+            icon={TrendingUp}
+            label="Average score"
+            value={`${average}/100`}
+          />
+          <Summary icon={Award} label="Approved" value={approved} />
+          <Summary
+            icon={CalendarDays}
+            label="Eligible days"
+            value={rows.reduce((m, r) => Math.max(m, r.eligibleDays), 0)}
+          />
+        </div>
+        <section className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
+            <label className="relative lg:col-span-2">
+              <Search
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search staff or employee ID"
+                className="h-10 w-full rounded-xl border border-gray-200 pl-9 pr-3 text-xs outline-none focus:border-red-500"
+              />
+            </label>
+            <input
+              type="month"
+              value={month}
+              onChange={(e) => selectMonth(e.target.value)}
+              className="h-10 rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-red-500"
+            />
+            <select
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs"
+            >
+              <option value="">All departments</option>
+              {departments.map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+            <select
+              value={performance}
+              onChange={(e) => setPerformance(e.target.value)}
+              className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs"
+            >
+              <option value="">All performance</option>
+              <option value="excellent">85–100</option>
+              <option value="good">60–84.99</option>
+              <option value="attention">Below 60</option>
+            </select>
+            {canConfigure ? (
+              <button
+                onClick={() => setShowSettings((v) => !v)}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50"
+              >
+                <Settings2 size={14} /> Rules
+              </button>
+            ) : (
+              <div />
+            )}
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:max-w-md">
+            <label className="text-[10px] font-bold text-gray-500">
+              From
+              <input
+                type="date"
+                value={start}
+                onChange={(e) =>
+                  setRange((r) => ({ ...r, start: e.target.value }))
+                }
+                className="mt-1 h-9 w-full rounded-lg border border-gray-200 px-2 text-xs"
+              />
+            </label>
+            <label className="text-[10px] font-bold text-gray-500">
+              To
+              <input
+                type="date"
+                value={end}
+                onChange={(e) =>
+                  setRange((r) => ({ ...r, end: e.target.value }))
+                }
+                className="mt-1 h-9 w-full rounded-lg border border-gray-200 px-2 text-xs"
+              />
+            </label>
+          </div>
+        </section>
+        {showSettings && config && (
+          <Rules
+            config={config}
+            setConfig={setConfig}
+            saving={saving}
+            message={message}
+            onSave={saveConfig}
+          />
+        )}{" "}
         {error && (
           <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
             {error}
           </p>
         )}
-        {loading ? (
-          <div className="flex h-72 items-center justify-center">
-            <Loader2 className="animate-spin text-red-600" />
+        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-100 px-4 py-4">
+            <h2 className="text-sm font-black text-gray-950">
+              Performance report
+            </h2>
+            <p className="mt-1 text-[10px] text-gray-400">
+              {filtered.length} staff member{filtered.length === 1 ? "" : "s"} ·
+              live until {end}
+            </p>
           </div>
-        ) : !result ? (
-          <p className="rounded-2xl bg-white p-16 text-center text-sm">
-            Staff performance not found.
-          </p>
-        ) : (
-          <>
-            <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-gray-950 to-gray-800 p-5 text-white shadow-xl sm:p-6">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[.2em] text-red-400">
-                    {result.staff.employee_code || "Staff"} ·{" "}
-                    {result.staff.department || "Department"}
-                  </p>
-                  <h2 className="mt-2 text-2xl font-black">
-                    {result.staff.full_name}
-                  </h2>
-                  <p className="mt-1 text-xs text-gray-400">
-                    {result.staff.job_title ||
-                      result.staff.role ||
-                      "Team member"}{" "}
-                    · {result.eligibleDays} eligible days
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-end gap-6 sm:justify-end">
-                  <div>
-                    <p className="text-4xl font-black">
-                      {result.totalScore}
-                      <span className="text-lg text-gray-500">/100</span>
-                    </p>
-                    <p className="mt-1 text-[9px] uppercase tracking-widest text-gray-400">
-                      Live performance
-                    </p>
-                  </div>
-                  <div className="sm:text-right">
-                    <p className="text-2xl font-black text-red-400">
-                      {money(result.incentiveAmount)}
-                    </p>
-                    <p className="mt-1 text-[9px] uppercase tracking-widest text-gray-400">
-                      {result.status} incentive
-                    </p>
-                    <p className="mt-2 text-[10px] text-gray-400">
-                      Earned {money(result.baseIncentiveAmount)} +{" "}
-                      {result.managementBonusPercent}% of{" "}
-                      {money(result.managementBonusBaseAmount)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-              <Card
-                label="Attendance"
-                value={result.attendanceScore}
-                max={25}
-                note={`${result.presentDays}/${result.eligibleDays} present`}
-              />
-              <Card
-                label="8 Working Hours"
-                value={result.workingHoursScore}
-                max={20}
-                note={`${result.completedHoursDays}/${result.eligibleDays} completed`}
-              />
-              <Card
-                label="Punctuality"
-                value={result.punctualityScore}
-                max={20}
-                note={`${result.onTimeDays}/${result.presentDays} on time · ${result.totalLateMinutes} min late`}
-              />
-              <Card
-                label="Break Compliance"
-                value={result.breakScore}
-                max={20}
-                note={`${result.breakViolationDays} violations`}
-              />
-              <Card
-                label="Daily Work Report"
-                value={result.dailyReportScore}
-                max={15}
-                note={`${result.reportDays}/${result.eligibleDays} submitted`}
-              />
+          {loading ? (
+            <div className="flex h-64 items-center justify-center">
+              <Loader2 className="animate-spin text-red-600" />
             </div>
-            <section className="grid gap-3 sm:grid-cols-3">
-              <TimingValue
-                icon={<Clock3 size={16} />}
-                label="Original late time"
-                value={formatPerformanceMinutes(
-                  result.totalOriginalLateMinutes,
-                )}
-                note="Before extra work is adjusted"
-              />
-              <TimingValue
-                icon={<TimerReset size={16} />}
-                label="Late time recovered"
-                value={formatPerformanceMinutes(
-                  result.totalCompensatedLateMinutes,
-                )}
-                note={`${formatPerformanceMinutes(result.totalLateMinutes)} final late time`}
-                tone="green"
-              />
-              <TimingValue
-                icon={<Zap size={16} />}
-                label="Actual overtime"
-                value={formatPerformanceMinutes(result.totalOvertimeMinutes)}
-                note={`${result.overtimeDays} overtime ${result.overtimeDays === 1 ? "day" : "days"}`}
-                tone="red"
-              />
-            </section>
-            <section className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
-              <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-                <div>
-                  <h2 className="text-sm font-black">
-                    Management performance bonus
-                  </h2>
-                  <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
-                    Admin or an authorized manager can award 0–25%. The bonus is
-                    always calculated on the fixed ₹3,000 management base and
-                    does not change the staff performance score.
-                  </p>
-                  <div className="mt-4 grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
-                    <BonusValue
-                      label="Earned incentive"
-                      value={money(result.baseIncentiveAmount)}
-                    />
-                    <BonusValue
-                      label="Bonus base"
-                      value={money(result.managementBonusBaseAmount)}
-                    />
-                    <BonusValue
-                      label={`Bonus (${managementBonusPercent}%)`}
-                      value={money(previewBonus)}
-                    />
-                    <BonusValue
-                      label="Final incentive"
-                      value={money(result.baseIncentiveAmount + previewBonus)}
-                      accent
-                    />
-                  </div>
-                </div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">
-                  Bonus percentage
-                  <input
-                    type="number"
-                    min={0}
-                    max={25}
-                    step={0.5}
-                    value={managementBonusPercent}
-                    onChange={(e) =>
-                      setManagementBonusPercent(
-                        Math.min(25, Math.max(0, Number(e.target.value) || 0)),
-                      )
-                    }
-                    disabled={result.status === "Paid"}
-                    className="mt-2 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm font-black outline-none focus:border-red-500 disabled:bg-gray-100 sm:w-40"
-                  />
-                </label>
-              </div>
-            </section>
-            <section className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-              <div className="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-sm font-black">Day-wise breakdown</h2>
-                  <p className="mt-1 text-[10px] text-gray-400">
-                    Every deduction is traced to its source record. Arrivals
-                    within the configured grace period count as on time.
-                  </p>
-                </div>
-                <button
-                  onClick={approve}
-                  disabled={busy || result.status === "Paid"}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 text-xs font-bold text-white disabled:bg-gray-200 disabled:text-gray-500"
-                >
-                  {busy ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <ShieldCheck size={14} />
-                  )}{" "}
-                  {result.status === "Estimated"
-                    ? "Approve incentive"
-                    : "Update incentive"}
-                </button>
-              </div>
-              <div className="hidden overflow-x-auto md:block">
-                <table className="w-full min-w-[1060px] text-left">
+          ) : !filtered.length ? (
+            <div className="py-20 text-center text-xs text-gray-400">
+              No staff match these filters.
+            </div>
+          ) : (
+            <>
+              <div className="hidden overflow-x-auto lg:block">
+                <table className="w-full min-w-[1140px] text-left">
                   <thead className="bg-gray-50 text-[9px] uppercase tracking-wider text-gray-400">
                     <tr>
-                      {[
-                        "Date",
-                        "Attendance",
-                        "Punch in / out",
-                        "Net work",
-                        "8 hours",
-                        "Punctuality",
-                        "Late recovery",
-                        "Late explanation",
-                        "Overtime",
-                        "Breaks",
-                        "Daily report",
-                      ].map((v) => (
-                        <th key={v} className="px-3 py-3 font-black">
-                          {v}
-                        </th>
-                      ))}
+                      <Th>Staff</Th>
+                      <Th>Attendance</Th>
+                      <Th>8 Hours</Th>
+                      <Th>Timing</Th>
+                      <Th>Breaks</Th>
+                      <Th>Daily report</Th>
+                      <Th>Overtime</Th>
+                      <Th>Total</Th>
+                      <Th>Incentive</Th>
+                      <Th>Status</Th>
+                      <Th></Th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {result.days.map((d) => (
-                      <tr
-                        key={d.date}
-                        className={
-                          d.state === "Excluded"
-                            ? "bg-gray-50/60 text-gray-400"
-                            : ""
-                        }
-                      >
-                        <td className="px-3 py-3 text-xs font-bold">
-                          {labelDate(d.date)}
+                    {filtered.map((r) => (
+                      <tr key={r.staff.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <p className="text-xs font-bold">
+                            {r.staff.full_name}
+                          </p>
+                          <p className="mt-1 text-[10px] text-gray-400">
+                            {r.staff.employee_code || "—"} ·{" "}
+                            {r.staff.department || "—"}
+                          </p>
                         </td>
-                        <td className="px-3 py-3 text-[10px] font-bold">
-                          {d.attendance}
+                        <Score value={r.attendanceScore} max={25} />
+                        <Score value={r.workingHoursScore} max={20} />
+                        <Score value={r.punctualityScore} max={20} />
+                        <Score value={r.breakScore} max={20} />
+                        <Score value={r.dailyReportScore} max={15} />
+                        <td className="px-4 py-3 text-xs font-black tabular-nums text-gray-900">
+                          {overtime(r.totalOvertimeMinutes)}
+                          <p className="mt-1 text-[9px] font-semibold text-gray-400">
+                            {r.overtimeDays} {r.overtimeDays === 1 ? "day" : "days"}
+                          </p>
                         </td>
-                        <td className="px-3 py-3 text-[10px]">
-                          {formatPerformanceTime(d.punchIn)} /{" "}
-                          {formatPerformanceTime(d.punchOut)}
+                        <td className="px-4 py-3">
+                          <strong
+                            className={
+                              r.totalScore >= 85
+                                ? "text-emerald-600"
+                                : r.totalScore < 60
+                                  ? "text-red-600"
+                                  : "text-gray-900"
+                            }
+                          >
+                            {r.totalScore}/100
+                          </strong>
                         </td>
-                        <td className="px-3 py-3 text-[10px] font-bold">
-                          {formatPerformanceMinutes(d.workingMinutes)}
+                        <td className="px-4 py-3 text-xs font-black">
+                          {money(r.incentiveAmount)}
                         </td>
-                        <Bool
-                          value={d.completedHours}
-                          muted={d.state !== "Complete"}
-                        />
-                        <td className="px-3 py-3 text-[10px]">
-                          {d.state !== "Complete"
-                            ? "—"
-                            : d.lateExcused
-                              ? `Excused · ${d.originalLateMinutes} min actual`
-                              : d.late
-                              ? `${d.lateSeverity} · ${d.lateMinutes} min`
-                              : "On time"}
+                        <td className="px-4 py-3">
+                          <Badge value={r.status} />
                         </td>
-                        <td className="px-3 py-3 text-[10px]">
-                          {d.state !== "Complete" || !d.originalLateMinutes
-                            ? "—"
-                            : d.lateExcused
-                              ? `${d.originalLateMinutes} min · Approved genuine`
-                            : d.compensatedLateMinutes
-                              ? `${d.originalLateMinutes} min − ${d.compensatedLateMinutes} min`
-                              : `${d.originalLateMinutes} min · Not recovered`}
-                        </td>
-                        <td className="px-3 py-3 text-[10px]">
-                          {!d.lateReason ? (
-                            <span className="text-gray-300">—</span>
-                          ) : (
-                            <div className="min-w-40 space-y-1.5">
-                              <p className="leading-relaxed text-gray-600">{d.lateReason}</p>
-                              <span className={`inline-flex rounded-full px-2 py-0.5 text-[8px] font-black uppercase ${d.lateReasonStatus === "Approved" ? "bg-emerald-50 text-emerald-700" : d.lateReasonStatus === "Rejected" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>{d.lateReasonStatus || "Pending"}</span>
-                              {d.lateReasonStatus === "Pending" && d.attendanceId && (
-                                <div className="flex gap-1">
-                                  <button type="button" disabled={reviewingAttendanceId === d.attendanceId} onClick={() => reviewLate(d, "Approved")} className="rounded-lg bg-emerald-600 px-2 py-1 text-[9px] font-bold text-white disabled:opacity-50">Approve genuine</button>
-                                  <button type="button" disabled={reviewingAttendanceId === d.attendanceId} onClick={() => reviewLate(d, "Rejected")} className="rounded-lg border border-gray-200 px-2 py-1 text-[9px] font-bold text-gray-600 disabled:opacity-50">Reject</button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-3 py-3 text-[10px] font-bold">
-                          {d.state !== "Complete" || !d.overtimeMinutes
-                            ? "—"
-                            : formatPerformanceMinutes(d.overtimeMinutes)}
-                        </td>
-                        <td className="px-3 py-3 text-[10px]">
-                          {d.breakCount} /{" "}
-                          {d.breakCompliant ? "Within limit" : "Violation"}
-                        </td>
-                        <td className="px-3 py-3">
-                          {d.reportSubmitted && d.report ? (
-                            <button
-                              type="button"
-                              onClick={() => setSelectedReportDay(d)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-[10px] font-bold text-gray-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                              aria-label={`View daily work report for ${labelDate(d.date)}`}
-                            >
-                              <Eye size={13} /> View
-                            </button>
-                          ) : d.state !== "Complete" ? (
-                            <span className="text-gray-300">—</span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-500">
-                              <XCircle size={14} /> Missing
-                            </span>
-                          )}
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/crm/performance/${r.staff.id}?start=${start}&end=${end}`}
+                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 px-2 text-[10px] font-bold"
+                          >
+                            Details <ChevronRight size={12} />
+                          </Link>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="divide-y divide-gray-100 md:hidden">
-                {result.days.map((d) => (
-                  <article key={d.date} className="p-4">
-                    <div className="flex justify-between">
-                      <p className="text-xs font-black">{labelDate(d.date)}</p>
-                      <span className="rounded-full bg-gray-100 px-2 py-1 text-[9px] font-bold">
-                        {d.state}
+              <div className="divide-y divide-gray-100 lg:hidden">
+                {filtered.map((r) => (
+                  <Link
+                    key={r.staff.id}
+                    href={`/crm/performance/${r.staff.id}?start=${start}&end=${end}`}
+                    className="block p-4 hover:bg-gray-50"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-black">
+                          {r.staff.full_name}
+                        </p>
+                        <p className="mt-1 text-[10px] text-gray-400">
+                          {r.staff.employee_code || "—"} ·{" "}
+                          {r.staff.department || "—"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-black text-red-600">
+                          {r.totalScore}
+                        </p>
+                        <p className="text-[9px] text-gray-400">OUT OF 100</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-[10px]">
+                      <span>
+                        Attendance <b>{r.attendanceScore}/25</b>
+                      </span>
+                      <span>
+                        8 Hours <b>{r.workingHoursScore}/20</b>
+                      </span>
+                      <span>
+                        Timing <b>{r.punctualityScore}/20</b>
+                      </span>
+                      <span>
+                        Breaks <b>{r.breakScore}/20</b>
+                      </span>
+                      <span>
+                        Reports <b>{r.dailyReportScore}/15</b>
+                      </span>
+                      <span>
+                        Overtime <b>{overtime(r.totalOvertimeMinutes)}</b>
+                      </span>
+                      <span className="font-black">
+                        {money(r.incentiveAmount)}
                       </span>
                     </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
-                      <span>
-                        Attendance <b>{d.attendance}</b>
-                      </span>
-                      <span>
-                        Net work{" "}
-                        <b>{formatPerformanceMinutes(d.workingMinutes)}</b>
-                      </span>
-                      <span>
-                        Punctuality{" "}
-                        <b>
-                          {d.state === "Complete"
-                            ? d.lateExcused
-                              ? `${d.originalLateMinutes} min · Excused`
-                              : d.late
-                              ? `${d.lateMinutes} min late`
-                              : "On time"
-                            : "—"}
-                        </b>
-                      </span>
-                      <span>
-                        Late recovered{" "}
-                        <b>
-                          {d.state === "Complete"
-                            ? formatPerformanceMinutes(
-                                d.compensatedLateMinutes,
-                              )
-                            : "—"}
-                        </b>
-                      </span>
-                      {d.lateReason && (
-                        <div className="col-span-2 rounded-xl border border-gray-100 bg-gray-50 p-3">
-                          <p className="flex items-center gap-1.5 font-black text-gray-700"><MessageSquareText size={12} /> Late explanation</p>
-                          <p className="mt-1.5 leading-relaxed text-gray-600">{d.lateReason}</p>
-                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                            <span className={`rounded-full px-2 py-1 text-[8px] font-black uppercase ${d.lateReasonStatus === "Approved" ? "bg-emerald-50 text-emerald-700" : d.lateReasonStatus === "Rejected" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>{d.lateReasonStatus || "Pending"}</span>
-                            {d.lateReasonStatus === "Pending" && d.attendanceId && <><button type="button" disabled={reviewingAttendanceId === d.attendanceId} onClick={() => reviewLate(d, "Approved")} className="rounded-lg bg-emerald-600 px-2 py-1 font-bold text-white disabled:opacity-50">Approve genuine</button><button type="button" disabled={reviewingAttendanceId === d.attendanceId} onClick={() => reviewLate(d, "Rejected")} className="rounded-lg border border-gray-200 bg-white px-2 py-1 font-bold text-gray-600 disabled:opacity-50">Reject</button></>}
-                          </div>
-                        </div>
-                      )}
-                      <span>
-                        Overtime{" "}
-                        <b>
-                          {d.state === "Complete"
-                            ? formatPerformanceMinutes(d.overtimeMinutes)
-                            : "—"}
-                        </b>
-                      </span>
-                      <span>
-                        Breaks <b>{d.breakCount}</b>
-                      </span>
-                      <span>
-                        8 hours <b>{d.completedHours ? "Yes" : "No"}</b>
-                      </span>
-                      <span className="flex items-center gap-2">
-                        DWR <b>{d.reportSubmitted ? "Submitted" : "Missing"}</b>
-                        {d.reportSubmitted && d.report && (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedReportDay(d)}
-                            className="inline-flex h-7 items-center gap-1 rounded-lg border border-gray-200 px-2 font-bold text-gray-700"
-                          >
-                            <Eye size={12} /> View
-                          </button>
-                        )}
-                      </span>
-                    </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
-            </section>
-          </>
-        )}
+            </>
+          )}
+        </section>
       </main>
-      {selectedReportDay?.report && (
-        <ReportViewer
-          day={selectedReportDay}
-          staffName={result?.staff.full_name || "Staff member"}
-          onClose={() => setSelectedReportDay(null)}
-        />
-      )}
     </>
   );
 }
-function TimingValue({
-  icon,
+function Summary({
+  icon: Icon,
   label,
   value,
-  note,
-  tone = "gray",
 }: {
-  icon: React.ReactNode;
+  icon: typeof Users;
   label: string;
-  value: string;
-  note: string;
-  tone?: "gray" | "green" | "red";
-}) {
-  const palette =
-    tone === "green"
-      ? "border-emerald-100 bg-emerald-50/70 text-emerald-700"
-      : tone === "red"
-        ? "border-red-100 bg-red-50/70 text-red-700"
-        : "border-gray-200 bg-white text-gray-700";
-  return (
-    <div className={`rounded-2xl border p-4 shadow-sm ${palette}`}>
-      <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 shadow-sm">
-          {icon}
-        </span>
-        <p className="text-[9px] font-black uppercase tracking-wider text-gray-500">
-          {label}
-        </p>
-      </div>
-      <p className="mt-3 text-xl font-black">{value}</p>
-      <p className="mt-1 text-[10px] text-gray-500">{note}</p>
-    </div>
-  );
-}
-function ReportViewer({
-  day,
-  staffName,
-  onClose,
-}: {
-  day: PerformanceDay;
-  staffName: string;
-  onClose: () => void;
-}) {
-  const report = day.report!;
-  const done = report.items.filter(
-    (item) => item.activity_status === "DONE",
-  ).length;
-  return (
-    <div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-gray-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-5"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Daily work report for ${labelDate(day.date)}`}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <section className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
-        <header className="flex items-start justify-between gap-4 border-b border-gray-100 p-5 sm:p-6">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600">
-              <FileText size={18} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[9px] font-black uppercase tracking-[.18em] text-red-600">
-                Submitted daily work report
-              </p>
-              <h2 className="mt-1 truncate text-lg font-black text-gray-950">
-                {labelDate(day.date)}
-              </h2>
-              <p className="mt-1 text-xs text-gray-500">{staffName}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition hover:bg-gray-50"
-            aria-label="Close daily work report"
-          >
-            <X size={16} />
-          </button>
-        </header>
-        <div className="grid grid-cols-3 gap-2 border-b border-gray-100 bg-gray-50/70 p-4 sm:px-6">
-          <ReportStat label="Activities" value={String(report.items.length)} />
-          <ReportStat label="Completed" value={String(done)} />
-          <ReportStat
-            label="Pending"
-            value={String(report.items.length - done)}
-          />
-        </div>
-        <div className="overflow-y-auto p-4 sm:p-6">
-          {!report.items.length ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 px-5 py-12 text-center text-sm text-gray-400">
-              No activities were included in this report.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {report.items.map((item, index) => (
-                <article
-                  key={item.id}
-                  className="rounded-2xl border border-gray-200 p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 gap-3">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-[10px] font-black text-gray-500">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-black text-gray-900">
-                          {item.activity_title}
-                        </h3>
-                        <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-gray-600">
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-wider ${
-                        item.activity_status === "DONE"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-amber-50 text-amber-700"
-                      }`}
-                    >
-                      {item.activity_status === "DONE" ? "Done" : "Pending"}
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-5 py-4 text-[10px] text-gray-500 sm:px-6">
-          <span>
-            Status: <b className="text-gray-800">{report.report_status}</b>
-          </span>
-          <span>
-            Submitted: {report.submitted_at
-              ? new Date(report.submitted_at).toLocaleString("en-IN", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })
-              : "—"}
-          </span>
-        </footer>
-      </section>
-    </div>
-  );
-}
-function ReportStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-white px-3 py-2.5 text-center shadow-sm">
-      <p className="text-sm font-black text-gray-900">{value}</p>
-      <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wider text-gray-400">
-        {label}
-      </p>
-    </div>
-  );
-}
-function Card({
-  label,
-  value,
-  max,
-  note,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  note: string;
+  value: string | number;
 }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-[9px] font-black uppercase tracking-wider text-gray-400">
+      <Icon size={16} className="text-red-600" />
+      <p className="mt-4 text-xl font-black">{value}</p>
+      <p className="mt-1 text-[9px] font-black uppercase tracking-wider text-gray-400">
         {label}
       </p>
-      <p className="mt-3 text-xl font-black">
-        {value}
-        <span className="text-xs text-gray-300">/{max}</span>
-      </p>
-      <p className="mt-1 text-[10px] text-gray-500">{note}</p>
     </div>
   );
 }
-function BonusValue({
-  label,
-  value,
-  accent = false,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-xl p-3 ${accent ? "bg-red-50 text-red-700" : "bg-gray-50 text-gray-900"}`}
-    >
-      <p className="text-[9px] font-black uppercase tracking-wider text-gray-400">
-        {label}
-      </p>
-      <p className="mt-1 text-sm font-black">{value}</p>
-    </div>
-  );
+function Th({ children }: { children?: React.ReactNode }) {
+  return <th className="px-4 py-3 font-black">{children}</th>;
 }
-function Bool({ value, muted }: { value: boolean; muted?: boolean }) {
+function Score({ value, max }: { value: number; max: number }) {
   return (
-    <td className="px-3 py-3">
-      {muted ? (
-        <span className="text-gray-300">—</span>
-      ) : value ? (
-        <CheckCircle2 size={15} className="text-emerald-500" />
-      ) : (
-        <XCircle size={15} className="text-red-500" />
-      )}
+    <td className="px-4 py-3 text-xs font-bold">
+      {value}
+      <span className="text-gray-300">/{max}</span>
     </td>
+  );
+}
+function Badge({ value }: { value: string }) {
+  return (
+    <span
+      className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${value === "Estimated" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}
+    >
+      {value}
+    </span>
+  );
+}
+function Rules({
+  config,
+  setConfig,
+  saving,
+  message,
+  onSave,
+}: {
+  config: IncentiveConfig;
+  setConfig: (v: IncentiveConfig) => void;
+  saving: boolean;
+  message: string;
+  onSave: () => void;
+}) {
+  const number = (
+    key: keyof IncentiveConfig,
+    label: string,
+    min = 0,
+    max?: number,
+  ) => (
+    <label className="text-[10px] font-bold text-gray-500">
+      {label}
+      <input
+        type="number"
+        min={min}
+        max={max}
+        value={String(config[key])}
+        onChange={(e) =>
+          setConfig({ ...config, [key]: Number(e.target.value) })
+        }
+        className="mt-1 h-9 w-full rounded-lg border border-gray-200 px-2 text-xs"
+      />
+    </label>
+  );
+  return (
+    <section className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-black">Incentive rules</h2>
+          <p className="mt-1 text-[10px] text-gray-400">
+            Shared Admin and Manager rules used by every live calculation.
+            Punctuality deductions are gradual: 0.5 for slightly late, 1 for
+            late and 2 for severely late. The management bonus is always
+            calculated on a fixed ₹3,000 base.
+          </p>
+        </div>
+        <button
+          onClick={onSave}
+          disabled={saving}
+          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-xl bg-red-600 px-4 text-xs font-bold text-white disabled:opacity-50"
+        >
+          {saving ? (
+            <Loader2 size={13} className="animate-spin" />
+          ) : (
+            <Save size={13} />
+          )}{" "}
+          Save
+        </button>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {number("attendance_weight", "Attendance points")}
+        {number("working_hours_weight", "8-hour points")}
+        {number("punctuality_weight", "Punctuality points")}
+        {number("break_weight", "Break points")}
+        {number("daily_report_weight", "DWR points")}
+        {number("required_work_minutes", "Required minutes", 1)}
+        {number("allowed_breaks_per_day", "Breaks allowed")}
+        {number("late_grace_minutes", "On-time grace (minutes)", 0, 60)}
+        {number("break_violation_deduction", "Deduction / break violation")}
+      </div>
+      <p className="mt-3 text-[10px] leading-relaxed text-gray-400">
+        Management bonus is awarded separately per staff member from the Details
+        page and is capped at 25% of the fixed ₹3,000 management base.
+      </p>
+      {message && (
+        <p className="mt-3 text-xs font-semibold text-red-600">{message}</p>
+      )}
+    </section>
   );
 }

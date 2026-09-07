@@ -47,6 +47,10 @@ const money = (value: number) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(value);
+const overtime = (minutes: number) => {
+  const safe = Math.max(0, Number(minutes || 0));
+  return `${Math.floor(safe / 60)}h ${safe % 60}m`;
+};
 
 export default function PerformancePage() {
   const { open } = useSidebar();
@@ -278,7 +282,7 @@ export default function PerformancePage() {
           ) : (
             <>
               <div className="hidden overflow-x-auto lg:block">
-                <table className="w-full min-w-[1050px] text-left">
+                <table className="w-full min-w-[1140px] text-left">
                   <thead className="bg-gray-50 text-[9px] uppercase tracking-wider text-gray-400">
                     <tr>
                       <Th>Staff</Th>
@@ -287,6 +291,7 @@ export default function PerformancePage() {
                       <Th>Timing</Th>
                       <Th>Breaks</Th>
                       <Th>Daily report</Th>
+                      <Th>Overtime</Th>
                       <Th>Total</Th>
                       <Th>Incentive</Th>
                       <Th>Status</Th>
@@ -310,6 +315,12 @@ export default function PerformancePage() {
                         <Score value={r.punctualityScore} max={20} />
                         <Score value={r.breakScore} max={20} />
                         <Score value={r.dailyReportScore} max={15} />
+                        <td className="px-4 py-3 text-xs font-black tabular-nums text-gray-900">
+                          {overtime(r.totalOvertimeMinutes)}
+                          <p className="mt-1 text-[9px] font-semibold text-gray-400">
+                            {r.overtimeDays} {r.overtimeDays === 1 ? "day" : "days"}
+                          </p>
+                        </td>
                         <td className="px-4 py-3">
                           <strong
                             className={
@@ -381,6 +392,9 @@ export default function PerformancePage() {
                       </span>
                       <span>
                         Reports <b>{r.dailyReportScore}/15</b>
+                      </span>
+                      <span>
+                        Overtime <b>{overtime(r.totalOvertimeMinutes)}</b>
                       </span>
                       <span className="font-black">
                         {money(r.incentiveAmount)}
