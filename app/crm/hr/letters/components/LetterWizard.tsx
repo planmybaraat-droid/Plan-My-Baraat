@@ -24,6 +24,7 @@ const STEPS = [
 ] as const;
 
 const HR_DEPARTMENTS = ['Operations', 'Sales', 'Client Servicing', 'Production', 'Accounts', 'Marketing', 'Management'];
+const ADDITIONAL_NOTES_KEY = 'additional_notes';
 
 function Field({ label, required, hint, children, className = '' }: { label: string; required?: boolean; hint?: string; children: React.ReactNode; className?: string }) {
   return (
@@ -88,7 +89,9 @@ export default function LetterWizard({ template, existingLetter }: { template: L
 
   const renderedText = useMemo(() => {
     if (!selectedEmployee) return '';
-    return renderLetterText(template.body_template, { ...selectedEmployee, designation }, extra);
+    const baseText = renderLetterText(template.body_template, { ...selectedEmployee, designation }, extra);
+    const additionalNotes = String(extra[ADDITIONAL_NOTES_KEY] ?? '').trim();
+    return additionalNotes ? `${baseText}\n\n## Additional Notes\n${additionalNotes}` : baseText;
   }, [selectedEmployee, designation, extra, template.body_template]);
 
   // Experience letters describe service from joining through Till Date or a
@@ -376,9 +379,7 @@ export default function LetterWizard({ template, existingLetter }: { template: L
           {step === 2 && (
             <>
               <p className="mb-6 text-[10px] font-black uppercase tracking-[0.22em] text-red-600">03 / Letter-specific details</p>
-              {template.extra_fields.length === 0 ? (
-                <div className="flex items-start gap-2 rounded-xl border border-gray-100 bg-gray-50/60 p-4 text-xs text-gray-500"><Info size={15} className="mt-0.5 shrink-0 text-gray-400" /> This letter uses only the employee&apos;s profile information — no extra details needed.</div>
-              ) : (
+              {template.extra_fields.length > 0 ? (
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   {template.extra_fields.map((field: LetterExtraFieldDef) => (
                     <Field key={field.key} label={field.label} required={field.required !== false} hint={field.hint} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
@@ -390,7 +391,14 @@ export default function LetterWizard({ template, existingLetter }: { template: L
                     </Field>
                   ))}
                 </div>
+              ) : (
+                <div className="flex items-start gap-2 rounded-xl border border-gray-100 bg-gray-50/60 p-4 text-xs text-gray-500"><Info size={15} className="mt-0.5 shrink-0 text-gray-400" /> This letter uses the employee&apos;s profile information. You can add any extra content below if needed.</div>
               )}
+              <div className="mt-5 border-t border-gray-100 pt-5">
+                <Field label="Additional content" hint="Optional — add any instruction, clause or note. It will appear at the end of this letter.">
+                  <textarea rows={5} value={String(extra[ADDITIONAL_NOTES_KEY] ?? '')} onChange={e => setExtra(cur => ({ ...cur, [ADDITIONAL_NOTES_KEY]: e.target.value }))} placeholder="Write any additional content for this letter..." />
+                </Field>
+              </div>
             </>
           )}
 
