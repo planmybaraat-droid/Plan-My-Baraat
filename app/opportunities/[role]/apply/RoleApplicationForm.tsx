@@ -11,7 +11,6 @@ const experienceOptions = ["Fresher / Less than 1 year", "1–2 Years", "2–5 Y
 
 export default function RoleApplicationForm({ role }: { role: Opportunity }) {
   const [state, setState] = useState<State>({ type: "idle", message: "" });
-  const [eventExperience, setEventExperience] = useState("No");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

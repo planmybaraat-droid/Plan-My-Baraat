@@ -9,7 +9,6 @@ const roles = {
   'video-editor': 'Video Editor',
 } as const;
 const text = (value: unknown, max = 1000) => typeof value === 'string' ? value.trim().slice(0, max) : '';
-const list = (value: unknown) => Array.isArray(value) ? value.map(item => text(item, 100)).filter(Boolean).slice(0, 20) : [];
 const validUrl = (value: string, required = false) => {
   if (!value) return !required;
   try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
@@ -29,15 +28,11 @@ export async function POST(request: Request) {
   const phone = text(body.phone, 30);
   const email = text(body.email, 180).toLowerCase();
   const city = text(body.city, 120);
-  const dateOfBirth = text(body.dateOfBirth, 10);
   const gender = text(body.gender, 20);
   const experience = text(body.experience, 80);
   const joiningDate = text(body.joiningDate, 10);
   const interviewDate = text(body.interviewDate, 10);
   const interviewTime = text(body.interviewTime, 5);
-  const resumeLink = text(body.resumeLink, 1000);
-  const profileLink = text(body.profileLink, 1000);
-  const languages = form.getAll('languages').map(value => text(value, 100)).filter(Boolean);
   const phoneDigits = phone.replace(/\D/g, '');
 
   if (!roles[role] || fullName.length < 2 || phoneDigits.length < 10 || phoneDigits.length > 15 || !gender || !experience) {
