@@ -11,7 +11,7 @@ export type Opportunity = {
 export const OPPORTUNITIES: Opportunity[] = [
   {
     id: "sales-executive",
-    title: "Sales Executive (Female)",
+    title: "Sales Executive",
     type: "Full-time",
     department: "Sales",
     location: "Vadodara",
