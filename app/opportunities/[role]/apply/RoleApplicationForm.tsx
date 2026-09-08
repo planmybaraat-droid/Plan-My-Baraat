@@ -18,6 +18,7 @@ export default function RoleApplicationForm({ role }: { role: Opportunity }) {
     const form = event.currentTarget;
     if (!form.reportValidity()) return;
     const fd = new FormData(form);
+    if (role.id === "video-editor" && !fd.getAll("software").length) { setState({ type: "error", message: "Select at least one editing software." }); return; }
     const values: Record<string, string | string[]> = {};
     fd.forEach((value, key) => {
       if (key === "confirm") return;
@@ -55,7 +56,7 @@ export default function RoleApplicationForm({ role }: { role: Opportunity }) {
         {role.id === "sales-executive" ? <>
           <Section title="Sales experience"><div className="grid gap-5 sm:grid-cols-2"><Select label="Total sales experience" name="experience" options={experienceOptions} required/><Field label="Previous industry / company" name="previousIndustry" placeholder="Where have you worked before?" required/></div></Section>
         </> : <>
-          <Section title="Editing experience"><div className="grid gap-5 sm:grid-cols-2"><Select label="Total experience" name="experience" options={experienceOptions} required/><Field label="Portfolio link" name="portfolioLink" type="url" placeholder="Google Drive, Behance, Instagram or YouTube" required/></div></Section>
+          <Section title="Editing experience"><Select label="Total experience" name="experience" options={experienceOptions} required/></Section>
           <Section title="Professional skills"><Checks label="Editing software" name="software" options={["Adobe Premiere Pro", "After Effects", "DaVinci Resolve", "Final Cut Pro", "Photoshop", "Lightroom", "Other"]}/></Section>
           <Section title="Role compatibility"><Select label="Comfortable with 10:00 AM – 7:00 PM timing?" name="workingHours" options={["Yes", "No"]} required/></Section>
         </>}

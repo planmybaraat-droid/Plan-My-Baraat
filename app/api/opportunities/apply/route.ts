@@ -9,10 +9,6 @@ const roles = {
   'video-editor': 'Video Editor',
 } as const;
 const text = (value: unknown, max = 1000) => typeof value === 'string' ? value.trim().slice(0, max) : '';
-const validUrl = (value: string, required = false) => {
-  if (!value) return !required;
-  try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
-};
 const fiveDaysFromNow = () => new Date(Date.now() + 5 * 86400000);
 const validInterviewTime = (value: string) => ['14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'].includes(value);
 
@@ -63,20 +59,22 @@ export async function POST(request: Request) {
     uploadedResumePath = uploadPath;
   } else {
     const software = form.getAll('software').map(value => text(value, 100)).filter(Boolean);
-    const portfolioLink = text(body.portfolioLink, 1000);
     const workingHours = text(body.workingHours, 3);
     const resumeFile = form.get('resumeFile');
     scheduledAt = new Date(`${interviewDate}T${interviewTime}:00`);
-    if (!software.length || !validUrl(portfolioLink, true) || !['Yes','No'].includes(workingHours) || !(resumeFile instanceof File) || !resumeFile.size || !/^\d{4}-\d{2}-\d{2}$/.test(interviewDate) || !validInterviewTime(interviewTime) || Number.isNaN(scheduledAt.getTime()) || scheduledAt < new Date() || scheduledAt > fiveDaysFromNow()) return NextResponse.json({ error: 'Please complete your editing details and choose a 2:00 PM–6:00 PM interview slot within five days.' }, { status: 400 });
+    if (!software.length) return NextResponse.json({ error: 'Select at least one editing software.' }, { status: 400 });
+    if (!['Yes','No'].includes(workingHours)) return NextResponse.json({ error: 'Confirm whether you are comfortable with 10:00 AM–7:00 PM timing.' }, { status: 400 });
+    if (!(resumeFile instanceof File) || !resumeFile.size) return NextResponse.json({ error: 'Upload your resume before submitting.' }, { status: 400 });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(interviewDate) || !validInterviewTime(interviewTime) || Number.isNaN(scheduledAt.getTime()) || scheduledAt < new Date() || scheduledAt > fiveDaysFromNow()) return NextResponse.json({ error: 'Choose a 2:00 PM–6:00 PM interview slot within the next five days.' }, { status: 400 });
     if (resumeFile.size > 5 * 1024 * 1024 || !['application/pdf','image/jpeg','image/png','image/webp'].includes(resumeFile.type)) return NextResponse.json({ error: 'Upload a PDF, JPG, PNG or WEBP resume up to 5 MB.' }, { status: 400 });
     if (!isSupabaseAdminConfigured || !supabaseAdmin) return NextResponse.json({ error: 'Resume uploads are not configured. Please contact us through WhatsApp.' }, { status: 503 });
     const extension = resumeFile.type === 'application/pdf' ? 'pdf' : resumeFile.type.split('/')[1];
     const uploadPath = `recruitment/${applicationId}/resume.${extension}`;
     const { error: uploadError } = await supabaseAdmin.storage.from('crm-files').upload(uploadPath, resumeFile, { contentType: resumeFile.type, upsert: false });
     if (uploadError) { console.error('Resume upload failed', uploadError); return NextResponse.json({ error: 'We could not upload your resume. Please try again.' }, { status: 500 }); }
-    applicationData = { ...common, software, portfolioLink, workingHours };
+    applicationData = { ...common, software, workingHours };
     skills = software.join(', ');
-    introduction = `Portfolio: ${portfolioLink}; 10 AM–7 PM timing: ${workingHours}`;
+    introduction = `10 AM–7 PM timing: ${workingHours}`;
     body.resumeLink = uploadPath;
     uploadedResumePath = uploadPath;
   }
