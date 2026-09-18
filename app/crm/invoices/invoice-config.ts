@@ -144,3 +144,22 @@ export function invoiceDraftFromAgreement(agreement: AgreementRecord, invoiceNum
     created_by_name: agreement.sales_executive || 'CRM Administrator',
   };
 }
+export function emptyInvoiceDraft(invoiceNumber: string, profile: BusinessProfile): InvoiceFormData {
+  const today = new Date();
+  const due = new Date(today);
+  due.setDate(due.getDate() + 7);
+  return {
+    invoice_number: invoiceNumber, supplier_profile: { ...profile },
+    agreement_id: '', agreement_number: '', document_type: 'Proforma Invoice', status: 'Draft',
+    issue_date: today.toISOString().slice(0, 10), due_date: due.toISOString().slice(0, 10),
+    client_name: '', mobile: '', email: '', billing_address: '', client_gstin: '',
+    place_of_supply: profile.state, state_code: profile.state_code,
+    event_date: '', venue: '', package_name: '',
+    line_items: [{ id: 'item-1', description: '', sac_code: profile.default_sac_code, quantity: 1, rate: 0, taxable_amount: 0 }],
+    subtotal: 0, discount: 0, taxable_value: 0, gst_percent: 0,
+    cgst_amount: 0, sgst_amount: 0, igst_amount: 0, total_amount: 0,
+    amount_paid: 0, balance_due: 0, payments: [], client_note: '',
+    payment_terms: 'Payment is due by the due date shown on this invoice.',
+    created_by_name: 'CRM Administrator',
+  };
+}
